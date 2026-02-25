@@ -15,9 +15,12 @@ const Sliders: React.FC = () => {
     const [uploading, setUploading] = useState(false);
     const [heroData, setHeroData] = useState<HeroMedia | null>(null);
 
-    const [form, setForm] = useState<{ media_url: string; type: 'image' | 'video' | 'text' }>({
+    const [form, setForm] = useState<{ media_url: string; type: 'image' | 'video' | 'text'; title: string; subtitle: string; titleColor: string }>({
         media_url: '',
-        type: 'image'
+        type: 'image',
+        title: 'Helping Young Minds Grow with *Confidence*',
+        subtitle: 'Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.',
+        titleColor: '#c75e33'
     });
 
     const fetchHeroMedia = async () => {
@@ -35,10 +38,22 @@ const Sliders: React.FC = () => {
             if (error && error.code !== 'PGRST116') throw error;
 
             if (data) {
+                let parsedTitle = data.title || 'Helping Young Minds Grow with *Confidence*';
+                let parsedColor = '#c75e33';
+
+                if (parsedTitle.includes('|||')) {
+                    const parts = parsedTitle.split('|||');
+                    parsedTitle = parts[0];
+                    parsedColor = parts[1];
+                }
+
                 setHeroData(data as HeroMedia);
                 setForm({
                     media_url: data.media_url || '',
-                    type: (data.type as any) || 'image'
+                    type: (data.type as any) || 'image',
+                    title: parsedTitle,
+                    subtitle: data.subtitle || 'Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.',
+                    titleColor: parsedColor
                 });
             }
         } catch (err) {
@@ -79,8 +94,8 @@ const Sliders: React.FC = () => {
         setLoading(true);
         try {
             const dataToSave = {
-                title: 'Hero Section',
-                subtitle: '',
+                title: `${form.title}|||${form.titleColor}`,
+                subtitle: form.subtitle,
                 type: form.type,
                 media_url: form.media_url,
                 is_active: true,
@@ -158,6 +173,46 @@ const Sliders: React.FC = () => {
                                     )}
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Hero Title</label>
+                            <p className="text-xs text-gray-500 mb-2">Use asterisks to highlight a word with the orange underline. (e.g. `with *Confidence*`)</p>
+                            <textarea
+                                className="w-full border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-3 rounded-lg transition-all min-h-[100px]"
+                                placeholder="Enter hero title..."
+                                value={form.title}
+                                onChange={e => setForm({ ...form, title: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Highlighted Word Color</label>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="color"
+                                    className="h-10 w-14 border border-gray-200 rounded cursor-pointer shrink-0"
+                                    value={form.titleColor}
+                                    onChange={e => setForm({ ...form, titleColor: e.target.value })}
+                                />
+                                <input
+                                    type="text"
+                                    className="border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-2 rounded-lg transition-all w-32 uppercase text-sm font-mono"
+                                    placeholder="#C75E33"
+                                    value={form.titleColor}
+                                    onChange={e => setForm({ ...form, titleColor: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Hero Subtitle</label>
+                            <textarea
+                                className="w-full border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-3 rounded-lg transition-all min-h-[100px]"
+                                placeholder="Enter hero subtitle..."
+                                value={form.subtitle}
+                                onChange={e => setForm({ ...form, subtitle: e.target.value })}
+                            />
                         </div>
                     </div>
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { classesData } from '../../constants/classesData';
-import { FaPlus, FaTrash, FaChevronDown, FaChevronRight, FaBook } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaChevronDown, FaChevronRight, FaBook, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 
 interface Subject {
     id: string;
@@ -30,6 +30,13 @@ const AdminClasses: React.FC = () => {
     const [newTopicDesc, setNewTopicDesc] = useState('');
     const [addingTopicFor, setAddingTopicFor] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+
+    // Edit states
+    const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
+    const [editSubjectName, setEditSubjectName] = useState('');
+    const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
+    const [editTopicName, setEditTopicName] = useState('');
+    const [editTopicDesc, setEditTopicDesc] = useState('');
 
     // Fetch subjects for selected class and curriculum
     const fetchSubjects = async () => {
@@ -164,6 +171,64 @@ const AdminClasses: React.FC = () => {
         }
     };
 
+    // Edit subject handlers
+    const handleEditSubject = (subject: Subject) => {
+        setEditingSubjectId(subject.id);
+        setEditSubjectName(subject.name);
+    };
+
+    const handleSaveSubject = async (subjectId: string) => {
+        if (!editSubjectName.trim()) return;
+        try {
+            const { error } = await supabase
+                .from('class_subjects')
+                .update({ name: editSubjectName.trim() })
+                .eq('id', subjectId);
+
+            if (error) throw error;
+            setEditingSubjectId(null);
+            fetchSubjects();
+        } catch (err) {
+            console.error('Error updating subject:', err);
+            alert('Failed to update subject.');
+        }
+    };
+
+    const handleCancelEditSubject = () => {
+        setEditingSubjectId(null);
+    };
+
+    // Edit topic handlers
+    const handleEditTopic = (topic: Topic) => {
+        setEditingTopicId(topic.id);
+        setEditTopicName(topic.name);
+        setEditTopicDesc(topic.description || '');
+    };
+
+    const handleSaveTopic = async (topicId: string, subjectId: string) => {
+        if (!editTopicName.trim()) return;
+        try {
+            const { error } = await supabase
+                .from('class_topics')
+                .update({
+                    name: editTopicName.trim(),
+                    description: editTopicDesc.trim() || null
+                })
+                .eq('id', topicId);
+
+            if (error) throw error;
+            setEditingTopicId(null);
+            fetchTopics(subjectId);
+        } catch (err) {
+            console.error('Error updating topic:', err);
+            alert('Failed to update topic.');
+        }
+    };
+
+    const handleCancelEditTopic = () => {
+        setEditingTopicId(null);
+    };
+
     return (
         <div className="max-w-4xl mx-auto">
             <div className="mb-6">
@@ -192,8 +257,8 @@ const AdminClasses: React.FC = () => {
                             <button
                                 onClick={() => setSelectedCurriculum('CBSE')}
                                 className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${selectedCurriculum === 'CBSE'
-                                        ? 'bg-[#a0522d] text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-[#a0522d] text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 CBSE
@@ -201,8 +266,8 @@ const AdminClasses: React.FC = () => {
                             <button
                                 onClick={() => setSelectedCurriculum('STATE')}
                                 className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${selectedCurriculum === 'STATE'
-                                        ? 'bg-[#a0522d] text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-[#a0522d] text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 STATE
@@ -260,32 +325,81 @@ const AdminClasses: React.FC = () => {
                                 {/* Subject Header */}
                                 <div
                                     className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                                    onClick={() => toggleSubject(subject.id)}
+                                    onClick={() => {
+                                        if (editingSubjectId !== subject.id) {
+                                            toggleSubject(subject.id);
+                                        }
+                                    }}
                                 >
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 flex-1">
                                         {expandedSubject === subject.id ? (
                                             <FaChevronDown className="text-[#a0522d] text-sm" />
                                         ) : (
                                             <FaChevronRight className="text-gray-400 text-sm" />
                                         )}
-                                        <span className="font-semibold text-gray-800">{subject.name}</span>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${subject.curriculum === 'CBSE' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
-                                            }`}>
-                                            {subject.curriculum}
-                                        </span>
-                                        {topics[subject.id] && (
-                                            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                                                {topics[subject.id].length} topics
-                                            </span>
+                                        {editingSubjectId === subject.id ? (
+                                            <div className="flex items-center gap-2 flex-1 mr-4" onClick={(e) => e.stopPropagation()}>
+                                                <input
+                                                    type="text"
+                                                    value={editSubjectName}
+                                                    onChange={(e) => setEditSubjectName(e.target.value)}
+                                                    className="flex-1 border border-gray-300 focus:border-[#a0522d] outline-none px-2 py-1 rounded text-sm font-semibold"
+                                                    autoFocus
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleSaveSubject(subject.id)}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <span className="font-semibold text-gray-800">{subject.name}</span>
+                                                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${subject.curriculum === 'CBSE' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
+                                                    }`}>
+                                                    {subject.curriculum}
+                                                </span>
+                                                {topics[subject.id] && (
+                                                    <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                                                        {topics[subject.id].length} topics
+                                                    </span>
+                                                )}
+                                            </>
                                         )}
                                     </div>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteSubject(subject.id); }}
-                                        className="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                                        title="Delete Subject"
-                                    >
-                                        <FaTrash size={14} />
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        {editingSubjectId === subject.id ? (
+                                            <>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleSaveSubject(subject.id); }}
+                                                    className="text-green-500 hover:text-green-700 p-2 rounded-lg hover:bg-green-50 transition-colors"
+                                                    title="Save"
+                                                >
+                                                    <FaCheck size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleCancelEditSubject(); }}
+                                                    className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                                                    title="Cancel"
+                                                >
+                                                    <FaTimes size={14} />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleEditSubject(subject); }}
+                                                    className="text-blue-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                                                    title="Edit Subject"
+                                                >
+                                                    <FaEdit size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteSubject(subject.id); }}
+                                                    className="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                                                    title="Delete Subject"
+                                                >
+                                                    <FaTrash size={14} />
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Topics (Expanded) */}
@@ -298,19 +412,69 @@ const AdminClasses: React.FC = () => {
                                             <ul className="space-y-2 mb-4">
                                                 {(topics[subject.id] || []).map((topic) => (
                                                     <li key={topic.id} className="flex items-start justify-between bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
-                                                        <div>
-                                                            <p className="font-medium text-gray-800 text-sm">{topic.name}</p>
-                                                            {topic.description && (
-                                                                <p className="text-xs text-gray-500 mt-1">{topic.description}</p>
+                                                        {editingTopicId === topic.id ? (
+                                                            <div className="flex-1 mr-4 space-y-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={editTopicName}
+                                                                    onChange={(e) => setEditTopicName(e.target.value)}
+                                                                    className="w-full border border-gray-300 focus:border-[#a0522d] outline-none px-2 py-1 rounded text-sm font-medium"
+                                                                    placeholder="Topic Name"
+                                                                    autoFocus
+                                                                />
+                                                                <textarea
+                                                                    value={editTopicDesc}
+                                                                    onChange={(e) => setEditTopicDesc(e.target.value)}
+                                                                    className="w-full border border-gray-300 focus:border-[#a0522d] outline-none px-2 py-1 rounded text-xs text-gray-500 resize-none"
+                                                                    placeholder="Description (optional)"
+                                                                    rows={2}
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <div>
+                                                                <p className="font-medium text-gray-800 text-sm">{topic.name}</p>
+                                                                {topic.description && (
+                                                                    <p className="text-xs text-gray-500 mt-1">{topic.description}</p>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        <div className="flex items-center gap-1">
+                                                            {editingTopicId === topic.id ? (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => handleSaveTopic(topic.id, subject.id)}
+                                                                        className="text-green-500 hover:text-green-700 p-1.5 rounded hover:bg-green-50 transition-colors"
+                                                                        title="Save"
+                                                                    >
+                                                                        <FaCheck size={12} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={handleCancelEditTopic}
+                                                                        className="text-gray-400 hover:text-gray-600 p-1.5 rounded hover:bg-gray-50 transition-colors"
+                                                                        title="Cancel"
+                                                                    >
+                                                                        <FaTimes size={12} />
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => handleEditTopic(topic)}
+                                                                        className="text-blue-400 hover:text-blue-600 p-1.5 rounded hover:bg-blue-50 transition-colors"
+                                                                        title="Edit Topic"
+                                                                    >
+                                                                        <FaEdit size={12} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteTopic(topic.id, subject.id)}
+                                                                        className="text-red-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition-colors flex-shrink-0"
+                                                                        title="Delete Topic"
+                                                                    >
+                                                                        <FaTrash size={12} />
+                                                                    </button>
+                                                                </>
                                                             )}
                                                         </div>
-                                                        <button
-                                                            onClick={() => handleDeleteTopic(topic.id, subject.id)}
-                                                            className="text-red-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition-colors flex-shrink-0 ml-2"
-                                                            title="Delete Topic"
-                                                        >
-                                                            <FaTrash size={12} />
-                                                        </button>
                                                     </li>
                                                 ))}
                                             </ul>

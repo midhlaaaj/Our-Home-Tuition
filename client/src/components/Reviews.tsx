@@ -126,19 +126,19 @@ const Reviews: React.FC = () => {
     const marqueeRow2 = [...shiftedReviews, ...shiftedReviews, ...shiftedReviews, ...shiftedReviews];
 
     return (
-        <section className="py-20 overflow-hidden" style={{ backgroundColor: '#8ca9ff' }}>
-            <div className="container mx-auto px-4 mb-12 text-center">
-                <h2 className="text-4xl font-bold text-white mb-4">
+        <section className="py-10 overflow-hidden" style={{ backgroundColor: '#8ca9ff' }}>
+            <div className="container mx-auto px-4 mb-8 text-center">
+                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">
                     What People Are Saying
                 </h2>
-                <p className="text-white/90 max-w-2xl mx-auto text-lg">
+                <p className="text-white/90 max-w-2xl mx-auto text-base sm:text-lg">
                     Hear from our satisfied parents and students about their experience with Our Home Tuition.
                 </p>
             </div>
 
             {/* Container with mouse events for slow-down effect */}
             <div
-                className="flex flex-col gap-6 group"
+                className="flex flex-col gap-4 group"
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
             >
@@ -149,34 +149,34 @@ const Reviews: React.FC = () => {
                             key={`r1-${review.id}-${index}`}
                             className="w-[280px] md:w-[320px] flex-shrink-0 mx-3"
                         >
-                            <div className="bg-white p-5 rounded-2xl shadow-lg transition-all duration-300 h-full flex flex-col justify-between">
-                                <div>
+                            <div className="bg-white p-3 rounded-xl shadow-lg transition-all duration-300 flex flex-col h-full justify-center">
+                                <div className="flex-1 flex flex-col justify-center">
                                     {/* Stars */}
-                                    <div className="flex mb-2 space-x-1">
+                                    <div className="flex mb-1.5 space-x-1">
                                         {[...Array(5)].map((_, i) => (
                                             <FaStar
                                                 key={i}
-                                                className={`text-sm ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                                className={`text-[10px] sm:text-xs ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
                                             />
                                         ))}
                                     </div>
 
                                     {/* Message */}
-                                    <p className="text-gray-700 mb-4 leading-relaxed italic text-sm line-clamp-4">
+                                    <p className="text-gray-700 mb-2 leading-snug italic text-xs sm:text-sm line-clamp-3">
                                         "{review.message}"
                                     </p>
                                 </div>
 
                                 {/* User Info */}
-                                <div className="flex items-center mt-auto">
+                                <div className="flex items-center mt-1 pt-2 border-t border-gray-100">
                                     <img
                                         src={review.avatar_url || `https://ui-avatars.com/api/?name=${review.name}&background=random`}
                                         alt={review.name}
-                                        className="w-8 h-8 rounded-full mr-3 object-cover"
+                                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full mr-2.5 object-cover"
                                     />
                                     <div>
-                                        <h4 className="font-bold text-gray-900 text-sm">{review.name}</h4>
-                                        <p className="text-[#8ca9ff] text-xs font-bold">{review.role}</p>
+                                        <h4 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight">{review.name}</h4>
+                                        <p className="text-[#8ca9ff] text-[10px] sm:text-xs font-bold leading-tight mt-0.5">{review.role}</p>
                                     </div>
                                 </div>
                             </div>
@@ -192,34 +192,34 @@ const Reviews: React.FC = () => {
                                 key={`r2-${review.id}-${index}`}
                                 className="w-[280px] md:w-[320px] flex-shrink-0 mx-3"
                             >
-                                <div className="bg-white p-5 rounded-2xl shadow-lg transition-all duration-300 h-full flex flex-col justify-between">
-                                    <div>
+                                <div className="bg-white p-3 rounded-xl shadow-lg transition-all duration-300 flex flex-col h-full justify-center">
+                                    <div className="flex-1 flex flex-col justify-center">
                                         {/* Stars */}
-                                        <div className="flex mb-2 space-x-1">
+                                        <div className="flex mb-1.5 space-x-1">
                                             {[...Array(5)].map((_, i) => (
                                                 <FaStar
                                                     key={i}
-                                                    className={`text-sm ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                                    className={`text-[10px] sm:text-xs ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
                                                 />
                                             ))}
                                         </div>
 
                                         {/* Message */}
-                                        <p className="text-gray-700 mb-4 leading-relaxed italic text-sm line-clamp-4">
+                                        <p className="text-gray-700 mb-2 leading-snug italic text-xs sm:text-sm line-clamp-3">
                                             "{review.message}"
                                         </p>
                                     </div>
 
                                     {/* User Info */}
-                                    <div className="flex items-center mt-auto">
+                                    <div className="flex items-center mt-1 pt-2 border-t border-gray-100">
                                         <img
                                             src={review.avatar_url || `https://ui-avatars.com/api/?name=${review.name}&background=random`}
                                             alt={review.name}
-                                            className="w-8 h-8 rounded-full mr-3 object-cover"
+                                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full mr-2.5 object-cover"
                                         />
                                         <div>
-                                            <h4 className="font-bold text-gray-900 text-sm">{review.name}</h4>
-                                            <p className="text-[#8ca9ff] text-xs font-bold">{review.role}</p>
+                                            <h4 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight">{review.name}</h4>
+                                            <p className="text-[#8ca9ff] text-[10px] sm:text-xs font-bold leading-tight mt-0.5">{review.role}</p>
                                         </div>
                                     </div>
                                 </div>

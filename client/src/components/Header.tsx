@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useCurriculum } from '../context/CurriculumContext';
 import { FaSignOutAlt, FaBell, FaChevronDown, FaPen, FaTimes, FaSave, FaCamera } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import AvatarSelectionModal from './AvatarSelectionModal';
@@ -18,7 +18,6 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
     const { curriculum, toggleCurriculum } = useCurriculum();
     const { user, signOut } = useAuth();
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-    const [isScrolled, setIsScrolled] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authView, setAuthView] = useState<'signin' | 'signup'>('signin');
@@ -33,8 +32,22 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
         email: '',
         address: ''
     });
-    const lastScrollY = useRef(0);
     const modalRef = useRef<HTMLDivElement>(null);
+    const location = useLocation();
+
+    const getDisplayName = () => {
+        const rawName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || '';
+        const parts = rawName.trim().split(/\s+/);
+
+        if (rawName.length >= 8 && rawName.length <= 10) return rawName;
+
+        if (parts.length >= 2) {
+            const firstMiddle = `${parts[0]} ${parts[1]}`;
+            if (firstMiddle.length >= 8 && firstMiddle.length <= 10) return firstMiddle;
+        }
+
+        return parts[0];
+    };
 
     // Initialize form when profile opens or user changes
     useEffect(() => {
@@ -122,22 +135,8 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
     // Scroll Logic
     useEffect(() => {
         const handleScroll = () => {
-            const currentScrollY = window.scrollY;
-
-            // Determine dynamic threshold based on viewport height (Hero section is min-h-[90vh], so ~85vh is a good switch point)
-            const heroHeightThreshold = window.innerHeight * 0.85;
-
-            // Scrolled state for style changes (blur etc)
-            if (currentScrollY > heroHeightThreshold) {
-                setIsScrolled(true);
-            } else {
-                setIsScrolled(false);
-            }
-
             // Visibility logic - always show the header as sticky throughout the website
             setIsHeaderVisible(true);
-
-            lastScrollY.current = currentScrollY;
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
@@ -147,22 +146,42 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
     return (
         <header
             className={`fixed w-full top-0 z-50 transition-all duration-300 ease-in-out transform ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
-                } ${bgClass ? bgClass : isScrolled
-                    ? 'bg-[#ffb76c]/95 backdrop-blur-md shadow-lg border-b border-[#ffb76c]/20'
-                    : 'bg-white/10 backdrop-blur-md shadow-sm border-b border-white/10'
+                } ${bgClass ? bgClass : 'bg-white shadow-md border-b border-gray-100'
                 }`}
         >
             <div className="container mx-auto px-4 py-3 flex justify-between items-center">
                 {/* Left Side: Logo & Brand */}
                 <Link to="/" className="flex items-center space-x-2">
                     {/* Placeholder for Logo */}
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#ffb76c] font-bold text-xl shadow-sm">
+                    <div className="w-10 h-10 bg-[#ffb76c] rounded-full flex items-center justify-center text-white font-bold text-xl shadow-sm">
                         HT
                     </div>
-                    <span className="text-white text-xl font-bold tracking-wide drop-shadow-sm">
-                        Our Home Tuition
+                    <span className="text-[#1B2A5A] text-xl font-bold tracking-wide">
+                        Our Home <span className="text-[#F57F01]">Tuition</span>
                     </span>
                 </Link>
+
+                {/* Navigation Links */}
+                <nav className="hidden md:flex items-center space-x-16 ml-auto mr-12">
+                    {[
+                        { name: 'Home', path: '/' },
+                        { name: 'Classes', path: '/class/1' },
+                        { name: 'Career', path: '#' },
+                        { name: 'About Us', path: '#' }
+                    ].map((link) => {
+                        const isActive = location.pathname === link.path;
+                        return (
+                            <Link
+                                key={link.name}
+                                to={link.path}
+                                className={`relative font-medium text-lg tracking-wide group py-2 transition-colors duration-200 ${isActive ? 'text-black' : 'text-gray-400 hover:text-black'}`}
+                            >
+                                {link.name}
+                                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gray-300 opacity-0 group-hover:opacity-100 transition-all duration-200"></span>
+                            </Link>
+                        );
+                    })}
+                </nav>
 
                 {/* Right Side: Toggle & Auth */}
                 <div className="flex items-center space-x-4">
@@ -170,18 +189,18 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                     {showToggle && (
                         <button
                             onClick={toggleCurriculum}
-                            className="relative w-32 h-10 bg-[#e69b48] rounded-full flex items-center p-1 cursor-pointer shadow-inner overflow-hidden border border-[#d68a3a]/40"
+                            className="relative w-32 h-10 bg-[#1B2A5A] rounded-full flex items-center p-1 cursor-pointer shadow-inner overflow-hidden border border-white/10"
                             aria-label="Toggle Curriculum"
                         >
                             {/* Background Text Labels */}
-                            <div className="absolute w-full flex justify-between px-3 text-xs font-bold text-[#0f1020]/70 pointer-events-none select-none">
+                            <div className="absolute w-full flex justify-between px-3 text-xs font-bold text-white/50 pointer-events-none select-none">
                                 <span>CBSE</span>
                                 <span>STATE</span>
                             </div>
 
                             {/* Slider Knob */}
                             <div
-                                className={`w-1/2 h-full bg-[#0f1020] rounded-full shadow-md text-white flex items-center justify-center text-xs font-bold transition-transform duration-300 ease-in-out ${curriculum === 'STATE' ? 'translate-x-full' : 'translate-x-0'
+                                className={`w-1/2 h-full bg-white rounded-full shadow-md text-[#1B2A5A] flex items-center justify-center text-xs font-bold transition-transform duration-300 ease-in-out ${curriculum === 'STATE' ? 'translate-x-full' : 'translate-x-0'
                                     }`}
                             >
                                 {curriculum}
@@ -193,7 +212,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                     {user ? (
                         <div className="flex items-center gap-4">
                             {/* Notification Bell */}
-                            <button className="w-10 h-10 rounded-full bg-[#e69b48] border border-[#d68a3a]/40 flex items-center justify-center text-[#0f1020] hover:bg-[#d68a3a] transition-all shadow-sm">
+                            <button className="w-10 h-10 rounded-full bg-[#1B2A5A] border border-white/10 flex items-center justify-center text-white hover:bg-[#142044] transition-all shadow-sm">
                                 <FaBell size={18} />
                             </button>
 
@@ -204,7 +223,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                             <div className="relative">
                                 <button
                                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                    className="h-10 flex items-center gap-3 bg-[#e69b48] text-[#0f1020] px-2 pr-4 rounded-full hover:bg-[#d68a3a] transition-all border border-[#d68a3a]/40 shadow-sm"
+                                    className="h-10 flex items-center gap-3 bg-[#1B2A5A] text-white px-2 pr-4 rounded-full hover:bg-[#142044] transition-all border border-white/10 shadow-sm"
                                 >
                                     <div className="w-8 h-8 rounded-full overflow-hidden bg-white/20 border-2 border-white/50 flex-shrink-0">
                                         {user.user_metadata?.avatar_url ? (
@@ -214,20 +233,20 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-white text-[#ffb76c] font-bold">
+                                            <div className="w-full h-full flex items-center justify-center bg-white text-[#1B2A5A] font-bold">
                                                 {user.email?.charAt(0).toUpperCase()}
                                             </div>
                                         )}
                                     </div>
                                     <div className="flex flex-col items-center pr-2">
-                                        <span className="text-sm font-bold leading-tight text-[#0f1020] drop-shadow-none">
-                                            {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                                        <span className="text-sm font-bold leading-tight text-white line-clamp-1">
+                                            {getDisplayName()}
                                         </span>
-                                        <span className="text-[10px] text-[#0f1020]/80 font-bold leading-none mt-0.5 bg-white/30 px-1.5 py-0.5 rounded-full border border-white/20">
+                                        <span className="text-[10px] text-[#22c55e] font-bold leading-none mt-0.5 drop-shadow-[0_0_3px_rgba(34,197,94,0.4)]">
                                             {user.user_metadata?.role || "Student"}
                                         </span>
                                     </div>
-                                    <FaChevronDown size={12} className={`text-[#0f1020]/80 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
+                                    <FaChevronDown size={12} className={`text-white/80 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
                                 </button>
                             </div>
 
@@ -466,14 +485,13 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => { setAuthView('signin'); setIsAuthModalOpen(true); }}
-                                className={`bg-transparent px-4 py-2 font-bold text-sm transition-colors ${isScrolled ? 'text-[#0f1020] hover:text-[#1a1c2e]' : 'text-white hover:text-gray-200'
-                                    }`}
+                                className="border border-[#1B2A5A] text-[#1B2A5A] px-6 py-2 rounded-xl font-bold text-sm hover:bg-[#1B2A5A] hover:text-white transition-all"
                             >
                                 Sign In
                             </button>
                             <button
                                 onClick={() => { setAuthView('signup'); setIsAuthModalOpen(true); }}
-                                className="bg-[#0f1020] text-white px-5 py-2 rounded-full font-bold text-sm shadow-md hover:bg-[#1a1c2e] transition-colors border border-white/20"
+                                className="bg-[#1B2A5A] text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-[#142044] transition-all shadow-md"
                             >
                                 Sign Up
                             </button>
