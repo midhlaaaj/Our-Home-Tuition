@@ -151,11 +151,8 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
         >
             <div className="container mx-auto px-4 py-3 flex justify-between items-center">
                 {/* Left Side: Logo & Brand */}
-                <Link to="/" className="flex items-center space-x-2">
-                    {/* Placeholder for Logo */}
-                    <div className="w-10 h-10 bg-[#ffb76c] rounded-full flex items-center justify-center text-white font-bold text-xl shadow-sm">
-                        HT
-                    </div>
+                <Link to="/" className="flex items-center space-x-0">
+                    <img src="/logo.png" alt="Our Home Tuition Logo" className="w-20 h-20 object-contain -my-5 ml-1 mr-1" />
                     <span className="text-[#1B2A5A] text-xl font-bold tracking-wide">
                         Our Home <span className="text-[#F57F01]">Tuition</span>
                     </span>

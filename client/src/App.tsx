@@ -16,7 +16,6 @@ import AdminAvatars from './pages/admin/AdminAvatars';
 import AdminPartners from './pages/admin/AdminPartners';
 import AdminClasses from './pages/admin/AdminClasses';
 import ClassPage from './pages/ClassPage';
-import BookingPage from './pages/BookingPage';
 
 // Protected Route Wrapper
 const ProtectedRoute = () => {
@@ -47,7 +46,6 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/class/:id" element={<ClassPage />} />
-            <Route path="/book-session" element={<BookingPage />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/login" element={<Login />} />
 
