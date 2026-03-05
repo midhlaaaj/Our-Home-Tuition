@@ -6,7 +6,8 @@ import ClassNavbar from '../components/ClassNavbar';
 import { classesData } from '../constants/classesData';
 import { useCurriculum } from '../context/CurriculumContext';
 import { supabase } from '../supabaseClient';
-import { FaPlus, FaMinus } from 'react-icons/fa';
+import { FaPlus, FaMinus, FaTimes } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 interface Subject {
     id: string;
@@ -30,6 +31,11 @@ const ClassPage: React.FC = () => {
     const [topics, setTopics] = useState<Record<string, Topic[]>>({});
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
+
+    // Booking Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedUnits, setSelectedUnits] = useState<{ subject: Subject, topic: Topic }[]>([]);
 
     // Fetch subjects for this class filtered by curriculum
     useEffect(() => {
@@ -85,6 +91,32 @@ const ClassPage: React.FC = () => {
         }
     };
 
+    // Pre-fetch all topics when modal opens to ensure smooth UX
+    const handleOpenModal = () => {
+        setIsModalOpen(true);
+        subjects.forEach(subject => {
+            if (!topics[subject.id]) {
+                fetchTopics(subject.id);
+            }
+        });
+    };
+
+    const toggleUnitSelection = (subject: Subject, topic: Topic) => {
+        setSelectedUnits(prev => {
+            const isSelected = prev.some(u => u.topic.id === topic.id);
+            if (isSelected) {
+                return prev.filter(u => u.topic.id !== topic.id);
+            } else {
+                return [...prev, { subject, topic }];
+            }
+        });
+    };
+
+    const handleProceedToBooking = () => {
+        setIsModalOpen(false);
+        navigate('/book-session', { state: { selectedUnits, classInfo, curriculum } });
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans pt-[64px]">
             <Header />
@@ -103,6 +135,12 @@ const ClassPage: React.FC = () => {
                                     {curriculum}
                                 </span>
                             </div>
+                            <button
+                                onClick={handleOpenModal}
+                                className="bg-[#a0522d] hover:bg-[#804224] text-white px-6 py-2.5 rounded-lg font-bold transition-colors shadow-sm flex items-center gap-2"
+                            >
+                                Book Session
+                            </button>
                         </div>
 
                         {loading ? (
@@ -168,6 +206,103 @@ const ClassPage: React.FC = () => {
                     </div>
                 )}
             </main>
+
+            {/* Booking Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+                        {/* Modal Header */}
+                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-800">Select Units to Book</h2>
+                                <p className="text-sm text-gray-500 mt-1">Choose specific topics from {classInfo?.label} ({curriculum})</p>
+                            </div>
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            >
+                                <FaTimes size={20} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body - Scrollable */}
+                        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                            {subjects.length === 0 ? (
+                                <p className="text-center text-gray-500 py-8">No subjects available.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {subjects.map(subject => (
+                                        <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                            <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                                                <h3 className="font-bold text-gray-800">{subject.name}</h3>
+                                            </div>
+                                            <div className="divide-y divide-gray-100">
+                                                {!topics[subject.id] ? (
+                                                    <div className="px-4 py-3 text-sm text-gray-500">Loading topics...</div>
+                                                ) : topics[subject.id].length === 0 ? (
+                                                    <div className="px-4 py-3 text-sm text-gray-500">No units available.</div>
+                                                ) : (
+                                                    topics[subject.id].map(topic => {
+                                                        const isSelected = selectedUnits.some(u => u.topic.id === topic.id);
+                                                        return (
+                                                            <label
+                                                                key={topic.id}
+                                                                className={`flex items-start gap-4 px-4 py-3 cursor-pointer hover:bg-orange-50/50 transition-colors ${isSelected ? 'bg-orange-50/30' : ''}`}
+                                                            >
+                                                                <div className="mt-0.5">
+                                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-[#a0522d] border-[#a0522d]' : 'border-gray-300 bg-white'}`}>
+                                                                        {isSelected && <svg className="w-3.5 h-3.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                                                    </div>
+                                                                    {/* Hidden native checkbox for accessibility/state matching */}
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="sr-only"
+                                                                        checked={isSelected}
+                                                                        onChange={() => toggleUnitSelection(subject, topic)}
+                                                                    />
+                                                                </div>
+                                                                <div className="flex-1">
+                                                                    <p className={`text-sm font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
+                                                                    {topic.description && (
+                                                                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{topic.description}</p>
+                                                                    )}
+                                                                </div>
+                                                            </label>
+                                                        );
+                                                    })
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="px-6 py-4 border-t border-gray-100 bg-white flex items-center justify-between sticky bottom-0 z-10">
+                            <div className="text-sm font-medium text-gray-600">
+                                {selectedUnits.length} unit{selectedUnits.length !== 1 ? 's' : ''} selected
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setSelectedUnits([])}
+                                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                                    disabled={selectedUnits.length === 0}
+                                >
+                                    Clear All
+                                </button>
+                                <button
+                                    onClick={handleProceedToBooking}
+                                    disabled={selectedUnits.length === 0}
+                                    className="bg-[#a0522d] hover:bg-[#804224] disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg font-bold transition-colors shadow-sm"
+                                >
+                                    Proceed to Booking
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <Footer />
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaTachometerAlt, FaImages, FaStar, FaHandshake, FaSignOutAlt, FaListOl, FaChalkboardTeacher, FaUserCircle, FaThLarge, FaBook } from 'react-icons/fa';
+import { FaTachometerAlt, FaImages, FaStar, FaHandshake, FaSignOutAlt, FaListOl, FaChalkboardTeacher, FaUserCircle, FaThLarge, FaBook, FaQuestionCircle } from 'react-icons/fa';
 
 const AdminLayout: React.FC = () => {
     const { signOut } = useAuth();
@@ -23,6 +23,7 @@ const AdminLayout: React.FC = () => {
         { path: '/admin/avatars', icon: <FaUserCircle />, label: 'Avatars' },
         { path: '/admin/partners', icon: <FaThLarge />, label: 'Partner Slides' },
         { path: '/admin/classes', icon: <FaBook />, label: 'Classes' },
+        { path: '/admin/faqs', icon: <FaQuestionCircle />, label: 'FAQs' },
     ];
 
     return (
