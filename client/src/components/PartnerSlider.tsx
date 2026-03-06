@@ -43,7 +43,21 @@ const PartnerSlider: React.FC = () => {
     if (loading || partners.length === 0) return null;
 
     return (
-        <section className="w-full bg-gray-50 py-12 overflow-hidden relative">
+        <section className="w-full bg-gray-200 pt-16 pb-8 overflow-hidden relative">
+            {/* Left Decor: Diagonal Lines Circle */}
+            <img
+                src="/images/decor-circle.png"
+                alt="Decoration"
+                className="absolute left-[-5%] top-1/2 -translate-y-1/2 w-48 md:w-64 opacity-100 z-0 pointer-events-none"
+            />
+
+            {/* Right Decor: Dots Grid */}
+            <img
+                src="/images/decor-dots.png"
+                alt="Decoration"
+                className="absolute right-0 bottom-4 w-32 md:w-40 opacity-100 z-0 pointer-events-none hidden sm:block"
+            />
+
             {/* Prev Button */}
             <button
                 ref={prevRef}
@@ -68,7 +82,7 @@ const PartnerSlider: React.FC = () => {
                 </svg>
             </button>
 
-            <div className="px-12">
+            <div className="px-12 relative z-10">
                 <Swiper
                     onSwiper={(swiper) => { swiperRef.current = swiper; }}
                     modules={[Autoplay, Pagination, Navigation]}
@@ -106,7 +120,7 @@ const PartnerSlider: React.FC = () => {
             </div>
 
             {/* Pagination Dots */}
-            <div className="partner-pagination flex justify-center gap-2 mt-6 [&>.swiper-pagination-bullet]:w-2.5 [&>.swiper-pagination-bullet]:h-2.5 [&>.swiper-pagination-bullet]:rounded-full [&>.swiper-pagination-bullet]:bg-gray-300 [&>.swiper-pagination-bullet-active]:bg-[#c75e33] [&>.swiper-pagination-bullet]:transition-all [&>.swiper-pagination-bullet-active]:w-6" />
+            <div className="partner-pagination relative z-10 flex justify-center gap-2 mt-6 [&>.swiper-pagination-bullet]:w-2.5 [&>.swiper-pagination-bullet]:h-2.5 [&>.swiper-pagination-bullet]:rounded-full [&>.swiper-pagination-bullet]:bg-gray-300 [&>.swiper-pagination-bullet-active]:bg-[#c75e33] [&>.swiper-pagination-bullet]:transition-all [&>.swiper-pagination-bullet-active]:w-6" />
         </section>
     );
 };

@@ -13,12 +13,12 @@ const classesData = Array.from({ length: 10 }, (_, i) => ({
 const BrowseClasses: React.FC = () => {
     return (
         <section className="py-12">
-            <div className="max-w-[85%] 2xl:max-w-[1400px] mx-auto bg-[#fff6f0] rounded-3xl shadow-sm px-4 sm:px-8 py-16 lg:px-12">
+            <div className="max-w-[85%] 2xl:max-w-[1400px] mx-auto bg-[#1F2937] rounded-3xl shadow-sm px-4 sm:px-8 py-16 lg:px-12">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl mb-4">
+                    <h2 className="text-3xl font-extrabold text-white sm:text-4xl mb-4 font-['Urbanist']">
                         Browse Classes
                     </h2>
-                    <p className="max-w-3xl mx-auto text-lg text-gray-500">
+                    <p className="max-w-3xl mx-auto text-lg text-gray-300">
                         Explore structured learning paths for students from Class 1 to Class 10. Select a class to view subjects, choose the specific units you need help with, and book a tutor for personalized home tuition at your home.
                     </p>
                 </div>
@@ -50,7 +50,7 @@ const Card: React.FC<CardProps> = ({ title, subtitle, Icon, href }) => {
     return (
         <Link
             to={href}
-            className="w-full p-4 rounded-xl border-[1px] border-orange-200 relative overflow-hidden group bg-white flex flex-col items-start block shadow-sm hover:shadow-md transition-shadow duration-300"
+            className="w-full p-4 rounded-xl relative overflow-hidden group bg-white flex flex-col items-start block shadow-sm hover:shadow-md transition-shadow duration-300"
         >
             <div className="absolute inset-0 bg-[#c75e33] translate-y-[100%] group-hover:translate-y-[0%] transition-transform duration-300" />
 

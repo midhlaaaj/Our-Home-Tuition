@@ -127,7 +127,7 @@ const HeroSection: React.FC = () => {
 
                     {/* Left Content Column */}
                     <div className="w-full lg:w-[65%] flex flex-col items-start text-left mt-24 lg:mt-32">
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[70px] font-extrabold text-white leading-[1.1] mb-6 animate-fade-in-up tracking-tight" style={{ animationDelay: '0.1s' }}>
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[70px] font-extrabold text-white leading-[1.1] mb-6 animate-fade-in-up tracking-tight font-['Urbanist']" style={{ animationDelay: '0.1s' }}>
                             {renderTitle(title)}
                         </h1>
                         <p className="text-lg md:text-xl text-gray-200 mb-10 leading-relaxed animate-fade-in-up drop-shadow-sm max-w-2xl font-normal" style={{ animationDelay: '0.2s' }}>

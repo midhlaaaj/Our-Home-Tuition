@@ -41,7 +41,7 @@ const FAQs: React.FC = () => {
         <section className="pt-12 pb-8 bg-white">
             <div className="container mx-auto px-4 max-w-4xl">
                 <div className="text-center mb-12">
-                    <h2 className="text-4xl font-bold text-gray-900 font-sans tracking-tight">
+                    <h2 className="text-4xl font-bold text-gray-900 font-['Urbanist'] tracking-tight">
                         Frequently Asked Questions
                     </h2>
                 </div>

@@ -1,4 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
 @import "tailwindcss";
+
+@layer base {
+
+  html,
+  body {
+    font-family: 'Urbanist', system-ui, sans-serif;
+  }
+}
 
 @keyframes scrollLeft {
   0% {

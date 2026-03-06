@@ -119,11 +119,11 @@ const MentorsSection: React.FC = () => {
     }
 
     return (
-        <section id="mentors" className="py-20 bg-white overflow-hidden">
+        <section id="mentors" className="py-10 bg-[#374151] overflow-hidden">
             <div className="container mx-auto px-4">
-                <div className="text-center mb-16">
-                    <h3 className="text-[#ffb76c] font-semibold text-lg mb-2">Meet the mentors</h3>
-                    <h2 className="text-4xl font-bold text-gray-800">
+                <div className="text-center mb-8">
+                    <h3 className="text-[#ffb76c] font-semibold text-lg mb-2 font-['Urbanist']">Meet the mentors</h3>
+                    <h2 className="text-4xl font-bold text-white font-['Urbanist']">
                         Clear your doubts with <span className="text-[#ffb76c]">expert mentorship</span>
                     </h2>
                 </div>
@@ -143,7 +143,7 @@ const MentorsSection: React.FC = () => {
                                     className="px-3 flex-shrink-0"
                                     style={{ width: `${100 / itemsPerPage}%` }}
                                 >
-                                    <div className="bg-gray-50 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-gray-100 h-full flex flex-col">
+                                    <div className="bg-gray-50 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
                                         <div className="aspect-[4/3] overflow-hidden">
                                             <img
                                                 src={mentor.image_url}
@@ -193,7 +193,7 @@ const MentorsSection: React.FC = () => {
                                 <div
                                     onMouseDown={handleDragStart}
                                     onTouchStart={handleTouchStart}
-                                    className={`absolute top-0 h-full bg-gray-500 rounded-full transition-[left] duration-500 ease-in-out ${isDragging ? 'bg-gray-700 !duration-0' : 'hover:bg-gray-600'}`}
+                                    className={`absolute top-0 h-full bg-[#1F2937] rounded-full transition-[left] duration-500 ease-in-out ${isDragging ? '!duration-0' : ''}`}
                                     style={{
                                         width: `${thumbWidth}%`,
                                         left: `${progress * (100 - thumbWidth)}%`,

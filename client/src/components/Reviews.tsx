@@ -126,9 +126,9 @@ const Reviews: React.FC = () => {
     const marqueeRow2 = [...shiftedReviews, ...shiftedReviews, ...shiftedReviews, ...shiftedReviews];
 
     return (
-        <section className="py-10 overflow-hidden" style={{ backgroundColor: '#8ca9ff' }}>
+        <section className="py-10 overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
             <div className="container mx-auto px-4 mb-8 text-center">
-                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">
+                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3 font-['Urbanist']">
                     What People Are Saying
                 </h2>
                 <p className="text-white/90 max-w-2xl mx-auto text-base sm:text-lg">
@@ -176,7 +176,7 @@ const Reviews: React.FC = () => {
                                     />
                                     <div>
                                         <h4 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight">{review.name}</h4>
-                                        <p className="text-[#8ca9ff] text-[10px] sm:text-xs font-bold leading-tight mt-0.5">{review.role}</p>
+                                        <p className="text-[#ffb76c] text-[10px] sm:text-xs font-bold leading-tight mt-0.5">{review.role}</p>
                                     </div>
                                 </div>
                             </div>
@@ -219,7 +219,7 @@ const Reviews: React.FC = () => {
                                         />
                                         <div>
                                             <h4 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight">{review.name}</h4>
-                                            <p className="text-[#8ca9ff] text-[10px] sm:text-xs font-bold leading-tight mt-0.5">{review.role}</p>
+                                            <p className="text-[#ffb76c] text-[10px] sm:text-xs font-bold leading-tight mt-0.5">{review.role}</p>
                                         </div>
                                     </div>
                                 </div>

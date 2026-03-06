@@ -43,8 +43,8 @@ const AffiliatedLogos: React.FC = () => {
     if (upperLogos.length === 0 && lowerLogos.length === 0) return null;
 
     return (
-        <div className="w-full bg-gray-50 py-12 overflow-hidden">
-            <h2 className="text-3xl font-bold text-center mb-12">
+        <div className="w-full bg-white py-8 overflow-hidden">
+            <h2 className="text-3xl font-bold text-center mb-12 font-['Urbanist']">
                 Our Affiliations
             </h2>
 

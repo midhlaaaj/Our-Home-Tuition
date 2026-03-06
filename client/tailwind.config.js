@@ -5,6 +5,9 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    fontFamily: {
+      sans: ['Urbanist', 'sans-serif'],
+    },
     extend: {
       keyframes: {
         scrollLeft: {
