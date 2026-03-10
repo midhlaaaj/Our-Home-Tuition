@@ -119,193 +119,178 @@ const Brands: React.FC = () => {
         setEditId(brand.id);
     };
 
-    const handleSeed = async () => {
-        if (!window.confirm('This will Wipe existing data and seed the EXACT requests?')) return;
-        setLoading(true);
-
-        const upperLogos = [
-            { name: "Google", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/2560px-Google_2015_logo.svg.png", row_category: 'upper', is_active: true },
-            { name: "Microsoft", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Microsoft_logo_%282012%29.svg/2560px-Microsoft_logo_%282012%29.svg.png", row_category: 'upper', is_active: true },
-            { name: "Amazon", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png", row_category: 'upper', is_active: true },
-            { name: "Meta", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Meta_Platforms_Inc._logo.svg/2560px-Meta_Platforms_Inc._logo.svg.png", row_category: 'upper', is_active: true },
-            { name: "Apple", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png", row_category: 'upper', is_active: true },
-            { name: "Netflix", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/2560px-Netflix_2015_logo.svg.png", row_category: 'upper', is_active: true },
-            { name: "Adobe", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Adobe_Systems_logo_and_wordmark.svg/2560px-Adobe_Systems_logo_and_wordmark.svg.png", row_category: 'upper', is_active: true },
-            { name: "Tesla", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Tesla_Motors.svg/2560px-Tesla_Motors.svg.png", row_category: 'upper', is_active: true },
-            { name: "Intel", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Intel-logo.svg/2560px-Intel-logo.svg.png", row_category: 'upper', is_active: true },
-            { name: "IBM", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/IBM_logo.svg/2560px-IBM_logo.svg.png", row_category: 'upper', is_active: true }
-        ];
-
-        const lowerLogos = [
-            { name: "Oracle", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Oracle_logo.svg/2560px-Oracle_logo.svg.png", row_category: 'lower', is_active: true },
-            { name: "NVIDIA", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Nvidia_logo.svg/2560px-Nvidia_logo.svg.png", row_category: 'lower', is_active: true },
-            { name: "Cisco", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Cisco_logo_blue_2016.svg/2560px-Cisco_logo_blue_2016.svg.png", row_category: 'lower', is_active: true },
-            { name: "Samsung", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Samsung_Logo.svg/2560px-Samsung_Logo.svg.png", row_category: 'lower', is_active: true },
-            { name: "Spotify", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png", row_category: 'lower', is_active: true },
-            { name: "LinkedIn", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/800px-LinkedIn_logo_initials.png", row_category: 'lower', is_active: true },
-            { name: "Uber", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Uber_logo_2018.svg/2560px-Uber_logo_2018.svg.png", row_category: 'lower', is_active: true },
-            { name: "Airbnb", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Airbnb_Logo_B%C3%A9lo.svg/2560px-Airbnb_Logo_B%C3%A9lo.svg.png", row_category: 'lower', is_active: true },
-            { name: "PayPal", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/2560px-PayPal.svg.png", row_category: 'lower', is_active: true },
-            { name: "Twitter", logo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Logo_of_Twitter.svg/512px-Logo_of_Twitter.svg.png", row_category: 'lower', is_active: true }
-        ];
-
-        try {
-            // Optional: clear table first to avoid duplicates if desired, or just append
-            // await supabase.from('brands').delete().neq('id', 0); // Risky without policies
-
-            const { error } = await supabase.from('brands').insert([...upperLogos, ...lowerLogos]);
-            if (error) throw error;
-            fetchBrands();
-            alert('Brands seeded successfully!');
-        } catch (err) {
-            console.error('Error seeding brands:', err);
-            alert('Failed to seed brands. Table might be missing or RLS issue.');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">Manage Affiliated Logos</h1>
-                <button
-                    onClick={handleSeed}
-                    className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
-                    disabled={loading}
-                >
-                    <FaMagic /> Seed Default Logos
-                </button>
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Affiliated Brands</h1>
+                    <p className="text-sm text-gray-500 font-medium">Manage partner logos and carousel placement.</p>
+                </div>
             </div>
 
             {/* Form */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit Brand' : 'Add New Brand'}</h2>
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                        type="text"
-                        placeholder="Brand Name"
-                        className="border p-2 rounded"
-                        value={form.name || ''}
-                        onChange={e => setForm({ ...form, name: e.target.value })}
-                        required
-                    />
+            <div className="bg-white p-6 rounded-[24px] shadow-xl border border-gray-50 mb-8">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#a0522d] flex items-center justify-center">
+                        <FaEdit size={16} />
+                    </div>
+                    <h2 className="text-lg font-black text-gray-900 tracking-tight">
+                        {isEditing ? 'Edit Brand Asset' : 'Register New Brand'}
+                    </h2>
+                </div>
 
-                    <div>
-                        <div className="flex flex-col gap-2">
-                            <div className="flex gap-2 items-center">
-                                <label className="flex-1 cursor-pointer bg-[#ffb76c] hover:bg-orange-500 text-white py-2 px-4 rounded text-center transition flex items-center justify-center gap-2">
-                                    <FaUpload /> {uploading ? 'Uploading...' : 'Upload Logo'}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Brand Name</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Google, Microsoft"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                value={form.name || ''}
+                                onChange={e => setForm({ ...form, name: e.target.value })}
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Carousel Row</label>
+                            <select
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm appearance-none cursor-pointer"
+                                value={form.row_category || 'upper'}
+                                onChange={e => setForm({ ...form, row_category: e.target.value as 'upper' | 'lower' })}
+                            >
+                                <option value="upper">Upper Row (Scrolls Left)</option>
+                                <option value="lower">Bottom Row (Scrolls Right)</option>
+                            </select>
+                        </div>
+
+                        <div className="md:col-span-2 space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Logo Asset</label>
+                            <div className="flex gap-3">
+                                <div className="flex-1 flex gap-2">
                                     <input
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleFileUpload}
-                                        disabled={uploading}
+                                        type="text"
+                                        placeholder="Logo URL"
+                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                        value={form.logo_url || ''}
+                                        onChange={e => setForm({ ...form, logo_url: e.target.value })}
                                     />
-                                </label>
-                                <span className="text-gray-400 text-sm">OR</span>
-                                <input
-                                    type="text"
-                                    placeholder="Logo URL"
-                                    className="border p-2 rounded flex-1"
-                                    value={form.logo_url || ''}
-                                    onChange={e => setForm({ ...form, logo_url: e.target.value })}
-                                />
-                            </div>
-
-                            {form.logo_url && (
-                                <div className="mt-2 h-16 w-full bg-gray-100 rounded overflow-hidden relative border flex items-center justify-center">
-                                    <img src={form.logo_url} alt="Preview" className="h-full w-auto max-w-full object-contain" />
+                                    <label className="flex items-center justify-center w-12 h-12 bg-white border-2 border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors shadow-sm shrink-0">
+                                        <FaUpload size={14} className="text-gray-400" />
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleFileUpload}
+                                            disabled={uploading}
+                                        />
+                                    </label>
                                 </div>
+                                {form.logo_url && (
+                                    <div className="relative shrink-0 flex items-center justify-center bg-gray-50 p-2 rounded-xl border border-gray-100 w-24">
+                                        <img src={form.logo_url} alt="Preview" className="max-h-8 max-w-full object-contain" />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-2">
+                            <label className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border-2 border-transparent hover:border-blue-100 transition-all cursor-pointer group">
+                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${form.is_active ? 'bg-blue-600 border-blue-600' : 'border-gray-200'}`}>
+                                    {form.is_active && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    className="hidden"
+                                    checked={form.is_active}
+                                    onChange={e => setForm({ ...form, is_active: e.target.checked })}
+                                />
+                                <span className="text-xs font-black text-gray-800">Active in Carousel</span>
+                            </label>
+                        </div>
+
+                        <div className="flex gap-2 justify-end col-span-2 md:col-span-1 ml-auto">
+                            {isEditing && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setIsEditing(false); setForm({ is_active: true, name: '', logo_url: '', row_category: 'upper' }); }}
+                                    className="px-6 py-3.5 bg-gray-100 text-gray-500 rounded-xl font-black hover:bg-gray-200 transition-all text-sm"
+                                >
+                                    Cancel
+                                </button>
                             )}
+                            <button
+                                type="submit"
+                                disabled={loading || uploading}
+                                className="px-8 py-3.5 bg-[#1B2A5A] text-white rounded-xl font-black hover:bg-[#142044] disabled:opacity-50 transition-all shadow-xl shadow-[#1B2A5A]/10 text-sm flex items-center justify-center gap-2 min-w-[140px]"
+                            >
+                                {loading ? 'Saving...' : (isEditing ? 'Update Brand' : 'Add Brand')}
+                            </button>
                         </div>
                     </div>
-
-                    {/* Row Selector */}
-                    <div>
-                        <select
-                            className="border p-2 rounded w-full"
-                            value={form.row_category || 'upper'}
-                            onChange={e => setForm({ ...form, row_category: e.target.value as 'upper' | 'lower' })}
-                        >
-                            <option value="upper">Upper Row (Scrolls Left)</option>
-                            <option value="lower">Bottom Row (Scrolls Right)</option>
-                        </select>
-                    </div>
-
-                    <div className="flex items-center">
-                        <input
-                            type="checkbox"
-                            className="mr-2"
-                            checked={form.is_active}
-                            onChange={e => setForm({ ...form, is_active: e.target.checked })}
-                        />
-                        <label>Active</label>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading || uploading}
-                        className="bg-[#ffb76c] text-white p-2 rounded col-span-2 hover:bg-orange-400 disabled:opacity-50"
-                    >
-                        {loading ? 'Saving...' : (isEditing ? 'Update Brand' : 'Add Brand')}
-                    </button>
-                    {isEditing && (
-                        <button
-                            type="button"
-                            onClick={() => { setIsEditing(false); setForm({ is_active: true, name: '', logo_url: '', row_category: 'upper' }); }}
-                            className="bg-gray-500 text-white p-2 rounded col-span-2"
-                        >
-                            Cancel
-                        </button>
-                    )}
                 </form>
             </div>
 
             {/* List */}
-            <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
-                <table className="w-full text-left min-w-[600px]">
-                    <thead>
-                        <tr className="border-b">
-                            <th className="p-2">Name</th>
-                            <th className="p-2">Logo</th>
-                            <th className="p-2">Row</th>
-                            <th className="p-2">Status</th>
-                            <th className="p-2">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {brands.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="p-4 text-center text-gray-500">No brands found. Click "Seed Default Logos" to get started.</td>
+            <div className="bg-white rounded-[24px] shadow-sm border border-gray-50 overflow-hidden">
+                <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white">
+                    <h2 className="text-lg font-black text-gray-900 tracking-tight">Partner Ecosystem</h2>
+                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-gray-200/50">
+                        {brands.length} Assets
+                    </span>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-gray-50/50">
+                                <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Brand</th>
+                                <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Logo Asset</th>
+                                <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Placement</th>
+                                <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 text-center">Status</th>
+                                <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 text-right">Actions</th>
                             </tr>
-                        ) : (
-                            brands.map((brand) => (
-                                <tr key={brand.id} className="border-b hover:bg-gray-50">
-                                    <td className="p-2 font-medium">{brand.name}</td>
-                                    <td className="p-2">
-                                        <img src={brand.logo_url} alt={brand.name} className="h-8 object-contain max-w-[100px]" />
-                                    </td>
-                                    <td className="p-2">
-                                        <span className={`px-2 py-1 rounded text-xs text-white ${brand.row_category === 'upper' ? 'bg-blue-500' : 'bg-indigo-500'}`}>
-                                            {brand.row_category === 'upper' ? 'Upper' : 'Lower'}
-                                        </span>
-                                    </td>
-                                    <td className="p-2">
-                                        <span className={`px-2 py-1 rounded text-xs text-white ${brand.is_active ? 'bg-green-500' : 'bg-red-500'}`}>
-                                            {brand.is_active ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </td>
-                                    <td className="p-2 flex space-x-2">
-                                        <button onClick={() => handleEdit(brand)} className="text-blue-500 hover:text-blue-700"><FaEdit /></button>
-                                        <button onClick={() => handleDelete(brand.id)} className="text-red-500 hover:text-red-700"><FaTrash /></button>
-                                    </td>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {brands.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="p-12 text-center text-gray-400 text-sm font-medium italic">No brands registered.</td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : (
+                                brands.map((brand) => (
+                                    <tr key={brand.id} className="group hover:bg-gray-50/50 transition-all duration-300">
+                                        <td className="p-4 font-black text-gray-900 text-sm">{brand.name}</td>
+                                        <td className="p-4">
+                                            <div className="bg-white p-2 rounded-lg border border-gray-50 inline-block shadow-sm">
+                                                <img src={brand.logo_url} alt={brand.name} className="h-6 object-contain max-w-[80px]" />
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-black tracking-tight border ${brand.row_category === 'upper'
+                                                    ? 'bg-blue-50 text-blue-600 border-blue-100'
+                                                    : 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                                                }`}>
+                                                {brand.row_category === 'upper' ? 'UPPER ROW' : 'LOWER ROW'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <span className={`px-2.5 py-1 rounded-full text-[9px] font-black tracking-[0.1em] uppercase border shadow-sm ${brand.is_active ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-500 border-red-100'}`}>
+                                                {brand.is_active ? 'Live' : 'Hidden'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button onClick={() => handleEdit(brand)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-all" title="Edit Brand"><FaEdit size={14} /></button>
+                                                <button onClick={() => handleDelete(brand.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all" title="Delete Brand"><FaTrash size={14} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

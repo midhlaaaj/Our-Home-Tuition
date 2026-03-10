@@ -158,39 +158,41 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({ isOpen, onU
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="flex flex-col h-full bg-white animate-fade-in w-full">
+        <div className="flex flex-col h-full bg-white animate-in fade-in zoom-in-95 duration-300 w-full relative">
+            {/* Close Button Top Right */}
+            <button
+                onClick={onBack}
+                className="absolute top-4 right-4 z-50 w-10 h-10 bg-black/5 hover:bg-black/10 text-gray-500 rounded-full flex items-center justify-center transition-all active:scale-95"
+            >
+                <span className="text-xl">&times;</span>
+            </button>
+
             {/* Header */}
-            <div className="bg-orange-500 p-4 shrink-0 flex justify-between items-center text-white">
-                <h3 className="text-lg font-bold">Change Profile Picture</h3>
-                {/* Back button removed in favor of explicit Cancel at bottom, or keep as "Cancel" icon? 
-                    User asked for "Save and Cancel button", usually implies footer actions. 
-                    Let's keep header simple or put Cancel there? 
-                    I'll put Save/Cancel in a footer for clarity as requested.
-                */}
+            <div className="p-8 pb-4 shrink-0">
+                <h3 className="text-2xl font-black text-gray-900 tracking-tight">Update Photo</h3>
+                <p className="text-gray-400 font-medium text-sm mt-1">Choose how you want to update your profile picture</p>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-gray-100 shrink-0">
+            <div className="flex px-8 gap-2 shrink-0">
                 <button
-                    className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'prebuilt' ? 'text-orange-600 border-b-2 border-orange-500 bg-orange-50' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-4 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'prebuilt' ? 'bg-[#a0522d]/10 text-[#a0522d]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
                     onClick={() => setActiveTab('prebuilt')}
                 >
-                    <FaUserCircle className="inline mb-0.5 mr-1" /> Avatars
+                    <FaUserCircle className="inline mb-0.5 mr-2" /> Avatars
                 </button>
                 <button
-                    className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'upload' ? 'text-orange-600 border-b-2 border-orange-500 bg-orange-50' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-4 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'upload' ? 'bg-[#a0522d]/10 text-[#a0522d]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
                     onClick={() => setActiveTab('upload')}
                 >
-                    <FaImage className="inline mb-0.5 mr-1" /> Gallery
+                    <FaImage className="inline mb-0.5 mr-2" /> Gallery
                 </button>
                 <button
-                    className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'camera' ? 'text-orange-600 border-b-2 border-orange-500 bg-orange-50' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-4 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'camera' ? 'bg-[#a0522d]/10 text-[#a0522d]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
                     onClick={() => setActiveTab('camera')}
                 >
-                    <FaCamera className="inline mb-0.5 mr-1" /> Camera
+                    <FaCamera className="inline mb-0.5 mr-2" /> Camera
                 </button>
             </div>
 
@@ -271,19 +273,19 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({ isOpen, onU
             </div>
 
             {/* Footer with Save/Cancel */}
-            <div className="p-4 border-t border-gray-100 flex gap-3 bg-white shrink-0">
+            <div className="p-8 pt-4 flex gap-4 bg-white shrink-0">
                 <button
                     onClick={onBack}
-                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
+                    className="flex-1 py-4 bg-gray-50 hover:bg-gray-100 text-gray-500 font-black rounded-2xl transition-all active:scale-95"
                 >
                     Cancel
                 </button>
                 <button
                     onClick={handleSave}
                     disabled={!hasChanges || uploading}
-                    className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center justify-center gap-2"
+                    className="flex-1 py-4 bg-[#a0522d] text-white font-black rounded-2xl transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed shadow-xl shadow-orange-900/10 active:scale-95 flex items-center justify-center gap-2"
                 >
-                    {uploading ? 'Saving...' : 'Save Changes'}
+                    {uploading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Save Profile'}
                 </button>
             </div>
         </div>

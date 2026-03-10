@@ -149,8 +149,8 @@ const Reviews: React.FC = () => {
                             key={`r1-${review.id}-${index}`}
                             className="w-[280px] md:w-[320px] flex-shrink-0 mx-3"
                         >
-                            <div className="bg-white p-3 rounded-xl shadow-lg transition-all duration-300 flex flex-col h-full justify-center">
-                                <div className="flex-1 flex flex-col justify-center">
+                            <div className="bg-white p-3 rounded-xl shadow-lg transition-all duration-300 flex flex-col h-full">
+                                <div className="flex-1 flex flex-col">
                                     {/* Stars */}
                                     <div className="flex mb-1.5 space-x-1">
                                         {[...Array(5)].map((_, i) => (
@@ -192,8 +192,8 @@ const Reviews: React.FC = () => {
                                 key={`r2-${review.id}-${index}`}
                                 className="w-[280px] md:w-[320px] flex-shrink-0 mx-3"
                             >
-                                <div className="bg-white p-3 rounded-xl shadow-lg transition-all duration-300 flex flex-col h-full justify-center">
-                                    <div className="flex-1 flex flex-col justify-center">
+                                <div className="bg-white p-3 rounded-xl shadow-lg transition-all duration-300 flex flex-col h-full">
+                                    <div className="flex-1 flex flex-col">
                                         {/* Stars */}
                                         <div className="flex mb-1.5 space-x-1">
                                             {[...Array(5)].map((_, i) => (

@@ -87,15 +87,27 @@ const AdminAvatars: React.FC = () => {
     };
 
     return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6 text-gray-800">Manage Avatars</h1>
+        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Identity Matrix</h1>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Pre-built avatar asset distribution layer</p>
+                </div>
+                <div className="px-4 py-2 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center gap-2.5">
+                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest leading-none">Bucket: Prebuilt-Avatars</span>
+                </div>
+            </div>
 
             {/* Upload Section */}
-            <div className="mb-8 p-6 bg-white rounded-xl shadow-sm border border-dashed border-gray-300 flex flex-col items-center justify-center">
-                <FaUpload className="text-4xl text-gray-300 mb-3" />
-                <p className="text-gray-500 mb-4">Upload new avatars using drag and drop or click to select</p>
-                <label className="cursor-pointer bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50">
-                    {uploading ? 'Uploading...' : 'Select Images'}
+            <div className="bg-white p-4 rounded-3xl shadow-xl border border-gray-50 flex flex-col gap-4">
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-100 rounded-[20px] cursor-pointer hover:border-[#ffb76c]/30 hover:bg-orange-50 transition-all group bg-orange-50/5">
+                    <div className="flex flex-col items-center justify-center pt-2 pb-3 text-center">
+                        <FaUpload className="text-2xl text-gray-300 group-hover:text-[#ffb76c] mb-2 transition-colors" />
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] group-hover:text-[#a0522d]">
+                            {uploading ? 'Synching Assets...' : 'Initialize Identity Upload'}
+                        </p>
+                        <p className="text-[8px] text-gray-300 font-bold mt-1 tracking-widest">MULTIPLE SELECTION SUPPORTED</p>
+                    </div>
                     <input
                         type="file"
                         className="hidden"
@@ -109,24 +121,35 @@ const AdminAvatars: React.FC = () => {
 
             {/* Grid */}
             {loading ? (
-                <div className="flex justify-center p-12">
-                    <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="aspect-square bg-white rounded-2xl border border-gray-50 animate-pulse shadow-sm"></div>
+                    ))}
                 </div>
             ) : avatars.length === 0 ? (
-                <p className="text-center text-gray-500">No avatars found.</p>
+                <div className="bg-white rounded-[32px] p-16 text-center border border-gray-50 shadow-2xl">
+                    <div className="w-16 h-16 bg-gray-50 text-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <FaUpload size={24} />
+                    </div>
+                    <h3 className="text-xl font-black text-gray-900 mb-1">Matrix Vacant</h3>
+                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest text-center">No pre-built identities registered.</p>
+                </div>
             ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 gap-4">
                     {avatars.map((avatar) => (
-                        <div key={avatar.name} className="group relative aspect-square bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <img src={avatar.url} alt={avatar.name} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div key={avatar.name} className="group relative aspect-square bg-white rounded-2xl shadow-xl border border-gray-50 overflow-hidden transition-all hover:scale-105 hover:shadow-2xl">
+                            <img src={avatar.url} alt={avatar.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-slate-900/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 backdrop-blur-[2px]">
                                 <button
                                     onClick={() => handleDelete(avatar.name)}
-                                    className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors transform scale-75 group-hover:scale-100 duration-200"
-                                    title="Delete Avatar"
+                                    className="w-10 h-10 flex items-center justify-center bg-white/10 text-white rounded-xl hover:bg-red-500 transition-all border border-white/20 hover:border-red-600 shadow-xl"
+                                    title="Deactivate Unit"
                                 >
-                                    <FaTrash />
+                                    <FaTrash size={12} />
                                 </button>
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 p-1 bg-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="text-[7px] text-gray-400 font-black truncate px-1 text-center">{avatar.name}</p>
                             </div>
                         </div>
                     ))}

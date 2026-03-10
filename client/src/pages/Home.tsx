@@ -9,6 +9,7 @@ import MentorsSection from '../components/MentorsSection';
 import PartnerSlider from '../components/PartnerSlider';
 import FAQs from '../components/FAQs';
 import BrowseClasses from '../components/BrowseClasses';
+import ContactForm from '../components/ContactForm';
 
 const Home: React.FC = () => {
     return (
@@ -24,6 +25,7 @@ const Home: React.FC = () => {
                 <MentorsSection />
                 <Reviews />
                 <FAQs />
+                <ContactForm />
             </main>
 
             <Footer />

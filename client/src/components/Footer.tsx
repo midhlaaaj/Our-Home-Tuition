@@ -1,20 +1,95 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { FaFacebook, FaInstagram, FaLinkedin, FaYoutube } from 'react-icons/fa';
 
 const Footer: React.FC = () => {
+    const currentYear = new Date().getFullYear();
+
+    const linksCol1 = [
+        { label: 'Home', to: '/' },
+        { label: 'About Us', to: '/about' },
+        { label: 'Classes', to: '/#browse-classes' },
+    ];
+
+    const linksCol2 = [
+        { label: 'Career', to: '/career' },
+        { label: 'Become a Tutor', to: '/career?apply=general' },
+        { label: 'Privacy Policy', to: '/privacy' },
+    ];
+
+    const socials = [
+        { icon: <FaFacebook size={18} />, href: '#', label: 'Facebook' },
+        { icon: <FaInstagram size={18} />, href: '#', label: 'Instagram' },
+        { icon: <FaLinkedin size={18} />, href: '#', label: 'LinkedIn' },
+        { icon: <FaYoutube size={18} />, href: '#', label: 'YouTube' },
+    ];
+
     return (
-        <footer className="bg-gray-800 text-white py-8">
-            <div className="container mx-auto px-4 text-center">
-                <h3 className="text-xl font-semibold mb-4">Our Home Tuition</h3>
-                <p className="text-gray-400 mb-4">
-                    Empowering students with quality education at home.
-                </p>
-                <div className="flex justify-center space-x-4 text-sm text-gray-500">
-                    <a href="#" className="hover:text-white transition-colors">About Us</a>
-                    <a href="#" className="hover:text-white transition-colors">Contact</a>
-                    <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+        <footer style={{ backgroundColor: '#1F2937' }}>
+            {/* Main Footer Content */}
+            <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-24 py-14">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
+
+                    {/* Column 1: Branding */}
+                    <div className="flex flex-col items-start gap-4">
+                        <div className="bg-white rounded-2xl p-4 shadow-md">
+                            <img
+                                src="/logo.png"
+                                alt="Our Home Tuition"
+                                className="h-16 w-auto object-contain"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Column 2: Useful Links — split into two sub-cols */}
+                    <div className="flex flex-col gap-4">
+                        <h4 className="text-sm font-bold uppercase tracking-widest text-white/60">
+                            Useful Links
+                        </h4>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                            {[...linksCol1, ...linksCol2].map((link) => (
+                                <Link
+                                    key={link.label}
+                                    to={link.to}
+                                    className="text-white/70 text-sm hover:text-white transition-colors duration-200"
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Column 3: Follow Us */}
+                    <div className="flex flex-col gap-4">
+                        <h4 className="text-sm font-bold uppercase tracking-widest text-white/60">
+                            Follow Us
+                        </h4>
+                        <div className="flex gap-3">
+                            {socials.map((social) => (
+                                <a
+                                    key={social.label}
+                                    href={social.href}
+                                    aria-label={social.label}
+                                    className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white/70 hover:bg-[#1B2A5A] hover:text-white transition-all duration-200"
+                                >
+                                    {social.icon}
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+
                 </div>
-                <div className="mt-8 text-xs text-gray-600">
-                    &copy; {new Date().getFullYear()} Our Home Tuition. All rights reserved.
+            </div>
+
+            {/* Bottom Bar */}
+            <div className="border-t border-white/10">
+                <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-24 py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
+                    <p className="text-xs text-white/40 text-center sm:text-left">
+                        © {currentYear} Our Home Tuition. All Rights Reserved.
+                    </p>
+                    <p className="text-xs text-white/40">
+                        Designed with ❤️ for better education
+                    </p>
                 </div>
             </div>
         </footer>

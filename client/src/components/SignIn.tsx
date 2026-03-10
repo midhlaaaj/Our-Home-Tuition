@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaFacebook } from 'react-icons/fa';
+import { FaTimes, FaFacebook, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { supabase } from '../supabaseClient';
 
@@ -14,6 +14,7 @@ interface SignInProps {
 const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin' }) => {
     const [isLogin, setIsLogin] = useState(initialView === 'signin');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     // Form States
     const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -38,6 +39,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
             setErrors({});
             setLoginData({ email: '', password: '' });
             setRegisterData({ name: '', email: '', phone: '', address: '', password: '', verifyPassword: '' });
+            setShowPassword(false);
         }
     }
 
@@ -213,8 +215,8 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                 {isLogin ? (
                                     <>
                                         {/* Logo Box */}
-                                        <div className="w-14 h-14 bg-white border-2 border-[#ffb76c]/50 rounded-full flex items-center justify-center mb-6 shadow-sm">
-                                            <span className="text-[#a0522d] text-2xl font-bold font-sans">HT</span>
+                                        <div className="w-24 h-16 flex items-center justify-center mb-6">
+                                            <img src="/logo.png" alt="Our Home Tuition" className="w-full h-full object-contain scale-125" />
                                         </div>
 
                                         {/* Social Logins */}
@@ -236,9 +238,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                             <div className="flex-1 h-px bg-gray-200"></div>
                                         </div>
                                     </>
-                                ) : (
-                                    <div className="mb-2 mt-2 w-full text-center"></div>
-                                )}
+                                ) : null}
 
                                 {/* Global Error/Success Message */}
                                 {(errors.auth || errors.success) && (
@@ -270,24 +270,31 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                     placeholder="Email"
                                                     value={loginData.email}
                                                     onChange={handleLoginChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#a0522d] focus:border-[#a0522d]'
+                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
                                                         } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
                                                 />
                                                 {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                                             </div>
 
-                                            <div>
+                                            <div className="relative">
                                                 <input
                                                     id="login-password"
                                                     name="password"
-                                                    type="password"
+                                                    type={showPassword ? "text" : "password"}
                                                     autoComplete="current-password"
                                                     placeholder="Password"
                                                     value={loginData.password}
                                                     onChange={handleLoginChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#a0522d] focus:border-[#a0522d]'
+                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
                                                         } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
                                                 />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                                                >
+                                                    {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                                                </button>
                                                 {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                                             </div>
 
@@ -295,7 +302,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                 <button
                                                     type="submit"
                                                     disabled={!loginData.email || !loginData.password || loading}
-                                                    className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#5d2366] hover:bg-[#4a1c51] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5d2366] disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-sm"
+                                                    className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#1B2A5A] hover:bg-[#142044] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1B2A5A] disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-sm"
                                                 >
                                                     {loading ? 'Signing In...' : 'Sign In'}
                                                 </button>
@@ -303,10 +310,10 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
 
                                             <div className="text-center pt-2 space-y-3">
                                                 <div>
-                                                    <a href="#" className="text-sm font-medium text-[#5d2366] hover:text-[#4a1c51]">Forgot Password?</a>
+                                                    <a href="#" className="text-sm font-medium text-[#1B2A5A] hover:text-[#142044]">Forgot Password?</a>
                                                 </div>
                                                 <div className="text-sm text-gray-900">
-                                                    Not a member yet? <button type="button" onClick={() => { setIsLogin(false); setErrors({}); }} className="font-medium text-[#5d2366] hover:text-[#4a1c51]">Sign Up</button>
+                                                    Not a member yet? <button type="button" onClick={() => { setIsLogin(false); setErrors({}); }} className="font-medium text-[#1B2A5A] hover:text-[#142044]">Sign Up</button>
                                                 </div>
                                             </div>
                                         </motion.form>
@@ -322,8 +329,8 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                             noValidate
                                         >
                                             {/* Logo Box */}
-                                            <div className="w-14 h-14 bg-white border-2 border-[#ffb76c]/50 rounded-full flex items-center justify-center mb-6 shadow-sm mx-auto">
-                                                <span className="text-[#a0522d] text-2xl font-bold font-sans">HT</span>
+                                            <div className="w-24 h-16 flex items-center justify-center mb-6 mx-auto">
+                                                <img src="/logo.png" alt="Our Home Tuition" className="w-full h-full object-contain scale-125" />
                                             </div>
 
                                             {/* Social Logins */}
@@ -353,7 +360,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                     placeholder="Name"
                                                     value={registerData.name}
                                                     onChange={handleRegisterChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#a0522d] focus:border-[#a0522d]'
+                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
                                                         } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
                                                 />
                                                 {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
@@ -367,7 +374,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                     placeholder="Email"
                                                     value={registerData.email}
                                                     onChange={handleRegisterChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#a0522d] focus:border-[#a0522d]'
+                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
                                                         } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
                                                 />
                                                 {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
@@ -381,23 +388,30 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                     placeholder="Phone Number"
                                                     value={registerData.phone}
                                                     onChange={handleRegisterChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#a0522d] focus:border-[#a0522d]'
+                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
                                                         } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
                                                 />
                                                 {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
                                             </div>
 
-                                            <div>
+                                            <div className="relative">
                                                 <input
                                                     id="reg-password"
                                                     name="password"
-                                                    type="password"
+                                                    type={showPassword ? "text" : "password"}
                                                     placeholder="Password"
                                                     value={registerData.password}
                                                     onChange={handleRegisterChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#a0522d] focus:border-[#a0522d]'
+                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
                                                         } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
                                                 />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                                                >
+                                                    {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                                                </button>
                                                 {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                                             </div>
 
@@ -406,8 +420,8 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                     type="submit"
                                                     disabled={loading || !(registerData.name && registerData.email && registerData.phone && registerData.password)}
                                                     className={`group relative w-full flex justify-center py-3 px-4 text-sm font-medium rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-sm ${registerData.name && registerData.email && registerData.phone && registerData.password
-                                                        ? 'bg-[#a0522d] hover:bg-[#804224]'
-                                                        : 'bg-[#cc8e71]'
+                                                        ? 'bg-[#1B2A5A] hover:bg-[#142044]'
+                                                        : 'bg-[#1B2A5A]/60'
                                                         }`}
                                                 >
                                                     {loading ? 'Signing Up...' : 'Sign Up'}
@@ -417,7 +431,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                             <div className="text-center pt-3 space-y-4">
 
                                                 <div className="text-sm text-gray-900 font-medium">
-                                                    Already have an account? <button type="button" onClick={() => { setIsLogin(true); setErrors({}); }} className="text-[#a0522d] hover:text-[#804224]">Sign In</button>
+                                                    Already have an account? <button type="button" onClick={() => { setIsLogin(true); setErrors({}); }} className="text-[#1B2A5A] hover:text-[#142044]">Sign In</button>
                                                 </div>
                                             </div>
                                         </motion.form>

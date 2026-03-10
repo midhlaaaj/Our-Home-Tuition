@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaUsers, FaArrowLeft, FaCheckCircle, FaTrash } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
+import { useEffect } from 'react';
 
 interface LocationState {
     selectedUnits: { subject: any, topic: any }[];
@@ -45,6 +48,17 @@ const BookingPage: React.FC = () => {
     const [additionalStudents, setAdditionalStudents] = useState<{ id: string, name: string, email: string }[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const { user } = useAuth();
+
+    // Pre-fill user data
+    useEffect(() => {
+        if (user) {
+            setName(user.user_metadata?.full_name || '');
+            setEmail(user.email || '');
+            setPhone(user.user_metadata?.phone || '');
+            setAddress(user.user_metadata?.address || '');
+        }
+    }, [user]);
 
     const handleAddStudent = () => {
         setAdditionalStudents([...additionalStudents, { id: Date.now().toString(), name: '', email: '' }]);
@@ -60,24 +74,42 @@ const BookingPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!user) {
+            alert("Please sign in to book a session.");
+            return;
+        }
+
         setIsSubmitting(true);
 
-        // Prepare the payload (either for an API call or Supabase)
-        const payload = {
-            class_id: classInfo.id,
-            curriculum,
-            selected_units: selectedUnits.map(su => ({ subject_id: su.subject.id, topic_id: su.topic.id })),
-            primary_student: { name, email, phone, address },
-            class_type: classType,
-            additional_students: classType === 'group' ? additionalStudents : []
-        };
+        try {
+            const { error } = await supabase
+                .from('bookings')
+                .insert({
+                    user_id: user.id,
+                    class_id: classInfo.id,
+                    curriculum,
+                    selected_units: selectedUnits.map(su => ({
+                        subject_id: su.subject.id,
+                        topic_id: su.topic.id,
+                        subject_name: su.subject.name,
+                        topic_name: su.topic.name
+                    })),
+                    primary_student: { name, email, phone, address },
+                    class_type: classType,
+                    additional_students: classType === 'group' ? additionalStudents : [],
+                    status: 'pending'
+                });
 
-        // Simulate API delay, since we don't have a backend table ready for this yet
-        console.log("Booking Payload:", payload);
-        setTimeout(() => {
-            setIsSubmitting(false);
+            if (error) throw error;
+
             setIsSuccess(true);
-        }, 1500);
+        } catch (err: any) {
+            console.error("Booking Error:", err);
+            alert("Failed to confirm booking: " + err.message);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (isSuccess) {

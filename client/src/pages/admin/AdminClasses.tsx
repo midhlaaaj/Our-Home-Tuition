@@ -230,44 +230,44 @@ const AdminClasses: React.FC = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">Manage Classes</h1>
-                <p className="text-gray-500 mt-2">Add subjects and topics for each class and curriculum.</p>
+        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+            <div>
+                <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Curriculum Manager</h1>
+                <p className="text-sm text-gray-500 font-medium">Configure subjects and topics per class level.</p>
             </div>
 
             {/* Selectors Row */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6">
+            <div className="bg-white p-5 rounded-[24px] shadow-xl border border-gray-50 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Select Class</label>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Class Level</label>
                         <select
                             value={selectedClassId}
                             onChange={(e) => setSelectedClassId(Number(e.target.value))}
-                            className="w-full border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-3 rounded-lg transition-all cursor-pointer appearance-none bg-white shadow-sm text-gray-800 font-medium"
+                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all cursor-pointer appearance-none text-gray-800 font-black text-sm"
                         >
                             {classesData.map((cls) => (
                                 <option key={cls.id} value={cls.id}>{cls.label}</option>
                             ))}
                         </select>
                     </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Curriculum</label>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">System Curriculum</label>
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setSelectedCurriculum('CBSE')}
-                                className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${selectedCurriculum === 'CBSE'
-                                    ? 'bg-[#a0522d] text-white shadow-md'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                className={`flex-1 py-3 rounded-xl font-black text-xs transition-all shadow-sm ${selectedCurriculum === 'CBSE'
+                                    ? 'bg-[#a0522d] text-white'
+                                    : 'bg-white border-2 border-gray-100 text-gray-400 hover:bg-gray-50'
                                     }`}
                             >
                                 CBSE
                             </button>
                             <button
                                 onClick={() => setSelectedCurriculum('STATE')}
-                                className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${selectedCurriculum === 'STATE'
-                                    ? 'bg-[#a0522d] text-white shadow-md'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                className={`flex-1 py-3 rounded-xl font-black text-xs transition-all shadow-sm ${selectedCurriculum === 'STATE'
+                                    ? 'bg-[#a0522d] text-white'
+                                    : 'bg-white border-2 border-gray-100 text-gray-400 hover:bg-gray-50'
                                     }`}
                             >
                                 STATE
@@ -278,64 +278,68 @@ const AdminClasses: React.FC = () => {
             </div>
 
             {/* Add Subject */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6">
-                <h2 className="text-lg font-bold text-gray-800 mb-4">
-                    Add Subject to Class {selectedClassId} ({selectedCurriculum})
-                </h2>
-                <div className="flex gap-3">
+            <div className="bg-white p-5 rounded-[24px] shadow-xl border border-gray-50 mb-6">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-orange-50 text-[#a0522d] flex items-center justify-center">
+                        <FaPlus size={12} />
+                    </div>
+                    <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest">
+                        New Subject - Class {selectedClassId}
+                    </h2>
+                </div>
+                <div className="flex gap-2">
                     <input
                         type="text"
-                        placeholder="e.g., Mathematics"
+                        placeholder="e.g. Mathematics"
                         value={newSubjectName}
                         onChange={(e) => setNewSubjectName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddSubject()}
-                        className="flex-1 border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-3 rounded-lg transition-all"
+                        className="flex-1 bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-medium text-sm"
                     />
                     <button
                         onClick={handleAddSubject}
                         disabled={!newSubjectName.trim()}
-                        className="bg-[#a0522d] text-white px-6 py-3 rounded-lg font-bold hover:bg-[#804224] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2 shadow-sm"
+                        className="bg-[#1B2A5A] text-white px-6 py-3 rounded-xl font-black hover:bg-[#142044] disabled:opacity-50 transition shadow-lg shadow-[#1B2A5A]/10 text-xs"
                     >
-                        <FaPlus /> Add
+                        Create
                     </button>
                 </div>
             </div>
 
             {/* Subjects List */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-800">
-                        {selectedCurriculum} Subjects for Class {selectedClassId}
+            <div className="bg-white rounded-[24px] shadow-sm border border-gray-50 overflow-hidden">
+                <div className="p-4 border-b border-gray-50 flex items-center justify-between">
+                    <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                        <FaBook size={14} className="text-[#a0522d]" /> {selectedCurriculum} Library
                     </h2>
+                    <span className="text-[10px] font-black text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                        {subjects.length} Subjects
+                    </span>
                 </div>
 
                 {loading ? (
-                    <div className="p-8 text-center">
-                        <div className="inline-block w-8 h-8 border-4 border-gray-200 border-t-[#a0522d] rounded-full animate-spin"></div>
+                    <div className="p-8 text-center animate-pulse">
+                        <div className="inline-block w-6 h-6 border-3 border-[#a0522d]/20 border-t-[#a0522d] rounded-full animate-spin"></div>
                     </div>
                 ) : subjects.length === 0 ? (
-                    <div className="p-8 text-center text-gray-400">
-                        <FaBook size={32} className="mx-auto mb-3 opacity-50" />
-                        <p>No {selectedCurriculum} subjects added yet for this class.</p>
+                    <div className="p-12 text-center text-gray-400">
+                        <FaBook size={24} className="mx-auto mb-2 opacity-20" />
+                        <p className="text-sm font-medium">No subjects recorded yet.</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-100">
+                    <div className="divide-y divide-gray-50">
                         {subjects.map((subject) => (
                             <div key={subject.id}>
                                 {/* Subject Header */}
                                 <div
-                                    className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                                    onClick={() => {
-                                        if (editingSubjectId !== subject.id) {
-                                            toggleSubject(subject.id);
-                                        }
-                                    }}
+                                    className="flex items-center justify-between p-3 hover:bg-gray-50/50 cursor-pointer transition-colors group"
+                                    onClick={() => { if (editingSubjectId !== subject.id) toggleSubject(subject.id); }}
                                 >
                                     <div className="flex items-center gap-3 flex-1">
                                         {expandedSubject === subject.id ? (
-                                            <FaChevronDown className="text-[#a0522d] text-sm" />
+                                            <FaChevronDown className="text-[#a0522d] text-[10px]" />
                                         ) : (
-                                            <FaChevronRight className="text-gray-400 text-sm" />
+                                            <FaChevronRight className="text-gray-300 text-[10px]" />
                                         )}
                                         {editingSubjectId === subject.id ? (
                                             <div className="flex items-center gap-2 flex-1 mr-4" onClick={(e) => e.stopPropagation()}>
@@ -343,59 +347,56 @@ const AdminClasses: React.FC = () => {
                                                     type="text"
                                                     value={editSubjectName}
                                                     onChange={(e) => setEditSubjectName(e.target.value)}
-                                                    className="flex-1 border border-gray-300 focus:border-[#a0522d] outline-none px-2 py-1 rounded text-sm font-semibold"
+                                                    className="flex-1 bg-white border-2 border-[#a0522d] outline-none px-3 py-1.5 rounded-lg text-sm font-black"
                                                     autoFocus
                                                     onKeyDown={(e) => e.key === 'Enter' && handleSaveSubject(subject.id)}
                                                 />
                                             </div>
                                         ) : (
-                                            <>
-                                                <span className="font-semibold text-gray-800">{subject.name}</span>
-                                                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${subject.curriculum === 'CBSE' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
-                                                    }`}>
-                                                    {subject.curriculum}
-                                                </span>
-                                                {topics[subject.id] && (
-                                                    <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                                                        {topics[subject.id].length} topics
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-black text-gray-800 text-sm group-hover:text-[#a0522d] transition-colors">{subject.name}</span>
+                                                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <span className="text-[9px] font-black bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                                                        {subject.curriculum}
                                                     </span>
-                                                )}
-                                            </>
+                                                    {topics[subject.id] && (
+                                                        <span className="text-[9px] font-black bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                                                            {topics[subject.id].length} topics
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
                                         {editingSubjectId === subject.id ? (
                                             <>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleSaveSubject(subject.id); }}
-                                                    className="text-green-500 hover:text-green-700 p-2 rounded-lg hover:bg-green-50 transition-colors"
-                                                    title="Save"
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-green-500 hover:bg-green-50 transition-colors"
                                                 >
-                                                    <FaCheck size={14} />
+                                                    <FaCheck size={12} />
                                                 </button>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleCancelEditSubject(); }}
-                                                    className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                                                    title="Cancel"
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
                                                 >
-                                                    <FaTimes size={14} />
+                                                    <FaTimes size={12} />
                                                 </button>
                                             </>
                                         ) : (
                                             <>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleEditSubject(subject); }}
-                                                    className="text-blue-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-colors"
-                                                    title="Edit Subject"
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
                                                 >
-                                                    <FaEdit size={14} />
+                                                    <FaEdit size={12} />
                                                 </button>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleDeleteSubject(subject.id); }}
-                                                    className="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                                                    title="Delete Subject"
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                                                 >
-                                                    <FaTrash size={14} />
+                                                    <FaTrash size={12} />
                                                 </button>
                                             </>
                                         )}
@@ -404,75 +405,70 @@ const AdminClasses: React.FC = () => {
 
                                 {/* Topics (Expanded) */}
                                 {expandedSubject === subject.id && (
-                                    <div className="bg-gray-50 px-6 pb-4 pt-2 border-t border-gray-100">
-                                        {/* Existing Topics */}
+                                    <div className="bg-gray-50/50 px-8 pb-4 pt-2 border-t border-gray-50">
                                         {(topics[subject.id] || []).length === 0 ? (
-                                            <p className="text-gray-400 text-sm py-2">No topics yet.</p>
+                                            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest py-3 italic">Empty syllabus</p>
                                         ) : (
                                             <ul className="space-y-2 mb-4">
                                                 {(topics[subject.id] || []).map((topic) => (
-                                                    <li key={topic.id} className="flex items-start justify-between bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                                                    <li key={topic.id} className="flex items-start justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md">
                                                         {editingTopicId === topic.id ? (
                                                             <div className="flex-1 mr-4 space-y-2">
                                                                 <input
                                                                     type="text"
                                                                     value={editTopicName}
                                                                     onChange={(e) => setEditTopicName(e.target.value)}
-                                                                    className="w-full border border-gray-300 focus:border-[#a0522d] outline-none px-2 py-1 rounded text-sm font-medium"
+                                                                    className="w-full bg-white border-2 border-[#a0522d] outline-none px-3 py-1.5 rounded-lg text-sm font-black"
                                                                     placeholder="Topic Name"
                                                                     autoFocus
                                                                 />
                                                                 <textarea
                                                                     value={editTopicDesc}
                                                                     onChange={(e) => setEditTopicDesc(e.target.value)}
-                                                                    className="w-full border border-gray-300 focus:border-[#a0522d] outline-none px-2 py-1 rounded text-xs text-gray-500 resize-none"
+                                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none px-3 py-2 rounded-lg text-xs font-medium resize-none shadow-inner"
                                                                     placeholder="Description (optional)"
                                                                     rows={2}
                                                                 />
                                                             </div>
                                                         ) : (
-                                                            <div>
-                                                                <p className="font-medium text-gray-800 text-sm">{topic.name}</p>
+                                                            <div className="flex-1">
+                                                                <p className="font-black text-gray-800 text-[13px] leading-tight mb-1">{topic.name}</p>
                                                                 {topic.description && (
-                                                                    <p className="text-xs text-gray-500 mt-1">{topic.description}</p>
+                                                                    <p className="text-[11px] text-gray-400 font-medium line-clamp-2">{topic.description}</p>
                                                                 )}
                                                             </div>
                                                         )}
-                                                        <div className="flex items-center gap-1">
+                                                        <div className="flex items-center gap-1 opacity-0 group-hover/topic:opacity-100 transition-opacity">
                                                             {editingTopicId === topic.id ? (
                                                                 <>
                                                                     <button
                                                                         onClick={() => handleSaveTopic(topic.id, subject.id)}
-                                                                        className="text-green-500 hover:text-green-700 p-1.5 rounded hover:bg-green-50 transition-colors"
-                                                                        title="Save"
+                                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-green-500 hover:bg-green-50"
                                                                     >
-                                                                        <FaCheck size={12} />
+                                                                        <FaCheck size={10} />
                                                                     </button>
                                                                     <button
                                                                         onClick={handleCancelEditTopic}
-                                                                        className="text-gray-400 hover:text-gray-600 p-1.5 rounded hover:bg-gray-50 transition-colors"
-                                                                        title="Cancel"
+                                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100"
                                                                     >
-                                                                        <FaTimes size={12} />
+                                                                        <FaTimes size={10} />
                                                                     </button>
                                                                 </>
                                                             ) : (
-                                                                <>
+                                                                <div className="flex items-center gap-1 group/topic">
                                                                     <button
                                                                         onClick={() => handleEditTopic(topic)}
-                                                                        className="text-blue-400 hover:text-blue-600 p-1.5 rounded hover:bg-blue-50 transition-colors"
-                                                                        title="Edit Topic"
+                                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
                                                                     >
-                                                                        <FaEdit size={12} />
+                                                                        <FaEdit size={10} />
                                                                     </button>
                                                                     <button
                                                                         onClick={() => handleDeleteTopic(topic.id, subject.id)}
-                                                                        className="text-red-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition-colors flex-shrink-0"
-                                                                        title="Delete Topic"
+                                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
                                                                     >
-                                                                        <FaTrash size={12} />
+                                                                        <FaTrash size={10} />
                                                                     </button>
-                                                                </>
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </li>
@@ -482,32 +478,32 @@ const AdminClasses: React.FC = () => {
 
                                         {/* Add Topic Form */}
                                         {addingTopicFor === subject.id ? (
-                                            <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                                            <div className="bg-white p-4 rounded-[20px] border border-gray-100 shadow-xl space-y-3 animate-in slide-in-from-top-2 duration-300">
                                                 <input
                                                     type="text"
-                                                    placeholder="Topic Name (e.g., Algebra)"
+                                                    placeholder="Topic Title (e.g. Calculus I)"
                                                     value={newTopicName}
                                                     onChange={(e) => setNewTopicName(e.target.value)}
-                                                    className="w-full border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-2.5 rounded-lg text-sm transition-all"
+                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-black text-sm"
                                                 />
                                                 <textarea
-                                                    placeholder="Description (optional)"
+                                                    placeholder="Module details..."
                                                     value={newTopicDesc}
                                                     onChange={(e) => setNewTopicDesc(e.target.value)}
                                                     rows={2}
-                                                    className="w-full border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-2.5 rounded-lg text-sm transition-all resize-none"
+                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-medium text-xs resize-none"
                                                 />
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-2 pt-1 border-t border-gray-50">
                                                     <button
                                                         onClick={() => handleAddTopic(subject.id)}
                                                         disabled={!newTopicName.trim()}
-                                                        className="bg-[#a0522d] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#804224] disabled:opacity-50 transition"
+                                                        className="flex-1 bg-[#1B2A5A] text-white py-2.5 rounded-xl font-black text-xs hover:bg-[#142044] disabled:opacity-50 transition"
                                                     >
                                                         Add Topic
                                                     </button>
                                                     <button
                                                         onClick={() => { setAddingTopicFor(null); setNewTopicName(''); setNewTopicDesc(''); }}
-                                                        className="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
+                                                        className="flex-1 bg-gray-100 text-gray-500 py-2.5 rounded-xl font-black text-xs hover:bg-gray-200 transition"
                                                     >
                                                         Cancel
                                                     </button>
@@ -516,9 +512,9 @@ const AdminClasses: React.FC = () => {
                                         ) : (
                                             <button
                                                 onClick={() => setAddingTopicFor(subject.id)}
-                                                className="text-[#a0522d] text-sm font-semibold flex items-center gap-1.5 hover:text-[#804224] transition-colors mt-2"
+                                                className="w-full py-2 border-2 border-dashed border-gray-100 rounded-xl text-[10px] font-black text-gray-400 uppercase tracking-widest hover:border-[#a0522d] hover:text-[#a0522d] hover:bg-[#a0522d]/5 transition-all flex items-center justify-center gap-2 mt-2"
                                             >
-                                                <FaPlus size={10} /> Add Topic
+                                                <FaPlus size={8} /> Add Topic
                                             </button>
                                         )}
                                     </div>

@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
 import { useCurriculum } from '../context/CurriculumContext';
-import { FaSignOutAlt, FaBell, FaChevronDown, FaPen, FaTimes, FaSave, FaCamera } from 'react-icons/fa';
+import { FaSignOutAlt, FaBell, FaChevronDown, FaUser } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../supabaseClient';
-import AvatarSelectionModal from './AvatarSelectionModal';
 
 import SignIn from './SignIn';
 
@@ -21,17 +18,6 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authView, setAuthView] = useState<'signin' | 'signup'>('signin');
-    const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
-    const [editForm, setEditForm] = useState({
-        displayName: '',
-        role: '',
-        class: '',
-        phone: '',
-        email: '',
-        address: ''
-    });
     const modalRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
 
@@ -49,85 +35,27 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
         return parts[0];
     };
 
-    // Initialize form when profile opens or user changes
-    useEffect(() => {
-        if (user) {
-            setEditForm({
-                displayName: user.user_metadata?.full_name || '',
-                role: user.user_metadata?.role || 'Student',
-                class: user.user_metadata?.class || '',
-                phone: user.user_metadata?.phone || '',
-                email: user.email || '',
-                address: user.user_metadata?.address || ''
-            });
-        }
-    }, [user, isProfileOpen]);
-
     const handleSignOut = async () => {
         await signOut();
         setIsProfileOpen(false);
     };
 
-    const handleEditToggle = () => {
-        setIsEditing(!isEditing);
-        // Reset form if cancelling edit
-        if (isEditing && user) {
-            setEditForm({
-                displayName: user.user_metadata?.full_name || '',
-                role: user.user_metadata?.role || 'Student',
-                class: user.user_metadata?.class || '',
-                phone: user.user_metadata?.phone || '',
-                email: user.email || '',
-                address: user.user_metadata?.address || ''
-            });
-        }
-    };
-
-    const handleSaveProfile = async () => {
-        setIsSaving(true);
-        try {
-            const { error } = await supabase.auth.updateUser({
-                data: {
-                    full_name: editForm.displayName,
-                    role: editForm.role,
-                    class: editForm.class,
-                    phone: editForm.phone,
-                    address: editForm.address
-                    // Email cannot be updated via this method usually, requires separate process
-                }
-            });
-
-            if (error) {
-                console.error("Error updating profile:", error);
-                alert("Failed to update profile: " + error.message);
-            } else {
-                console.log("Profile updated successfully");
-                setIsEditing(false);
-            }
-        } catch (err) {
-            console.error("Unexpected error updating profile:", err);
-            alert("An unexpected error occurred.");
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setEditForm({ ...editForm, [e.target.name]: e.target.value });
-    };
-
-    // Scroll Lock when Profile is Open
+    // Close dropdown on click outside
     useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+                setIsProfileOpen(false);
+            }
+        };
+
         if (isProfileOpen) {
-            document.body.style.overflow = 'hidden';
+            document.addEventListener('mousedown', handleClickOutside);
         } else {
-            document.body.style.overflow = 'unset';
-            setIsEditing(false); // Reset edit mode when closing
-            const timer = setTimeout(() => setIsAvatarModalOpen(false), 300); // Reset avatar view after animation
-            return () => clearTimeout(timer);
+            document.removeEventListener('mousedown', handleClickOutside);
         }
+
         return () => {
-            document.body.style.overflow = 'unset';
+            document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [isProfileOpen]);
 
@@ -159,8 +87,8 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                     {[
                         { name: 'Home', path: '/' },
                         { name: 'Classes', path: '/class/1' },
-                        { name: 'Career', path: '#' },
-                        { name: 'About Us', path: '#' }
+                        { name: 'Career', path: '/career' },
+                        { name: 'About Us', path: '/about' }
                     ].map((link) => {
                         const isActive = location.pathname === link.path;
                         return (
@@ -179,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                 {/* Right Side: Toggle & Auth */}
                 <div className="flex items-center space-x-4">
                     {/* Toggle Button */}
-                    {showToggle && (
+                    {showToggle && location.pathname.startsWith('/class') && (
                         <button
                             onClick={toggleCurriculum}
                             className="relative w-32 h-10 bg-[#1B2A5A] rounded-full flex items-center p-1 cursor-pointer shadow-inner overflow-hidden border border-white/10"
@@ -213,7 +141,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
 
 
                             {/* Profile Dropdown */}
-                            <div className="relative">
+                            <div className="relative" ref={modalRef}>
                                 <button
                                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                                     className="h-10 flex items-center gap-3 bg-[#1B2A5A] text-white px-2 pr-4 rounded-full hover:bg-[#142044] transition-all border border-white/10 shadow-sm"
@@ -241,238 +169,38 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                     </div>
                                     <FaChevronDown size={12} className={`text-white/80 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
                                 </button>
-                            </div>
 
-                            {/* Centered Profile Modal - Updated to use Portal */}
-                            {isProfileOpen && ReactDOM.createPortal(
-                                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                                    {/* Backdrop */}
-                                    <div
-                                        className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"
-                                        onClick={() => setIsProfileOpen(false)}
-                                    />
+                                {/* Dropdown Menu */}
+                                {isProfileOpen && (
+                                    <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-[100] animate-in fade-in zoom-in duration-200 origin-top-right">
+                                        <div className="px-5 py-3 border-b border-gray-50 mb-2">
+                                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Account</p>
+                                            <p className="text-sm font-black text-gray-800 truncate">{user.email}</p>
+                                        </div>
 
-                                    {/* Modal Content */}
-                                    <div
-                                        ref={modalRef}
-                                        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-zoom-in max-h-[90vh] flex flex-col z-50"
-                                    >
-                                        {!isAvatarModalOpen ? (
-                                            <>
-                                                {/* Top Controls */}
-                                                {!isEditing && (
-                                                    <div className="absolute top-4 left-4 z-10">
-                                                        <button
-                                                            onClick={handleEditToggle}
-                                                            className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100/50"
-                                                            title="Edit Profile"
-                                                        >
-                                                            <FaPen size={15} />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                <div className="absolute top-4 right-4 z-10">
-                                                    <button
-                                                        onClick={() => setIsProfileOpen(false)}
-                                                        className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100/50"
-                                                    >
-                                                        <FaTimes size={18} />
-                                                    </button>
-                                                </div>
+                                        <Link
+                                            to="/profile"
+                                            onClick={() => setIsProfileOpen(false)}
+                                            className="w-full flex items-center gap-3 px-5 py-3 text-sm font-black text-gray-600 hover:text-[#a0522d] hover:bg-orange-50 transition-all"
+                                        >
+                                            <div className="w-8 h-8 rounded-lg bg-orange-50 text-[#a0522d] flex items-center justify-center">
+                                                <FaUser size={14} />
+                                            </div>
+                                            View Profile
+                                        </Link>
 
-                                                {/* Avatar & Name Section */}
-                                                <div className="pt-8 pb-5 px-6 shrink-0 flex flex-col items-center">
-                                                    <div className="relative w-20 h-20 mb-3 group">
-                                                        <div className="w-full h-full rounded-full overflow-hidden border-2 border-[#ffb76c]/50 shadow-sm flex items-center justify-center bg-gray-50">
-                                                            {user?.user_metadata?.avatar_url ? (
-                                                                <img
-                                                                    src={user.user_metadata.avatar_url}
-                                                                    alt="Profile"
-                                                                    className="w-full h-full object-cover"
-                                                                />
-                                                            ) : (
-                                                                <span className="text-[#a0522d] text-3xl font-bold font-sans">
-                                                                    {user?.email?.charAt(0).toUpperCase()}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        {isEditing && (
-                                                            <button
-                                                                onClick={() => setIsAvatarModalOpen(true)}
-                                                                className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center transition-opacity cursor-pointer z-10"
-                                                            >
-                                                                <FaCamera className="text-white text-xl drop-shadow-md" />
-                                                            </button>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Name (Editable) */}
-                                                    {isEditing ? (
-                                                        <input
-                                                            type="text"
-                                                            name="displayName"
-                                                            value={editForm.displayName}
-                                                            onChange={handleChange}
-                                                            className="bg-transparent text-gray-900 text-center font-bold text-xl placeholder-gray-400 border-b border-gray-300 focus:outline-none focus:border-[#a0522d] w-3/4 pb-1"
-                                                            placeholder="Your Name"
-                                                        />
-                                                    ) : (
-                                                        <h3 className="text-xl font-bold text-gray-900 tracking-wide">
-                                                            {user?.user_metadata?.full_name || "User Name"}
-                                                        </h3>
-                                                    )}
-                                                </div>
-
-                                                {/* Details List */}
-                                                <div className="bg-white px-6 pb-6 relative flex-1 overflow-y-auto">
-                                                    <div className="space-y-4">
-                                                        {/* Role */}
-                                                        <div className="flex flex-col gap-1 border-b border-gray-100 pb-2">
-                                                            <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">Role</span>
-                                                            {isEditing ? (
-                                                                <select
-                                                                    name="role"
-                                                                    value={editForm.role}
-                                                                    onChange={handleChange}
-                                                                    className="text-gray-800 text-sm font-semibold bg-gray-50 focus:bg-white focus:ring-1 focus:ring-[#a0522d] px-3 py-2 rounded-lg w-full border border-gray-200 focus:border-[#a0522d] outline-none transition-all cursor-pointer appearance-none shadow-sm"
-                                                                >
-                                                                    <option value="Student">Student</option>
-                                                                    <option value="Parent">Parent</option>
-                                                                </select>
-                                                            ) : (
-                                                                <span className="text-gray-800 font-medium text-sm">{user?.user_metadata?.role || "Student"}</span>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Class */}
-                                                        <div className="flex flex-col gap-1 border-b border-gray-100 pb-2">
-                                                            <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">Class</span>
-                                                            {isEditing ? (
-                                                                <input
-                                                                    type="text"
-                                                                    name="class"
-                                                                    value={editForm.class}
-                                                                    onChange={handleChange}
-                                                                    className="text-gray-800 text-sm font-semibold bg-gray-50 focus:bg-white focus:ring-1 focus:ring-[#a0522d] px-3 py-2 rounded-lg w-full border border-gray-200 focus:border-[#a0522d] outline-none transition-all shadow-sm"
-                                                                    placeholder="e.g. 10th Grade"
-                                                                />
-                                                            ) : (
-                                                                <span className="text-gray-800 font-medium text-sm">{user?.user_metadata?.class || "Not Set"}</span>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Mobile */}
-                                                        <div className="flex flex-col gap-1 border-b border-gray-100 pb-2">
-                                                            <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">Mobile</span>
-                                                            {isEditing ? (
-                                                                <input
-                                                                    type="text"
-                                                                    name="phone"
-                                                                    value={editForm.phone}
-                                                                    onChange={handleChange}
-                                                                    className="text-gray-800 text-sm font-semibold bg-gray-50 focus:bg-white focus:ring-1 focus:ring-[#a0522d] px-3 py-2 rounded-lg w-full border border-gray-200 focus:border-[#a0522d] outline-none transition-all shadow-sm"
-                                                                    placeholder="+91..."
-                                                                />
-                                                            ) : (
-                                                                <span className="text-gray-800 font-medium text-sm">{user?.user_metadata?.phone || "Not Set"}</span>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Email */}
-                                                        <div className="flex flex-col gap-1 border-b border-gray-100 pb-2">
-                                                            <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">Email</span>
-                                                            <span className="text-gray-800 font-medium text-sm truncate w-full">{user?.email}</span>
-                                                        </div>
-
-                                                        {/* Address */}
-                                                        <div className="flex flex-col gap-1 border-b border-gray-100 pb-2">
-                                                            <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">Address</span>
-                                                            {isEditing ? (
-                                                                <textarea
-                                                                    name="address"
-                                                                    value={editForm.address}
-                                                                    onChange={handleChange}
-                                                                    rows={2}
-                                                                    className="text-gray-800 text-sm font-semibold bg-gray-50 focus:bg-white focus:ring-1 focus:ring-[#a0522d] px-3 py-2 rounded-lg w-full border border-gray-200 focus:border-[#a0522d] outline-none transition-all resize-none shadow-sm"
-                                                                    placeholder="Enter your full address"
-                                                                />
-                                                            ) : (
-                                                                <span className="text-gray-800 font-medium text-sm leading-relaxed">{user?.user_metadata?.address || "Not Set"}</span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Footer Actions */}
-                                                <div className="bg-white px-6 pb-6 pt-2 relative z-10">
-                                                    {isEditing ? (
-                                                        <div className="flex gap-3">
-                                                            <button
-                                                                onClick={handleEditToggle}
-                                                                disabled={isSaving}
-                                                                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                                                            >
-                                                                <FaTimes /> Cancel
-                                                            </button>
-                                                            {(() => {
-                                                                const hasChanges = user ? (
-                                                                    (editForm.displayName || '') !== (user.user_metadata?.full_name || '') ||
-                                                                    (editForm.class || '') !== (user.user_metadata?.class || '') ||
-                                                                    (editForm.phone || '') !== (user.user_metadata?.phone || '') ||
-                                                                    (editForm.address || '') !== (user.user_metadata?.address || '') ||
-                                                                    (editForm.role || '') !== (user.user_metadata?.role || '')
-                                                                ) : false;
-
-                                                                return (
-                                                                    <button
-                                                                        onClick={handleSaveProfile}
-                                                                        disabled={isSaving || !hasChanges}
-                                                                        className={`flex-1 py-2.5 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm ${isSaving || !hasChanges
-                                                                            ? 'bg-[#cc8e71] cursor-not-allowed'
-                                                                            : 'bg-[#a0522d] hover:bg-[#804224]'
-                                                                            }`}
-                                                                    >
-                                                                        {isSaving ? (
-                                                                            <>
-                                                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                                                Saving...
-                                                                            </>
-                                                                        ) : (
-                                                                            <>
-                                                                                <FaSave /> Save Changes
-                                                                            </>
-                                                                        )}
-                                                                    </button>
-                                                                );
-                                                            })()}
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            onClick={handleSignOut}
-                                                            className="w-full py-2.5 border border-gray-200 hover:bg-red-50 text-gray-700 hover:text-red-500 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 group shadow-sm"
-                                                        >
-                                                            <FaSignOutAlt className="group-hover:rotate-180 transition-transform duration-300 text-gray-400 group-hover:text-red-400" />
-                                                            Sign Out
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <AvatarSelectionModal
-                                                isOpen={true}
-                                                onBack={() => setIsAvatarModalOpen(false)}
-                                                onUpdate={async () => {
-                                                    const { error } = await supabase.auth.refreshSession();
-                                                    if (error) console.error("Session refresh error", error);
-                                                    setIsAvatarModalOpen(false);
-                                                }}
-                                                currentAvatarUrl={user?.user_metadata?.avatar_url}
-                                            />
-                                        )}
+                                        <button
+                                            onClick={handleSignOut}
+                                            className="w-full flex items-center gap-3 px-5 py-3 text-sm font-black text-gray-600 hover:text-red-500 hover:bg-red-50 transition-all border-t border-gray-50 mt-2 pt-4"
+                                        >
+                                            <div className="w-8 h-8 rounded-lg bg-red-50 text-red-400 flex items-center justify-center">
+                                                <FaSignOutAlt size={14} />
+                                            </div>
+                                            Sign Out
+                                        </button>
                                     </div>
-                                </div>,
-                                document.body
-                            )}
+                                )}
+                            </div>
                         </div>
                     ) : (
                         <div className="flex items-center gap-3">

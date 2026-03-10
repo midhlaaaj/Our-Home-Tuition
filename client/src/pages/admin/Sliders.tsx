@@ -126,20 +126,26 @@ const Sliders: React.FC = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">Manage Hero Section</h1>
-                <p className="text-gray-500 mt-2">Upload the main background image or video for the homepage.</p>
+        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+            <div>
+                <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Hero Section Master</h1>
+                <p className="text-sm text-gray-500 font-medium">Control the first impression of your platform.</p>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <div className="bg-white p-6 rounded-[24px] shadow-xl border border-gray-50">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Background Media</label>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex gap-4 items-center">
-                                <label className="cursor-pointer bg-[#ffb76c] hover:bg-[#ffa94d] text-gray-900 font-semibold py-3 px-6 rounded-lg text-center transition flex items-center justify-center gap-2 shadow-sm min-w-[200px]">
-                                    <FaUpload /> {uploading ? 'Uploading...' : 'Upload File'}
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-8 h-8 rounded-lg bg-orange-50 text-[#a0522d] flex items-center justify-center">
+                                <FaUpload size={14} />
+                            </div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Atmospheric Media</label>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-3 items-center">
+                                <label className="cursor-pointer bg-[#ffb76c] hover:bg-[#ffa94d] text-[#1B2A5A] font-black py-3 rounded-xl text-center transition flex items-center justify-center gap-2 shadow-lg shadow-orange-100/50 text-xs">
+                                    <FaUpload size={12} /> {uploading ? 'Processing...' : 'Upload Asset'}
                                     <input
                                         type="file"
                                         className="hidden"
@@ -148,67 +154,82 @@ const Sliders: React.FC = () => {
                                         disabled={uploading}
                                     />
                                 </label>
-                                <span className="text-gray-400 font-medium">OR</span>
-                                <input
-                                    type="text"
-                                    placeholder="Paste Image/Video URL"
-                                    className="border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-3 rounded-lg flex-1 transition-all"
-                                    value={form.media_url}
-                                    onChange={e => setForm({ ...form, media_url: e.target.value })}
-                                />
+                                <div className="relative group">
+                                    <input
+                                        type="text"
+                                        placeholder="Direct Asset URL"
+                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-medium text-sm pr-10"
+                                        value={form.media_url}
+                                        onChange={e => setForm({ ...form, media_url: e.target.value })}
+                                    />
+                                </div>
                             </div>
 
                             {form.media_url && form.media_url.includes('drive.google.com') && (
-                                <p className="text-sm text-red-500 font-medium mt-1">
-                                    ⚠️ Google Drive preview links do not work directly. Please upload the file instead.
-                                </p>
+                                <div className="bg-red-50 border border-red-100 p-2.5 rounded-xl flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                                    <p className="text-[10px] text-red-600 font-black uppercase tracking-tighter">
+                                        Google Drive links restricted. Host assets directly.
+                                    </p>
+                                </div>
                             )}
 
                             {form.media_url && (
-                                <div className="mt-4 h-[300px] w-full bg-gray-50 rounded-xl overflow-hidden relative border border-gray-200 flex items-center justify-center shadow-inner">
+                                <div className="mt-2 h-[220px] w-full bg-gray-900 rounded-2xl overflow-hidden relative border-4 border-white shadow-2xl flex items-center justify-center group-hover:scale-[1.01] transition-transform">
                                     {form.type === 'video' ? (
-                                        <video src={form.media_url} autoPlay loop muted className="h-full w-auto max-w-full object-contain" controls />
+                                        <video src={form.media_url} autoPlay loop muted className="h-full w-full object-cover" />
                                     ) : (
-                                        <img src={form.media_url} alt="Preview" className="h-full w-auto max-w-full object-contain" />
+                                        <img src={form.media_url} alt="Preview" className="h-full w-full object-cover" />
                                     )}
+                                    <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+                                    <div className="absolute top-3 left-3 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black text-white uppercase border border-white/20">
+                                        Live Preview
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Hero Title</label>
-                            <p className="text-xs text-gray-500 mb-2">Use asterisks to highlight a word with the orange underline. (e.g. `with *Confidence*`)</p>
-                            <textarea
-                                className="w-full border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-3 rounded-lg transition-all min-h-[100px]"
-                                placeholder="Enter hero title..."
-                                value={form.title}
-                                onChange={e => setForm({ ...form, title: e.target.value })}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Highlighted Word Color</label>
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="color"
-                                    className="h-10 w-14 border border-gray-200 rounded cursor-pointer shrink-0"
-                                    value={form.titleColor}
-                                    onChange={e => setForm({ ...form, titleColor: e.target.value })}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-50">
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Hero Title</label>
+                                <textarea
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all min-h-[100px] font-black text-gray-900 text-sm"
+                                    placeholder="Enter hero title..."
+                                    value={form.title}
+                                    onChange={e => setForm({ ...form, title: e.target.value })}
                                 />
-                                <input
-                                    type="text"
-                                    className="border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-2 rounded-lg transition-all w-32 uppercase text-sm font-mono"
-                                    placeholder="#C75E33"
-                                    value={form.titleColor}
-                                    onChange={e => setForm({ ...form, titleColor: e.target.value })}
-                                />
+                                <p className="text-[9px] text-gray-400 font-medium px-1 leading-relaxed italic">
+                                    *Keyword* = Dynamic underline style.
+                                </p>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Accent Calibration</label>
+                                <div className="flex items-center gap-2">
+                                    <div className="relative group">
+                                        <input
+                                            type="color"
+                                            className="h-10 w-16 border-2 border-gray-100 rounded-xl cursor-pointer bg-white"
+                                            value={form.titleColor}
+                                            onChange={e => setForm({ ...form, titleColor: e.target.value })}
+                                        />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        className="bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-2 rounded-xl transition-all w-24 uppercase text-xs font-black tracking-widest text-[#a0522d]"
+                                        value={form.titleColor}
+                                        onChange={e => setForm({ ...form, titleColor: e.target.value })}
+                                    />
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Hero Subtitle</label>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Meta Description (Subtitle)</label>
                             <textarea
-                                className="w-full border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none p-3 rounded-lg transition-all min-h-[100px]"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all min-h-[185px] font-medium text-gray-600 text-sm leading-relaxed"
                                 placeholder="Enter hero subtitle..."
                                 value={form.subtitle}
                                 onChange={e => setForm({ ...form, subtitle: e.target.value })}
@@ -216,20 +237,20 @@ const Sliders: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="pt-4 border-t border-gray-100 flex justify-end">
+                    <div className="pt-6 border-t border-gray-50 flex justify-end">
                         <button
                             type="submit"
                             disabled={loading || uploading || !form.media_url}
-                            className="bg-[#a0522d] text-white py-3 px-8 font-bold rounded-lg hover:bg-[#804224] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md flex items-center gap-2"
+                            className="bg-[#1B2A5A] text-white py-3.5 px-10 font-black rounded-xl hover:bg-[#142044] disabled:opacity-50 transition shadow-xl shadow-[#1B2A5A]/10 text-xs flex items-center gap-3"
                         >
                             {loading ? (
                                 <>
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    Saving...
+                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    Syncing...
                                 </>
                             ) : (
                                 <>
-                                    <FaSave /> Save Hero Section
+                                    <FaSave size={12} /> Commit Changes
                                 </>
                             )}
                         </button>

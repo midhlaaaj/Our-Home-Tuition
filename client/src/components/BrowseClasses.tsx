@@ -12,7 +12,7 @@ const classesData = Array.from({ length: 10 }, (_, i) => ({
 
 const BrowseClasses: React.FC = () => {
     return (
-        <section className="py-12">
+        <section id="browse-classes" className="py-12">
             <div className="max-w-[85%] 2xl:max-w-[1400px] mx-auto bg-[#1F2937] rounded-3xl shadow-sm px-4 sm:px-8 py-16 lg:px-12">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-extrabold text-white sm:text-4xl mb-4 font-['Urbanist']">

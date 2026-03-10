@@ -101,117 +101,130 @@ const AdminFAQs: React.FC = () => {
     }
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Manage FAQs</h1>
+        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Knowledge Base</h1>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Configure and index frequently asked questions</p>
+                </div>
                 {!isEditing && (
                     <button
                         onClick={handleAddNew}
-                        className="flex items-center gap-2 bg-[#a0522d] text-white px-4 py-2 rounded-lg hover:bg-[#804224] transition-colors"
+                        className="bg-[#a0522d] text-white px-5 py-2.5 rounded-xl font-black hover:bg-[#804224] transition-all flex items-center gap-2.5 shadow-xl shadow-[#a0522d]/10 group text-[11px] uppercase tracking-widest"
                     >
-                        <FaPlus size={14} /> Add New FAQ
+                        <div className="w-5 h-5 bg-white/10 rounded-lg flex items-center justify-center group-hover:rotate-90 transition-transform">
+                            <FaPlus size={10} />
+                        </div>
+                        Index New Entry
                     </button>
                 )}
             </div>
 
             {isEditing ? (
-                <div className="bg-white p-6 rounded-xl shadow-md mb-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">{editingFaq.id ? 'Edit FAQ' : 'Add New FAQ'}</h2>
+                <div className="bg-white p-6 rounded-[28px] shadow-2xl border border-gray-50 mb-8 animate-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#a0522d] flex items-center justify-center">
+                            {editingFaq.id ? <FaEdit size={14} /> : <FaPlus size={14} />}
+                        </div>
+                        <h2 className="text-lg font-black text-gray-900 tracking-tight uppercase tracking-widest">
+                            {editingFaq.id ? 'Entry Calibration' : 'Entry Initialization'}
+                        </h2>
+                    </div>
                     <form onSubmit={handleSave} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
+                        <div className="space-y-1.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Question Vector</label>
                             <input
                                 type="text"
                                 value={editingFaq.question || ''}
                                 onChange={(e) => setEditingFaq({ ...editingFaq, question: e.target.value })}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#a0522d] focus:border-[#a0522d]"
-                                placeholder="Enter question..."
+                                className="w-full bg-gray-50/50 border border-gray-100 focus:border-[#a0522d] focus:bg-white outline-none px-4 py-2.5 rounded-xl transition-all font-bold text-sm"
+                                placeholder="Enter core query..."
                                 required
                             />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Answer</label>
+                        <div className="space-y-1.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Resolution Content</label>
                             <textarea
                                 value={editingFaq.answer || ''}
                                 onChange={(e) => setEditingFaq({ ...editingFaq, answer: e.target.value })}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#a0522d] focus:border-[#a0522d] h-32"
-                                placeholder="Enter detailed answer..."
+                                className="w-full bg-gray-50/50 border border-gray-100 focus:border-[#a0522d] focus:bg-white outline-none px-4 py-2.5 rounded-xl transition-all font-medium text-sm h-32 resize-none"
+                                placeholder="Enter detailed resolution schema..."
                                 required
                             />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
+                        <div className="space-y-1.5 w-1/3">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Display Sequence</label>
                             <input
                                 type="number"
                                 value={editingFaq.order || 0}
                                 onChange={(e) => setEditingFaq({ ...editingFaq, order: parseInt(e.target.value) || 0 })}
-                                className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#a0522d] focus:border-[#a0522d]"
+                                className="w-full bg-gray-50/50 border border-gray-100 focus:border-[#a0522d] focus:bg-white outline-none px-4 py-2.5 rounded-xl transition-all font-bold text-sm"
                             />
                         </div>
-                        <div className="flex gap-3 pt-4 border-t">
+                        <div className="flex gap-3 pt-4 border-t border-gray-50">
                             <button
                                 type="button"
                                 onClick={() => { setIsEditing(false); setEditingFaq({}); }}
-                                className="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
+                                className="bg-gray-100 text-gray-500 px-5 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center gap-2"
                             >
-                                <FaTimes /> Cancel
+                                <FaTimes size={10} /> Abort
                             </button>
                             <button
                                 type="submit"
-                                className="px-5 py-2 text-white bg-[#a0522d] hover:bg-[#804224] rounded-lg transition-colors flex items-center gap-2"
+                                className="flex-1 bg-[#1B2A5A] text-white px-5 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-[#142044] transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/10"
                             >
-                                <FaSave /> Save FAQ
+                                <FaSave size={10} /> Commit to Database
                             </button>
                         </div>
                     </form>
                 </div>
             ) : (
-                <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-50 border-b">
-                            <tr>
-                                <th className="px-6 py-3 text-sm font-semibold text-gray-600 w-16">Order</th>
-                                <th className="px-6 py-3 text-sm font-semibold text-gray-600">Question</th>
-                                <th className="px-6 py-3 text-sm font-semibold text-gray-600 text-right w-24">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {faqs.map((faq) => (
-                                <tr key={faq.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{faq.order}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm font-bold text-gray-900">{faq.question}</div>
-                                        <div className="text-sm text-gray-500 mt-1 line-clamp-1">{faq.answer}</div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex justify-end gap-3">
-                                            <button
-                                                onClick={() => handleEdit(faq)}
-                                                className="text-blue-600 hover:text-blue-800 p-1"
-                                                title="Edit"
-                                            >
-                                                <FaEdit size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(faq.id)}
-                                                className="text-red-500 hover:text-red-700 p-1"
-                                                title="Delete"
-                                            >
-                                                <FaTrash size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {faqs.length === 0 && (
-                                <tr>
-                                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
-                                        No FAQs added yet.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                <div className="space-y-4">
+                    {faqs.map((faq) => (
+                        <div key={faq.id} className="bg-white p-5 rounded-[24px] shadow-xl border border-gray-50 group hover:border-orange-100/50 transition-all duration-300">
+                            <div className="flex justify-between items-start gap-4 mb-3">
+                                <div className="flex items-center gap-2.5">
+                                    <span className="text-[9px] font-black text-gray-300 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
+                                        ID: {faq.order}
+                                    </span>
+                                    <h3 className="text-sm font-black text-gray-900 tracking-tight leading-tight group-hover:text-[#a0522d] transition-colors">
+                                        {faq.question}
+                                    </h3>
+                                </div>
+                                <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => handleEdit(faq)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
+                                        title="Recalibrate"
+                                    >
+                                        <FaEdit size={12} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(faq.id)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                        title="Purge"
+                                    >
+                                        <FaTrash size={12} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="relative pl-4 space-y-2">
+                                <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-orange-100 rounded-full"></div>
+                                <p className="text-[11px] text-gray-500 leading-relaxed font-semibold italic">
+                                    {faq.answer}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                    {faqs.length === 0 && (
+                        <div className="bg-white rounded-[32px] p-16 text-center border border-gray-50 shadow-2xl">
+                            <div className="w-16 h-16 bg-gray-50 text-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <FaPlus size={24} />
+                            </div>
+                            <h3 className="text-lg font-black text-gray-900 mb-1">Vault Empty</h3>
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest text-center">No knowledge matrices found.</p>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

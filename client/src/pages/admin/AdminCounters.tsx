@@ -110,129 +110,150 @@ const AdminCounters: React.FC = () => {
     };
 
     return (
-        <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Manage Stats Counters</h1>
+        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Vitals & Metrics</h1>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Configure global statistical impact counters</p>
+                </div>
+                <div className="px-4 py-2 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center gap-2.5">
+                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest leading-none">Domain: Analytic-Layer</span>
+                </div>
+            </div>
 
             {/* Form */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                <h2 className="text-xl font-bold mb-4 flex items-center">
-                    {isEditing ? <FaEdit className="mr-2" /> : <FaPlus className="mr-2" />}
-                    {isEditing ? 'Edit Counter' : 'Add New Counter'}
-                </h2>
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                        type="text"
-                        placeholder="Label (e.g. Students)"
-                        className="border p-2 rounded"
-                        value={form.label || ''}
-                        onChange={e => setForm({ ...form, label: e.target.value })}
-                        required
-                    />
-                    <input
-                        type="number"
-                        placeholder="Value (e.g. 1000)"
-                        className="border p-2 rounded"
-                        value={form.value || ''}
-                        onChange={e => setForm({ ...form, value: parseInt(e.target.value) || 0 })}
-                        required
-                    />
-                    <input
-                        type="text"
-                        placeholder="Suffix (e.g. + or K+)"
-                        className="border p-2 rounded"
-                        value={form.suffix || ''}
-                        onChange={e => setForm({ ...form, suffix: e.target.value })}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Display Order"
-                        className="border p-2 rounded"
-                        value={form.display_order || 0}
-                        onChange={e => setForm({ ...form, display_order: parseInt(e.target.value) || 0 })}
-                    />
+            <div className="bg-white p-5 rounded-[28px] shadow-2xl border border-gray-50 mb-8">
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#ffb76c] flex items-center justify-center">
+                        {isEditing ? <FaEdit size={14} /> : <FaPlus size={14} />}
+                    </div>
+                    <h2 className="text-sm font-black text-gray-900 tracking-widest uppercase">
+                        {isEditing ? 'Re-calibrate Metric' : 'Initialize New Metric'}
+                    </h2>
+                </div>
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="md:col-span-2 space-y-1">
+                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Label</label>
+                        <input
+                            type="text"
+                            placeholder="e.g. Active Students"
+                            className="w-full bg-gray-50 border border-gray-100 focus:border-[#ffb76c] focus:bg-white outline-none px-4 py-2 rounded-xl transition-all font-bold text-xs"
+                            value={form.label || ''}
+                            onChange={e => setForm({ ...form, label: e.target.value })}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Value</label>
+                        <input
+                            type="number"
+                            placeholder="e.g. 5000"
+                            className="w-full bg-gray-50 border border-gray-100 focus:border-[#ffb76c] focus:bg-white outline-none px-4 py-2 rounded-xl transition-all font-bold text-xs"
+                            value={form.value || ''}
+                            onChange={e => setForm({ ...form, value: parseInt(e.target.value) || 0 })}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Suffix</label>
+                        <input
+                            type="text"
+                            placeholder="e.g. +"
+                            className="w-full bg-gray-50 border border-gray-100 focus:border-[#ffb76c] focus:bg-white outline-none px-4 py-2 rounded-xl transition-all font-bold text-xs"
+                            value={form.suffix || ''}
+                            onChange={e => setForm({ ...form, suffix: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Sequence</label>
+                        <input
+                            type="number"
+                            placeholder="Order"
+                            className="w-full bg-gray-50 border border-gray-100 focus:border-[#ffb76c] focus:bg-white outline-none px-4 py-2 rounded-xl transition-all font-bold text-xs"
+                            value={form.display_order || 0}
+                            onChange={e => setForm({ ...form, display_order: parseInt(e.target.value) || 0 })}
+                        />
+                    </div>
 
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2 px-2">
                         <input
                             type="checkbox"
                             id="isActive"
-                            className="mr-2 h-4 w-4"
+                            className="h-3.5 w-3.5 rounded-md border-gray-200 text-[#ffb76c] focus:ring-[#ffb76c]"
                             checked={form.is_active}
                             onChange={e => setForm({ ...form, is_active: e.target.checked })}
                         />
-                        <label htmlFor="isActive" className="text-gray-700">Active</label>
+                        <label htmlFor="isActive" className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Transmit Live</label>
                     </div>
 
-                    <div className="col-span-1 md:col-span-2 flex space-x-2">
-                        <button type="submit" className="bg-[#ffb76c] text-white px-4 py-2 rounded hover:bg-orange-400 font-bold flex-1">
-                            {isEditing ? 'Update Counter' : 'Add Counter'}
+                    <div className="md:col-span-2 flex gap-2">
+                        <button type="submit" className="flex-1 bg-[#1B2A5A] text-white px-4 py-2 rounded-xl hover:bg-[#142044] font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-blue-900/10">
+                            {isEditing ? 'Confirm Delta' : 'Deploy To Production'}
                         </button>
                         {isEditing && (
                             <button
                                 type="button"
                                 onClick={() => { setIsEditing(false); setForm({ label: '', value: 0, suffix: '', is_active: true, display_order: 0 }); }}
-                                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 font-bold"
+                                className="bg-gray-100 text-gray-500 px-4 py-2 rounded-xl hover:bg-gray-200 font-black text-[10px] uppercase tracking-widest transition-all"
                             >
-                                Cancel
+                                Abort
                             </button>
                         )}
                     </div>
                 </form>
             </div>
 
-            {/* List */}
-            <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-gray-100 border-b">
-                            <th className="p-3 font-semibold text-gray-600">Order</th>
-                            <th className="p-3 font-semibold text-gray-600">Label</th>
-                            <th className="p-3 font-semibold text-gray-600">Value</th>
-                            <th className="p-3 font-semibold text-gray-600">Suffix</th>
-                            <th className="p-3 font-semibold text-gray-600">Status</th>
-                            <th className="p-3 font-semibold text-gray-600">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan={6} className="p-4 text-center">Loading...</td></tr>
-                        ) : counters.length === 0 ? (
-                            <tr><td colSpan={6} className="p-4 text-center text-gray-500">No counters found. Add one above.</td></tr>
-                        ) : (
-                            counters.map(counter => (
-                                <tr key={counter.id} className="border-b hover:bg-gray-50 transition-colors">
-                                    <td className="p-3">{counter.display_order}</td>
-                                    <td className="p-3 font-medium">{counter.label}</td>
-                                    <td className="p-3">{counter.value}</td>
-                                    <td className="p-3 text-gray-500">{counter.suffix}</td>
-                                    <td className="p-3">
-                                        <button
-                                            onClick={() => handleToggleActive(counter)}
-                                            className={`px-3 py-1 rounded-full text-xs font-bold text-white transition-colors ${counter.is_active ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}`}
-                                        >
-                                            {counter.is_active ? 'Active' : 'Inactive'}
-                                        </button>
-                                    </td>
-                                    <td className="p-3 flex space-x-3">
-                                        <button
-                                            onClick={() => handleEdit(counter)}
-                                            className="text-blue-500 hover:text-blue-700 transition-colors"
-                                            title="Edit"
-                                        >
-                                            <FaEdit size={18} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(counter.id)}
-                                            className="text-red-500 hover:text-red-700 transition-colors"
-                                            title="Delete"
-                                        >
-                                            <FaTrash size={18} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+            {/* List - Grid of Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {loading ? (
+                    [1, 2, 3, 4].map(i => (
+                        <div key={i} className="bg-white h-24 rounded-2xl border border-gray-50 animate-pulse shadow-sm"></div>
+                    ))
+                ) : counters.length === 0 ? (
+                    <div className="col-span-full bg-white rounded-[32px] p-12 text-center border border-gray-50 shadow-2xl">
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">No spectral metrics recorded yet.</p>
+                    </div>
+                ) : (
+                    counters.map(counter => (
+                        <div key={counter.id} className={`bg-white p-4 rounded-2xl shadow-xl border transition-all duration-300 group hover:scale-[1.02] ${counter.is_active ? 'border-gray-50' : 'border-gray-100 opacity-60 grayscale'}`}>
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-[8px] font-black text-gray-300 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                                    SEQ: {counter.display_order}
+                                </span>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => handleEdit(counter)}
+                                        className="p-1.5 text-gray-400 hover:text-[#1B2A5A] hover:bg-slate-50 rounded-lg transition-colors"
+                                    >
+                                        <FaEdit size={10} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(counter.id)}
+                                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                        <FaTrash size={10} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="text-center pb-2">
+                                <div className="text-2xl font-black text-gray-900 mb-0.5">
+                                    {counter.value}{counter.suffix}
+                                </div>
+                                <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                                    {counter.label}
+                                </div>
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-gray-50 flex items-center justify-center">
+                                <button
+                                    onClick={() => handleToggleActive(counter)}
+                                    className={`text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all ${counter.is_active ? 'bg-green-100 text-green-600 border border-green-200/50' : 'bg-gray-100 text-gray-400'}`}
+                                >
+                                    {counter.is_active ? 'Streaming' : 'Offline'}
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );

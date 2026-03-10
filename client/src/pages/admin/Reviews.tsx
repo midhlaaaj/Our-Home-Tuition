@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { FaTrash, FaEdit, FaMagic, FaUpload } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaMagic, FaUpload, FaStar } from 'react-icons/fa';
 import { uploadFile } from '../../utils/uploadHelper';
 
 interface Review {
@@ -116,219 +116,272 @@ const Reviews: React.FC = () => {
         setIsEditing(true);
         setEditId(review.id);
     };
-
-    const handleSeed = async () => {
-        if (!window.confirm('This will add sample reviews using the format you requested. Proceed?')) return;
-
-        const sampleReviews = [
-            {
-                name: "Sarah Thompson",
-                role: "Project Manager",
-                rating: 5,
-                message: "This AI product has transformed the way I manage my daily tasks. It's intuitive, fast, and incredibly accurate!",
-                avatar_url: "https://randomuser.me/api/portraits/women/44.jpg",
-                is_active: true
-            },
-            {
-                name: "Michael Chen",
-                role: "Software Developer",
-                rating: 5,
-                message: "I was skeptical at first, but this AI tool saved me hours of work. The automation features are a game-changer.",
-                avatar_url: "https://randomuser.me/api/portraits/men/32.jpg",
-                is_active: true
-            },
-            {
-                name: "Emily Rodriguez",
-                role: "Data Analyst",
-                rating: 5,
-                message: "The AI's ability to analyze data and provide insights is unmatched. It's like having a personal assistant 24/7.",
-                avatar_url: "https://randomuser.me/api/portraits/women/65.jpg",
-                is_active: true
-            },
-            {
-                name: "David Patel",
-                role: "IT Consultant",
-                rating: 5,
-                message: "I've never seen an AI product this user-friendly. It integrated seamlessly into my workflow from day one.",
-                avatar_url: "https://randomuser.me/api/portraits/men/86.jpg",
-                is_active: true
-            },
-            {
-                name: "Olivia Harper",
-                role: "Marketing Specialist",
-                rating: 5,
-                message: "This AI has boosted my productivity tenfold. The predictive features are spot-on and so helpful!",
-                avatar_url: "https://randomuser.me/api/portraits/women/24.jpg",
-                is_active: true
-            },
-            {
-                name: "James Carter",
-                role: "Operations Manager",
-                rating: 4,
-                message: "The customer support for this AI product is phenomenal. Fast and delivers results every time.",
-                avatar_url: "https://randomuser.me/api/portraits/men/11.jpg",
-                is_active: true
-            }
-        ];
-
-        try {
-            const { error } = await supabase.from('reviews').insert(sampleReviews);
-            if (error) throw error;
-            fetchReviews();
-            alert('Sample reviews added!');
-        } catch (err) {
-            console.error('Error seeding reviews:', err);
-            alert('Failed to seed. Table might be missing.');
-        }
-    };
-
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">Manage Reviews</h1>
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 mb-1">Manage Reviews</h1>
+                    <p className="text-sm text-gray-500 font-medium">Control home page testimonials.</p>
+                </div>
                 <button
-                    onClick={handleSeed}
-                    className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+                    onClick={() => {
+                        const formElement = document.getElementById('review-form');
+                        formElement?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="bg-[#a0522d] text-white px-6 py-3 rounded-xl font-black hover:bg-[#804224] transition-all shadow-lg shadow-[#a0522d]/20 text-sm"
                 >
-                    <FaMagic /> Seed Sample Data
+                    Add New Review
                 </button>
             </div>
 
-
-
             {/* Form */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit Review' : 'Add New Review'}</h2>
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                        type="text"
-                        placeholder="Name"
-                        className="border p-2 rounded"
-                        value={form.name || ''}
-                        onChange={e => setForm({ ...form, name: e.target.value })}
-                        required
-                    />
-                    <input
-                        type="text"
-                        placeholder="Role (e.g., Parent, Student, Job Title)"
-                        className="border p-2 rounded"
-                        value={form.role || ''}
-                        onChange={e => setForm({ ...form, role: e.target.value })}
-                        required
-                    />
-                    <input
-                        type="number"
-                        placeholder="Rating (1-5)"
-                        className="border p-2 rounded"
-                        value={form.rating || 5}
-                        min="1" max="5"
-                        onChange={e => setForm({ ...form, rating: parseInt(e.target.value) })}
-                    />
+            <div id="review-form" className="bg-white p-6 md:p-8 rounded-[24px] shadow-xl border border-gray-50 mb-8">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#a0522d] flex items-center justify-center">
+                        <FaEdit size={16} />
+                    </div>
+                    <h2 className="text-xl font-black text-gray-900 tracking-tight">
+                        {isEditing ? 'Update Selection' : 'Register New Review'}
+                    </h2>
+                </div>
 
-                    {/* Avatar Upload */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
                             <input
                                 type="text"
-                                placeholder="Avatar URL (Optional)"
-                                className="border p-2 rounded w-full"
-                                value={form.avatar_url || ''}
-                                onChange={e => setForm({ ...form, avatar_url: e.target.value })}
+                                placeholder="e.g., Sarah Thompson"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                value={form.name || ''}
+                                onChange={e => setForm({ ...form, name: e.target.value })}
+                                required
                             />
-                            <label className="flex items-center justify-center p-2 bg-gray-100 border rounded cursor-pointer hover:bg-gray-200">
-                                <FaUpload />
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={handleFileUpload}
-                                    disabled={uploading}
-                                />
-                            </label>
                         </div>
-                        {uploading && <span className="text-sm text-blue-500">Uploading...</span>}
-                        {form.avatar_url && (
-                            <img src={form.avatar_url} alt="Preview" className="h-10 w-10 rounded-full object-cover border bg-gray-50" />
-                        )}
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Role / Subtitle</label>
+                            <input
+                                type="text"
+                                placeholder="Student, Parent, etc."
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                value={form.role || ''}
+                                onChange={e => setForm({ ...form, role: e.target.value })}
+                                required
+                            />
+                        </div>
                     </div>
 
-                    <textarea
-                        placeholder="Message"
-                        className="border p-2 rounded col-span-2"
-                        value={form.message || ''}
-                        onChange={e => setForm({ ...form, message: e.target.value })}
-                        required
-                    />
-                    <div className="flex items-center">
-                        <input
-                            type="checkbox"
-                            className="mr-2"
-                            checked={form.is_active}
-                            onChange={e => setForm({ ...form, is_active: e.target.checked })}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Rating (Out of 5)</label>
+                            <div className="flex items-center gap-3 bg-gray-50 p-3.5 rounded-xl border-2 border-transparent focus-within:border-[#a0522d] focus-within:bg-white transition-all">
+                                <div className="flex items-center gap-2">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => setForm({ ...form, rating: star })}
+                                            className="transition-transform active:scale-95 group"
+                                        >
+                                            <FaStar
+                                                size={20}
+                                                className={`transition-colors ${(form.rating || 0) >= star
+                                                    ? 'text-orange-400'
+                                                    : 'text-gray-200 group-hover:text-orange-200'
+                                                    }`}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                                <span className="ml-2 text-xs font-black text-gray-400 uppercase tracking-widest">
+                                    {form.rating || 1} Star{(form.rating || 1) > 1 ? 's' : ''}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Avatar Image</label>
+                            <div className="flex gap-3">
+                                <div className="flex-1 flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Avatar URL (Optional)"
+                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                        value={form.avatar_url || ''}
+                                        onChange={e => setForm({ ...form, avatar_url: e.target.value })}
+                                    />
+                                    <label className="flex items-center justify-center w-12 h-12 bg-white border-2 border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors shadow-sm shrink-0">
+                                        <FaUpload size={14} className="text-gray-400" />
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleFileUpload}
+                                            disabled={uploading}
+                                        />
+                                    </label>
+                                </div>
+                                {form.avatar_url && (
+                                    <div className="relative shrink-0">
+                                        <img src={form.avatar_url} alt="Preview" className="w-12 h-12 rounded-xl object-cover border-4 border-gray-50 shadow-md" />
+                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">The Review Message</label>
+                        <textarea
+                            placeholder="What did they say about us?"
+                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-4 rounded-xl transition-all font-medium resize-none text-gray-700 leading-relaxed text-sm"
+                            rows={3}
+                            value={form.message || ''}
+                            onChange={e => setForm({ ...form, message: e.target.value })}
+                            required
                         />
-                        <label>Active</label>
                     </div>
 
-                    <button type="submit" disabled={uploading} className="bg-[#ffb76c] text-white p-2 rounded col-span-2 hover:bg-orange-400 disabled:opacity-50">
-                        {isEditing ? 'Update Review' : 'Add Review'}
-                    </button>
-                    {isEditing && (
-                        <button
-                            type="button"
-                            onClick={() => { setIsEditing(false); setForm({ role: 'Student', rating: 5, is_active: true, name: '', message: '', avatar_url: '' }); }}
-                            className="bg-gray-500 text-white p-2 rounded col-span-2"
-                        >
-                            Cancel
-                        </button>
-                    )}
+                    <div className="flex flex-col md:flex-row gap-4 pt-2">
+                        <label className="flex-grow flex items-center gap-3 bg-gray-50 p-4 rounded-xl border-2 border-transparent hover:border-blue-100 transition-all cursor-pointer group">
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${form.is_active ? 'bg-blue-600 border-blue-600' : 'border-gray-200'}`}>
+                                {form.is_active && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                            </div>
+                            <input
+                                type="checkbox"
+                                className="hidden"
+                                checked={form.is_active}
+                                onChange={e => setForm({ ...form, is_active: e.target.checked })}
+                            />
+                            <div>
+                                <p className="text-xs font-black text-gray-800">Publicly Visible</p>
+                            </div>
+                        </label>
+
+                        <div className="flex gap-2">
+                            {isEditing && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setIsEditing(false); setForm({ role: 'Student', rating: 5, is_active: true, name: '', message: '', avatar_url: '' }); }}
+                                    className="px-6 py-3.5 bg-gray-100 text-gray-500 rounded-xl font-black hover:bg-gray-200 transition-all text-sm"
+                                >
+                                    Cancel
+                                </button>
+                            )}
+                            <button
+                                type="submit"
+                                disabled={uploading}
+                                className="px-8 py-3.5 bg-[#1B2A5A] text-white rounded-xl font-black hover:bg-[#142044] disabled:opacity-50 transition-all shadow-xl shadow-[#1B2A5A]/10 text-sm flex items-center justify-center gap-2 shrink-0"
+                            >
+                                {isEditing ? 'Update Review' : 'Publish Review'}
+                            </button>
+                        </div>
+                    </div>
                 </form>
             </div>
 
             {/* List */}
-            <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+            <div className="bg-white rounded-[24px] shadow-sm border border-gray-50 overflow-hidden">
+                <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white">
+                    <h2 className="text-lg font-black text-gray-900 tracking-tight flex items-center gap-2">
+                        <FaStar size={16} className="text-orange-400" /> Published Reviews
+                    </h2>
+                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-gray-200/50">
+                        {reviews.length} total
+                    </span>
+                </div>
+
                 {loading ? (
-                    <p>Loading...</p>
+                    <div className="p-12 text-center animate-pulse">
+                        <div className="inline-block w-8 h-8 border-4 border-[#ffb76c]/20 border-t-[#ffb76c] rounded-full animate-spin"></div>
+                    </div>
+                ) : reviews.length === 0 ? (
+                    <div className="p-12 text-center text-gray-400">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FaStar size={24} className="opacity-20" />
+                        </div>
+                        <h3 className="text-lg font-black text-gray-800 mb-1">No reviews found</h3>
+                        <p className="text-sm font-medium">Add a new review to get started.</p>
+                    </div>
                 ) : (
-                    <table className="w-full text-left min-w-[600px]">
-                        <thead>
-                            <tr className="border-b">
-
-                                <th className="p-2">Name</th>
-                                <th className="p-2">Role</th>
-                                <th className="p-2">Rating</th>
-                                <th className="p-2">Status</th>
-                                <th className="p-2">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {reviews.map(review => (
-                                <tr key={review.id} className="border-b hover:bg-gray-50">
-
-                                    <td className="p-2 flex items-center gap-2">
-                                        <img src={review.avatar_url || `https://ui-avatars.com/api/?name=${review.name}`} className="w-8 h-8 rounded-full" alt="" />
-                                        {review.name}
-                                    </td>
-                                    <td className="p-2">{review.role}</td>
-                                    <td className="p-2">{review.rating}/5</td>
-                                    <td className="p-2">
-                                        <span className={`px-2 py-1 rounded text-xs text-white ${review.is_active ? 'bg-green-500' : 'bg-red-500'}`}>
-                                            {review.is_active ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </td>
-                                    <td className="p-2 flex space-x-2">
-                                        <button onClick={() => handleEdit(review)} className="text-blue-500 hover:text-blue-700"><FaEdit /></button>
-                                        <button onClick={() => handleDelete(review.id)} className="text-red-500 hover:text-red-700"><FaTrash /></button>
-                                    </td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50/50">
+                                    <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Contributor</th>
+                                    <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Identity</th>
+                                    <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Sentiment</th>
+                                    <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 text-center">Visibility</th>
+                                    <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 text-right">Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-                {!loading && reviews.length === 0 && (
-                    <p className="text-center text-gray-500 mt-4">No reviews found. Try seeding data!</p>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {reviews.map(review => (
+                                    <tr key={review.id} className="group hover:bg-gray-50/50 transition-all duration-300">
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="relative">
+                                                    <img
+                                                        src={review.avatar_url || `https://ui-avatars.com/api/?name=${review.name}`}
+                                                        className="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm"
+                                                        alt=""
+                                                    />
+                                                    <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${review.is_active ? 'bg-green-500' : 'bg-red-400'}`}></div>
+                                                </div>
+                                                <div>
+                                                    <p className="font-black text-gray-900 group-hover:text-[#a0522d] transition-colors text-sm">{review.name}</p>
+                                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Review Entry</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-[10px] font-black tracking-tight border border-blue-100 italic">
+                                                {review.role}
+                                            </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1 text-orange-400">
+                                                {[...Array(review.rating)].map((_, i) => (
+                                                    <FaStar key={i} size={10} />
+                                                ))}
+                                                <span className="ml-1 text-[10px] font-black text-gray-300">{review.rating}.0</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <span className={`px-2.5 py-1 rounded-full text-[9px] font-black tracking-[0.1em] uppercase border shadow-sm ${review.is_active
+                                                ? 'bg-green-50 text-green-600 border-green-100'
+                                                : 'bg-red-50 text-red-500 border-red-100'
+                                                }`}>
+                                                {review.is_active ? 'Live' : 'Hidden'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button
+                                                    onClick={() => handleEdit(review)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-all"
+                                                    title="Edit Review"
+                                                >
+                                                    <FaEdit size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(review.id)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                                                    title="Delete Review"
+                                                >
+                                                    <FaTrash size={14} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

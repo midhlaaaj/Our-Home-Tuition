@@ -23,6 +23,7 @@ app.use('/api/sliders', sliderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/mentors', mentorRoutes);
+// Removed achievements route (migrated to direct Supabase)
 
 // Basic Route
 app.get('/', (req, res) => {

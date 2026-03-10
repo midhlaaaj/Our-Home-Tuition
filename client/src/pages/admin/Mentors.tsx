@@ -124,217 +124,188 @@ const Mentors: React.FC = () => {
         setEditId(mentor.id);
     };
 
-    const handleSeed = async () => {
-        if (!window.confirm('This will add 6 default mentors. Continue?')) return;
-        setLoading(true);
-
-        const sampleMentors = [
-            {
-                name: "Dr. Sarah Johnson",
-                subject: "Mathematics",
-                description: "Ph.D. in Mathematics with 10+ years of teaching experience. Specializes in Calculus and Algebra.",
-                image_url: "https://randomuser.me/api/portraits/women/44.jpg",
-                is_active: true
-            },
-            {
-                name: "Prof. Michael Chen",
-                subject: "Physics",
-                description: "Former research scientist at CERN. Passionate about making complex physics concepts accessible to students.",
-                image_url: "https://randomuser.me/api/portraits/men/32.jpg",
-                is_active: true
-            },
-            {
-                name: "Emily Davis",
-                subject: "English Literature",
-                description: "Published author and literature enthusiast. Helps students develop critical thinking and writing skills.",
-                image_url: "https://randomuser.me/api/portraits/women/68.jpg",
-                is_active: true
-            },
-            {
-                name: "Robert Wilson",
-                subject: "Computer Science",
-                description: "Software Engineer with industry experience. Teaches coding fundamentals, algorithms, and web development.",
-                image_url: "https://randomuser.me/api/portraits/men/86.jpg",
-                is_active: true
-            },
-            {
-                name: "Dr. Anita Patel",
-                subject: "Biology",
-                description: "Expert in Molecular Biology. Inspires curiosity about the living world through interactive lessons.",
-                image_url: "https://randomuser.me/api/portraits/women/63.jpg",
-                is_active: true
-            },
-            {
-                name: "James Thompson",
-                subject: "Chemistry",
-                description: "Experienced Chemistry tutor. Focuses on practical applications and clear understanding of chemical reactions.",
-                image_url: "https://randomuser.me/api/portraits/men/46.jpg",
-                is_active: true
-            }
-        ];
-
-        try {
-            const { error } = await supabase.from('mentors').insert(sampleMentors);
-            if (error) throw error;
-            fetchMentors();
-            alert('Default mentors added successfully!');
-        } catch (err) {
-            console.error('Error seeding mentors:', err);
-            alert('Failed to seed mentors. Is the "mentors" table created in Supabase?');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">Manage Mentors</h1>
-                <button
-                    onClick={handleSeed}
-                    className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
-                    disabled={loading}
-                >
-                    <FaMagic /> Seed Default Mentors
-                </button>
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Manage Mentors</h1>
+                    <p className="text-sm text-gray-500 font-medium">Configure teacher profiles for students.</p>
+                </div>
             </div>
 
             {/* Form */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit Mentor' : 'Add New Mentor'}</h2>
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                        type="text"
-                        placeholder="Mentor Name"
-                        className="border p-2 rounded"
-                        value={form.name || ''}
-                        onChange={e => setForm({ ...form, name: e.target.value })}
-                        required
-                    />
-
-                    <input
-                        type="text"
-                        placeholder="Subject (e.g. Mathematics)"
-                        className="border p-2 rounded"
-                        value={form.subject || ''}
-                        onChange={e => setForm({ ...form, subject: e.target.value })}
-                        required
-                    />
-
-                    <div className="md:col-span-2">
-                        <textarea
-                            placeholder="Short Description"
-                            className="border p-2 rounded w-full h-24"
-                            value={form.description || ''}
-                            onChange={e => setForm({ ...form, description: e.target.value })}
-                            required
-                        />
+            <div className="bg-white p-6 rounded-[24px] shadow-xl border border-gray-50 mb-8">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#a0522d] flex items-center justify-center">
+                        <FaEdit size={16} />
                     </div>
+                    <h2 className="text-lg font-black text-gray-900 tracking-tight">
+                        {isEditing ? 'Edit Mentor Profile' : 'Register New Mentor'}
+                    </h2>
+                </div>
 
-                    <div className="md:col-span-2">
-                        <div className="flex flex-col gap-2">
-                            <label className="block text-sm font-medium text-gray-700">Mentor Photo</label>
-                            <div className="flex gap-2 items-center">
-                                <label className="flex-1 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-center transition flex items-center justify-center gap-2">
-                                    <FaUpload /> {uploading ? 'Uploading...' : 'Upload Photo'}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Mentor Name</label>
+                            <input
+                                type="text"
+                                placeholder="FullName"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                value={form.name || ''}
+                                onChange={e => setForm({ ...form, name: e.target.value })}
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Subject Expertise</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Mathematics"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                value={form.subject || ''}
+                                onChange={e => setForm({ ...form, subject: e.target.value })}
+                                required
+                            />
+                        </div>
+
+                        <div className="md:col-span-2 space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Professional Bio</label>
+                            <textarea
+                                placeholder="Brief summary of experience..."
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-4 rounded-xl transition-all font-medium resize-none text-gray-700 text-sm h-24"
+                                value={form.description || ''}
+                                onChange={e => setForm({ ...form, description: e.target.value })}
+                                required
+                            />
+                        </div>
+
+                        <div className="md:col-span-2 space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Profile Image</label>
+                            <div className="flex gap-3">
+                                <div className="flex-1 flex gap-2">
                                     <input
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleFileUpload}
-                                        disabled={uploading}
+                                        type="text"
+                                        placeholder="Image URL"
+                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                        value={form.image_url || ''}
+                                        onChange={e => setForm({ ...form, image_url: e.target.value })}
                                     />
-                                </label>
-                                <span className="text-gray-400 text-sm">OR</span>
-                                <input
-                                    type="text"
-                                    placeholder="Image URL"
-                                    className="border p-2 rounded flex-1"
-                                    value={form.image_url || ''}
-                                    onChange={e => setForm({ ...form, image_url: e.target.value })}
-                                />
-                            </div>
-
-                            {form.image_url && (
-                                <div className="mt-2 h-32 w-32 bg-gray-100 rounded overflow-hidden relative border flex items-center justify-center mx-auto md:mx-0">
-                                    <img src={form.image_url} alt="Preview" className="h-full w-full object-cover" />
+                                    <label className="flex items-center justify-center w-12 h-12 bg-white border-2 border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors shadow-sm shrink-0">
+                                        <FaUpload size={14} className="text-gray-400" />
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleFileUpload}
+                                            disabled={uploading}
+                                        />
+                                    </label>
                                 </div>
+                                {form.image_url && (
+                                    <div className="relative shrink-0">
+                                        <img src={form.image_url} alt="Preview" className="w-12 h-12 rounded-xl object-cover border-4 border-gray-50 shadow-md" />
+                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-2">
+                            <label className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border-2 border-transparent hover:border-blue-100 transition-all cursor-pointer group">
+                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${form.is_active ? 'bg-blue-600 border-blue-600' : 'border-gray-200'}`}>
+                                    {form.is_active && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    className="hidden"
+                                    checked={form.is_active}
+                                    onChange={e => setForm({ ...form, is_active: e.target.checked })}
+                                />
+                                <span className="text-xs font-black text-gray-800">Public Profile</span>
+                            </label>
+                        </div>
+
+                        <div className="flex gap-2 justify-end col-span-2 md:col-span-1 ml-auto">
+                            {isEditing && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setIsEditing(false); setForm({ is_active: true, name: '', subject: '', description: '', image_url: '' }); }}
+                                    className="px-6 py-3.5 bg-gray-100 text-gray-500 rounded-xl font-black hover:bg-gray-200 transition-all text-sm"
+                                >
+                                    Cancel
+                                </button>
                             )}
+                            <button
+                                type="submit"
+                                disabled={loading || uploading}
+                                className="px-8 py-3.5 bg-[#1B2A5A] text-white rounded-xl font-black hover:bg-[#142044] disabled:opacity-50 transition-all shadow-xl shadow-[#1B2A5A]/10 text-sm flex items-center justify-center gap-2 min-w-[140px]"
+                            >
+                                {loading ? 'Saving...' : (isEditing ? 'Update Mentor' : 'Add Mentor')}
+                            </button>
                         </div>
                     </div>
-
-                    <div className="flex items-center md:col-span-2">
-                        <input
-                            type="checkbox"
-                            className="mr-2 h-5 w-5"
-                            checked={form.is_active}
-                            onChange={e => setForm({ ...form, is_active: e.target.checked })}
-                        />
-                        <label>Active (Visible on website)</label>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading || uploading}
-                        className="bg-green-600 text-white p-2 rounded col-span-2 hover:bg-green-700 disabled:opacity-50 font-bold"
-                    >
-                        {loading ? 'Saving...' : (isEditing ? 'Update Mentor' : 'Add Mentor')}
-                    </button>
-                    {isEditing && (
-                        <button
-                            type="button"
-                            onClick={() => { setIsEditing(false); setForm({ is_active: true, name: '', subject: '', description: '', image_url: '' }); }}
-                            className="bg-gray-500 text-white p-2 rounded col-span-2"
-                        >
-                            Cancel
-                        </button>
-                    )}
                 </form>
             </div>
 
             {/* List */}
-            <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
-                <table className="w-full text-left min-w-[800px]">
-                    <thead>
-                        <tr className="border-b bg-gray-50">
-                            <th className="p-3">Photo</th>
-                            <th className="p-3">Name</th>
-                            <th className="p-3">Subject</th>
-                            <th className="p-3 w-1/3">Description</th>
-                            <th className="p-3">Status</th>
-                            <th className="p-3">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {mentors.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="p-6 text-center text-gray-500">No mentors found. Add one above or Seed Default Mentors.</td>
+            <div className="bg-white rounded-[24px] shadow-sm border border-gray-50 overflow-hidden">
+                <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white">
+                    <h2 className="text-lg font-black text-gray-900 tracking-tight">Active Faculty</h2>
+                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-gray-200/50">
+                        {mentors.length} Profiles
+                    </span>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-gray-50/50">
+                                <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Profile</th>
+                                <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Expertise</th>
+                                <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 w-1/3">Bio</th>
+                                <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 text-center">Status</th>
+                                <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 text-right">Actions</th>
                             </tr>
-                        ) : (
-                            mentors.map((mentor) => (
-                                <tr key={mentor.id} className="border-b hover:bg-gray-50">
-                                    <td className="p-3">
-                                        <img src={mentor.image_url} alt={mentor.name} className="h-12 w-12 rounded-full object-cover border" />
-                                    </td>
-                                    <td className="p-3 font-semibold text-gray-800">{mentor.name}</td>
-                                    <td className="p-3 text-gray-600">{mentor.subject}</td>
-                                    <td className="p-3 text-sm text-gray-500 truncate max-w-xs" title={mentor.description}>
-                                        {mentor.description.substring(0, 60)}{mentor.description.length > 60 ? '...' : ''}
-                                    </td>
-                                    <td className="p-3">
-                                        <span className={`px-2 py-1 rounded text-xs font-semibold text-white ${mentor.is_active ? 'bg-green-500' : 'bg-red-500'}`}>
-                                            {mentor.is_active ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </td>
-                                    <td className="p-3 flex space-x-3">
-                                        <button onClick={() => handleEdit(mentor)} className="text-blue-600 hover:text-blue-800" title="Edit"><FaEdit /></button>
-                                        <button onClick={() => handleDelete(mentor.id)} className="text-red-500 hover:text-red-700" title="Delete"><FaTrash /></button>
-                                    </td>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {mentors.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="p-12 text-center text-gray-400 text-sm font-medium italic">No mentor profiles registered yet.</td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : (
+                                mentors.map((mentor) => (
+                                    <tr key={mentor.id} className="group hover:bg-gray-50/50 transition-all duration-300">
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-3">
+                                                <img src={mentor.image_url} alt={mentor.name} className="h-10 w-10 rounded-xl object-cover border-2 border-white shadow-sm" />
+                                                <span className="font-black text-gray-900 text-sm">{mentor.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className="bg-orange-50 text-[#a0522d] px-2 py-1 rounded text-[10px] font-black tracking-tight border border-orange-100">
+                                                {mentor.subject}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-[11px] text-gray-500 leading-relaxed max-w-xs">{mentor.description}</td>
+                                        <td className="p-4 text-center">
+                                            <span className={`px-2.5 py-1 rounded-full text-[9px] font-black tracking-[0.1em] uppercase border shadow-sm ${mentor.is_active ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-500 border-red-100'}`}>
+                                                {mentor.is_active ? 'Live' : 'Hidden'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button onClick={() => handleEdit(mentor)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-all" title="Edit Profile"><FaEdit size={14} /></button>
+                                                <button onClick={() => handleDelete(mentor.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all" title="Delete Profile"><FaTrash size={14} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
