@@ -43,7 +43,7 @@ const AdminLayout: React.FC = () => {
             )}
 
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 w-72 bg-[#1B2A5A] text-white flex flex-col shadow-2xl z-40 lg:relative lg:translate-x-0 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed inset-y-0 left-0 w-72 bg-[#1F2937] text-white flex flex-col shadow-2xl z-40 lg:relative lg:translate-x-0 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-8 border-b border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
@@ -67,11 +67,11 @@ const AdminLayout: React.FC = () => {
                             to={item.path}
                             onClick={() => setIsSidebarOpen(false)}
                             className={`flex items-center space-x-4 px-5 py-4 rounded-2xl transition-all duration-300 group ${location.pathname === item.path
-                                ? 'bg-[#ffb76c] text-[#1B2A5A] shadow-lg shadow-[#ffb76c]/20 font-black scale-[1.02]'
+                                ? 'bg-[#ffb76c] text-[#1F2937] shadow-lg shadow-[#ffb76c]/20 font-black scale-[1.02]'
                                 : 'text-white/60 hover:bg-white/5 hover:text-white font-bold'
                                 }`}
                         >
-                            <span className={`text-xl transition-transform group-hover:scale-110 ${location.pathname === item.path ? 'text-[#1B2A5A]' : 'text-white/40 group-hover:text-[#ffb76c]'}`}>
+                            <span className={`text-xl transition-transform group-hover:scale-110 ${location.pathname === item.path ? 'text-[#1F2937]' : 'text-white/40 group-hover:text-[#ffb76c]'}`}>
                                 {item.icon}
                             </span>
                             <span className="text-sm tracking-wide">{item.label}</span>
@@ -110,7 +110,7 @@ const AdminLayout: React.FC = () => {
                         </div>
                     </div>
 
-                    <Link to="/" className="flex items-center gap-2 cursor-pointer no-underline hover:opacity-100 active:opacity-100 transition-none">
+                    <Link to="/" className="flex items-center gap-2 cursor-pointer no-underline pointer-events-auto">
                         <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
                         <span className="hidden sm:inline font-black text-gray-900 text-lg tracking-tight">Our Home Tuition</span>
                     </Link>
