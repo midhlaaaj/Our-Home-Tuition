@@ -1,14 +1,12 @@
-Category,Name,Hex,Usage
-Brand,Primary Navy,#1B2A5A,Header elements; Sidebar (original); Primary Buttons; Toggles
-Brand,Deep Charcoal,#1F2937,Counter Section; Browse Classes container; Footer background
-Brand,Dark Slate,#0F172A,Admin Login background (Slate-900)
-Brand,Hero Navy,#17242e,Hero section gradient and background overlay
-Brand,Hover Navy,#142044,Hover states for primary blue buttons
-Accent,Sunset Orange,#ffb76c,Counter numbers; AdminHub "Hub" text; Sidebar active highlights
-Accent,Coral,#FF7F50,Admin Login "Portal" text and main "Authorize" button
-Accent,Burnt Orange,#c75e33,Hero Section title highlights; Browse Classes card icons
-Accent,Brick Orange,#b35a2e,"Explore Classes" CTA button in the Hero section
-Accent,Brown-Accent,#a0522d,Decorative profile dropdown highlights
-Utility,Soft Gray,#F9FAFB,Home Page Contact Section background
-Utility,Pure White,#FFFFFF,Main backgrounds; Cards; Header surface
-Utility,Border Gray,#E5E7EB,Dividers and subtle UI borders (Gray-200)
+category,name,hex,usage
+Primary,Dark Navy,#1B2A5A,Headers; primary buttons; footers
+Primary,Terracotta,#a0522d,Accents; teaching excellence text
+Secondary,Warm Peach,#ffb76c,Highlights; active underlines; counter labels
+Background,Light Gray,#F9FAFB,Page backgrounds
+Admin,Dark Slate,#1F2937,Admin panel sidebar background
+Status,Emerald,#10B981,Positive status badges
+Status,Rose,#EF4444,Negative status badges
+Action,Sky Blue,#3B82F6,CV download buttons
+Text,Gray 600,#4B5563,Body copy
+Text,Gray 900,#111827,Main headings
+UI,Gray 100,#F3F4F6,Card borders

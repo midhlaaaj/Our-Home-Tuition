@@ -22,7 +22,7 @@ const AdminAvatars: React.FC = () => {
             if (error) {
                 console.error('Error fetching avatars:', error);
             } else {
-                const avatarList = data
+                const avatarList = (data || [])
                     .filter(file => file.name !== '.emptyFolderPlaceholder')
                     .map(file => {
                         const { data: publicUrlData } = supabase

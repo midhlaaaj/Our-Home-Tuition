@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { FaTrash, FaEdit, FaUpload, FaMagic } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaUpload } from 'react-icons/fa';
 import { uploadFile } from '../../utils/uploadHelper';
 
 interface Mentor {
