@@ -21,6 +21,8 @@ interface Topic {
     subject_id: string;
     name: string;
     description: string | null;
+    unit_no: number;
+    unit_title: string | null;
 }
 
 const ClassPage: React.FC = () => {
@@ -71,6 +73,7 @@ const ClassPage: React.FC = () => {
                 .from('class_topics')
                 .select('*')
                 .eq('subject_id', subjectId)
+                .order('unit_no', { ascending: true })
                 .order('created_at', { ascending: true });
 
             if (error) throw error;
@@ -78,6 +81,23 @@ const ClassPage: React.FC = () => {
         } catch (err) {
             console.error('Error fetching topics:', err);
         }
+    };
+
+    // Helper to group topics by unit_no
+    const groupTopicsByUnit = (subjectTopics: Topic[]) => {
+        const groups: Record<number, { unit_no: number, unit_title: string | null, topics: Topic[] }> = {};
+        subjectTopics.forEach(topic => {
+            const unitNo = topic.unit_no || 1;
+            if (!groups[unitNo]) {
+                groups[unitNo] = {
+                    unit_no: unitNo,
+                    unit_title: topic.unit_title,
+                    topics: []
+                };
+            }
+            groups[unitNo].topics.push(topic);
+        });
+        return Object.values(groups).sort((a, b) => a.unit_no - b.unit_no);
     };
 
     const toggleSubject = (subjectId: string) => {
@@ -160,7 +180,7 @@ const ClassPage: React.FC = () => {
                                             onClick={() => toggleSubject(subject.id)}
                                             className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
                                         >
-                                            <span className="font-medium text-gray-800 text-base">{subject.name}</span>
+                                            <span className="font-black text-gray-900 text-lg tracking-tight">{subject.name}</span>
                                             <span className="text-gray-400 flex-shrink-0 ml-4">
                                                 {expandedSubject === subject.id ? <FaMinus size={14} /> : <FaPlus size={14} />}
                                             </span>
@@ -176,21 +196,30 @@ const ClassPage: React.FC = () => {
                                                 ) : topics[subject.id].length === 0 ? (
                                                     <p className="text-gray-400 text-sm py-2">No topics available yet.</p>
                                                 ) : (
-                                                    <ul className="space-y-2">
-                                                        {topics[subject.id].map((topic, index) => (
-                                                            <li key={topic.id} className="flex items-start gap-3 py-2">
-                                                                <span className="text-[#e69b48] font-bold text-sm mt-0.5 flex-shrink-0">
-                                                                    {index + 1}.
-                                                                </span>
-                                                                <div>
-                                                                    <p className="text-gray-800 font-medium text-sm">{topic.name}</p>
-                                                                    {topic.description && (
-                                                                        <p className="text-gray-500 text-xs mt-1">{topic.description}</p>
-                                                                    )}
-                                                                </div>
-                                                            </li>
+                                                    <div className="space-y-6">
+                                                        {groupTopicsByUnit(topics[subject.id]).map((group) => (
+                                                            <div key={group.unit_no} className="space-y-2">
+                                                                <h3 className="text-[#a0522d] font-bold text-xs tracking-wide">
+                                                                    Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
+                                                                </h3>
+                                                                <ul className="space-y-2 pl-2">
+                                                                    {group.topics.map((topic) => (
+                                                                        <li key={topic.id} className="flex items-start gap-3 py-1">
+                                                                            <span className="text-[#e69b48] font-bold text-sm mt-0.5 flex-shrink-0">
+                                                                                •
+                                                                            </span>
+                                                                            <div>
+                                                                                <p className="text-gray-800 font-medium text-sm">{topic.name}</p>
+                                                                                {topic.description && (
+                                                                                    <p className="text-gray-500 text-xs mt-1">{topic.description}</p>
+                                                                                )}
+                                                                            </div>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
                                                         ))}
-                                                    </ul>
+                                                    </div>
                                                 )}
                                             </div>
                                         )}
@@ -234,7 +263,7 @@ const ClassPage: React.FC = () => {
                                     {subjects.map(subject => (
                                         <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                                             <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                                                <h3 className="font-bold text-gray-800">{subject.name}</h3>
+                                                <h3 className="font-black text-gray-900 tracking-tight text-sm">{subject.name}</h3>
                                             </div>
                                             <div className="divide-y divide-gray-100">
                                                 {!topics[subject.id] ? (
@@ -242,34 +271,47 @@ const ClassPage: React.FC = () => {
                                                 ) : topics[subject.id].length === 0 ? (
                                                     <div className="px-4 py-3 text-sm text-gray-500">No units available.</div>
                                                 ) : (
-                                                    topics[subject.id].map(topic => {
-                                                        const isSelected = selectedUnits.some(u => u.topic.id === topic.id);
-                                                        return (
-                                                            <label
-                                                                key={topic.id}
-                                                                className={`flex items-start gap-4 px-4 py-3 cursor-pointer hover:bg-orange-50/50 transition-colors ${isSelected ? 'bg-orange-50/30' : ''}`}
-                                                            >
-                                                                <div className="mt-0.5">
-                                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-[#a0522d] border-[#a0522d]' : 'border-gray-300 bg-white'}`}>
-                                                                        {isSelected && <svg className="w-3.5 h-3.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                                                                    </div>
-                                                                    {/* Hidden native checkbox for accessibility/state matching */}
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="sr-only"
-                                                                        checked={isSelected}
-                                                                        onChange={() => toggleUnitSelection(subject, topic)}
-                                                                    />
+                                                    <div className="divide-y divide-gray-100">
+                                                        {groupTopicsByUnit(topics[subject.id]).map((group) => (
+                                                            <div key={group.unit_no} className="bg-white">
+                                                                <div className="px-4 py-2 bg-gray-50/50">
+                                                                    <p className="text-[10px] font-bold text-[#a0522d] tracking-wide">
+                                                                        Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
+                                                                    </p>
                                                                 </div>
-                                                                <div className="flex-1">
-                                                                    <p className={`text-sm font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
-                                                                    {topic.description && (
-                                                                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{topic.description}</p>
-                                                                    )}
-                                                                </div>
-                                                            </label>
-                                                        );
-                                                    })
+                                                                {group.topics.map(topic => {
+                                                                    const isSelected = selectedUnits.some(u => u.topic.id === topic.id);
+                                                                    return (
+                                                                        <label
+                                                                            key={topic.id}
+                                                                            className={`flex items-start gap-4 px-6 py-3 cursor-pointer hover:bg-orange-50/50 transition-colors ${isSelected ? 'bg-orange-50/30' : ''}`}
+                                                                        >
+                                                                            <div className="mt-0.5">
+                                                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-[#a0522d] border-[#a0522d]' : 'border-gray-300 bg-white'}`}>
+                                                                                    {isSelected && <svg className="w-3.5 h-3.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                                                                </div>
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    className="sr-only"
+                                                                                    checked={isSelected}
+                                                                                    onChange={() => toggleUnitSelection(subject, topic)}
+                                                                                />
+                                                                            </div>
+                                                                            <div className="flex-1">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="text-[#e69b48]">•</span>
+                                                                                    <p className={`text-sm font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
+                                                                                </div>
+                                                                                {topic.description && (
+                                                                                    <p className="text-xs text-gray-500 mt-1 ml-4 line-clamp-2">{topic.description}</p>
+                                                                                )}
+                                                                            </div>
+                                                                        </label>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>

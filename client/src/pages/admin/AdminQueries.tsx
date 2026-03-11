@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { FaTrash, FaEnvelope, FaPhone, FaCalendarAlt, FaSearch, FaCheckCircle, FaDownload } from 'react-icons/fa';
 
+interface Mentor {
+    id: string;
+    name: string;
+    subject: string;
+}
+
 interface ContactQuery {
     id: string;
     name: string;
@@ -10,17 +16,26 @@ interface ContactQuery {
     query: string;
     is_resolved: boolean;
     created_at: string;
+    assigned_mentor_id?: string;
 }
 
 const AdminQueries: React.FC = () => {
     const [queries, setQueries] = useState<ContactQuery[]>([]);
+    const [mentors, setMentors] = useState<Mentor[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState<'all' | 'unresolved' | 'resolved'>('unresolved');
+    const [assigningId, setAssigningId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchQueries();
+        fetchMentors();
     }, []);
+
+    const fetchMentors = async () => {
+        const { data } = await supabase.from('mentors').select('id, name, subject').eq('is_active', true);
+        setMentors(data || []);
+    };
 
     const fetchQueries = async () => {
         setLoading(true);
@@ -37,6 +52,22 @@ const AdminQueries: React.FC = () => {
             alert(`Fetch error: ${err.message || 'Check your database permissions'}`);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAssignMentor = async (queryId: string, mentorId: string) => {
+        try {
+            const { error } = await supabase
+                .from('contact_queries')
+                .update({ assigned_mentor_id: mentorId })
+                .eq('id', queryId);
+
+            if (error) throw error;
+            setQueries(queries.map(q => q.id === queryId ? { ...q, assigned_mentor_id: mentorId } : q));
+            setAssigningId(null);
+        } catch (err: any) {
+            console.error('Error assigning mentor:', err);
+            alert(`Failed to assign: ${err.message}`);
         }
     };
 
@@ -111,7 +142,7 @@ const AdminQueries: React.FC = () => {
     });
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 font-['Urbanist']">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Inbox Hub</h1>
@@ -218,9 +249,37 @@ const AdminQueries: React.FC = () => {
                                 </div>
 
                                 <div className={`pt-3 border-t mt-auto ${query.is_resolved ? 'border-green-50' : 'border-gray-50'}`}>
-                                    <p className="text-[11px] leading-relaxed italic line-clamp-3 text-gray-500 font-medium">
+                                    <p className="text-[11px] leading-relaxed italic line-clamp-3 text-gray-500 font-medium mb-3">
                                         "{query.query}"
                                     </p>
+
+                                    {!query.is_resolved && (
+                                        <div className="flex flex-col gap-2">
+                                            {assigningId === query.id ? (
+                                                <select
+                                                    className="w-full text-[10px] font-black uppercase tracking-widest bg-gray-50 border border-gray-100 p-2 rounded-lg outline-none focus:border-[#a0522d]"
+                                                    onChange={(e) => handleAssignMentor(query.id, e.target.value)}
+                                                    defaultValue=""
+                                                >
+                                                    <option value="" disabled>Select Mentor</option>
+                                                    {mentors.map(m => (
+                                                        <option key={m.id} value={m.id}>{m.name} ({m.subject})</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setAssigningId(query.id)}
+                                                    className="w-full py-2 bg-white border border-gray-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 hover:text-[#a0522d] hover:border-[#a0522d]/20 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    {query.assigned_mentor_id ? (
+                                                        <>Reassign: {mentors.find(m => m.id === query.assigned_mentor_id)?.name || 'Mentor'}</>
+                                                    ) : (
+                                                        <>Assign Mentor</>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -16,6 +16,8 @@ interface Topic {
     subject_id: string;
     name: string;
     description: string | null;
+    unit_no: number;
+    unit_title: string | null;
     created_at: string;
 }
 
@@ -28,6 +30,8 @@ const AdminClasses: React.FC = () => {
     const [newSubjectName, setNewSubjectName] = useState('');
     const [newTopicName, setNewTopicName] = useState('');
     const [newTopicDesc, setNewTopicDesc] = useState('');
+    const [newUnitNo, setNewUnitNo] = useState<number>(1);
+    const [newUnitTitle, setNewUnitTitle] = useState('');
     const [addingTopicFor, setAddingTopicFor] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -37,6 +41,13 @@ const AdminClasses: React.FC = () => {
     const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
     const [editTopicName, setEditTopicName] = useState('');
     const [editTopicDesc, setEditTopicDesc] = useState('');
+    const [editTopicUnitNo, setEditTopicUnitNo] = useState<number>(1);
+    const [editTopicUnitTitle, setEditTopicUnitTitle] = useState('');
+
+    // Unit Edit states
+    const [editingUnitKey, setEditingUnitKey] = useState<{ subjectId: string, unitNo: number } | null>(null);
+    const [editUnitNo, setEditUnitNo] = useState<number>(1);
+    const [editUnitTitle, setEditUnitTitle] = useState('');
 
     // Fetch subjects for selected class and curriculum
     const fetchSubjects = async () => {
@@ -65,6 +76,7 @@ const AdminClasses: React.FC = () => {
                 .from('class_topics')
                 .select('*')
                 .eq('subject_id', subjectId)
+                .order('unit_no', { ascending: true })
                 .order('created_at', { ascending: true });
 
             if (error) throw error;
@@ -140,12 +152,17 @@ const AdminClasses: React.FC = () => {
                 .insert([{
                     subject_id: subjectId,
                     name: newTopicName.trim(),
-                    description: newTopicDesc.trim() || null
+                    description: newTopicDesc.trim() || null,
+                    unit_no: newUnitNo,
+                    unit_title: newUnitTitle.trim() || null
                 }]);
 
             if (error) throw error;
             setNewTopicName('');
             setNewTopicDesc('');
+            // Keep unit settings for easy consecutive adding if preferred, 
+            // or reset them. Let's keep them but maybe increment unit_no if user wants?
+            // For now, let's just reset name/desc.
             setAddingTopicFor(null);
             fetchTopics(subjectId);
         } catch (err) {
@@ -203,6 +220,8 @@ const AdminClasses: React.FC = () => {
         setEditingTopicId(topic.id);
         setEditTopicName(topic.name);
         setEditTopicDesc(topic.description || '');
+        setEditTopicUnitNo(topic.unit_no);
+        setEditTopicUnitTitle(topic.unit_title || '');
     };
 
     const handleSaveTopic = async (topicId: string, subjectId: string) => {
@@ -212,7 +231,9 @@ const AdminClasses: React.FC = () => {
                 .from('class_topics')
                 .update({
                     name: editTopicName.trim(),
-                    description: editTopicDesc.trim() || null
+                    description: editTopicDesc.trim() || null,
+                    unit_no: editTopicUnitNo,
+                    unit_title: editTopicUnitTitle.trim() || null
                 })
                 .eq('id', topicId);
 
@@ -227,6 +248,54 @@ const AdminClasses: React.FC = () => {
 
     const handleCancelEditTopic = () => {
         setEditingTopicId(null);
+    };
+
+    // Unit edit handlers
+    const handleEditUnit = (unitNo: number, unitTitle: string | null, subjectId: string) => {
+        setEditingUnitKey({ subjectId, unitNo });
+        setEditUnitNo(unitNo);
+        setEditUnitTitle(unitTitle || '');
+    };
+
+    const handleSaveUnit = async () => {
+        if (!editingUnitKey) return;
+        try {
+            const { error } = await supabase
+                .from('class_topics')
+                .update({
+                    unit_no: editUnitNo,
+                    unit_title: editUnitTitle.trim() || null
+                })
+                .eq('subject_id', editingUnitKey.subjectId)
+                .eq('unit_no', editingUnitKey.unitNo);
+
+            if (error) throw error;
+            setEditingUnitKey(null);
+            fetchTopics(editingUnitKey.subjectId);
+        } catch (err) {
+            console.error('Error updating unit:', err);
+            alert('Failed to update unit.');
+        }
+    };
+
+    const handleCancelEditUnit = () => {
+        setEditingUnitKey(null);
+    };
+
+    // Helper to group topics by unit_no
+    const groupTopicsByUnit = (subjectTopics: Topic[]) => {
+        const groups: Record<number, { unit_no: number, unit_title: string | null, topics: Topic[] }> = {};
+        subjectTopics.forEach(topic => {
+            if (!groups[topic.unit_no]) {
+                groups[topic.unit_no] = {
+                    unit_no: topic.unit_no,
+                    unit_title: topic.unit_title,
+                    topics: []
+                };
+            }
+            groups[topic.unit_no].topics.push(topic);
+        });
+        return Object.values(groups).sort((a, b) => a.unit_no - b.unit_no);
     };
 
     return (
@@ -407,87 +476,163 @@ const AdminClasses: React.FC = () => {
                                 {expandedSubject === subject.id && (
                                     <div className="bg-gray-50/50 px-8 pb-4 pt-2 border-t border-gray-50">
                                         {(topics[subject.id] || []).length === 0 ? (
-                                            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest py-3 italic">Empty syllabus</p>
+                                            <p className="text-[10px] font-black text-gray-300 tracking-widest py-3 italic">Empty syllabus</p>
                                         ) : (
-                                            <ul className="space-y-2 mb-4">
-                                                {(topics[subject.id] || []).map((topic) => (
-                                                    <li key={topic.id} className="flex items-start justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md">
-                                                        {editingTopicId === topic.id ? (
-                                                            <div className="flex-1 mr-4 space-y-2">
-                                                                <input
-                                                                    type="text"
-                                                                    value={editTopicName}
-                                                                    onChange={(e) => setEditTopicName(e.target.value)}
-                                                                    className="w-full bg-white border-2 border-[#a0522d] outline-none px-3 py-1.5 rounded-lg text-sm font-black"
-                                                                    placeholder="Topic Name"
-                                                                    autoFocus
-                                                                />
-                                                                <textarea
-                                                                    value={editTopicDesc}
-                                                                    onChange={(e) => setEditTopicDesc(e.target.value)}
-                                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none px-3 py-2 rounded-lg text-xs font-medium resize-none shadow-inner"
-                                                                    placeholder="Description (optional)"
-                                                                    rows={2}
-                                                                />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex-1">
-                                                                <p className="font-black text-gray-800 text-[13px] leading-tight mb-1">{topic.name}</p>
-                                                                {topic.description && (
-                                                                    <p className="text-[11px] text-gray-400 font-medium line-clamp-2">{topic.description}</p>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                        <div className="flex items-center gap-1 opacity-0 group-hover/topic:opacity-100 transition-opacity">
-                                                            {editingTopicId === topic.id ? (
+                                            <div className="space-y-6 mb-6">
+                                                {groupTopicsByUnit(topics[subject.id] || []).map((group) => (
+                                                    <div key={group.unit_no} className="space-y-3">
+                                                        {/* Unit Header */}
+                                                        <div className="flex items-center justify-between group/unit w-full">
+                                                            {editingUnitKey?.subjectId === subject.id && editingUnitKey?.unitNo === group.unit_no ? (
+                                                                <div className="flex items-center gap-2 flex-1">
+                                                                    <input
+                                                                        type="number"
+                                                                        value={editUnitNo}
+                                                                        onChange={(e) => setEditUnitNo(parseInt(e.target.value))}
+                                                                        className="w-16 bg-white border-2 border-[#a0522d] outline-none px-2 py-1 rounded-lg text-xs font-black"
+                                                                        placeholder="No"
+                                                                    />
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editUnitTitle}
+                                                                        onChange={(e) => setEditUnitTitle(e.target.value)}
+                                                                        className="flex-1 bg-white border-2 border-[#a0522d] outline-none px-3 py-1 rounded-lg text-xs font-black"
+                                                                        placeholder="Unit Title (optional)"
+                                                                    />
+                                                                    <button onClick={handleSaveUnit} className="text-green-500 hover:bg-green-50 p-1 rounded-lg"><FaCheck size={10} /></button>
+                                                                    <button onClick={handleCancelEditUnit} className="text-gray-400 hover:bg-gray-100 p-1 rounded-lg"><FaTimes size={10} /></button>
+                                                                </div>
+                                                            ) : (
                                                                 <>
+                                                                    <h3 className="text-xs font-black text-[#a0522d] tracking-wider">
+                                                                        Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
+                                                                    </h3>
                                                                     <button
-                                                                        onClick={() => handleSaveTopic(topic.id, subject.id)}
-                                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-green-500 hover:bg-green-50"
+                                                                        onClick={() => handleEditUnit(group.unit_no, group.unit_title, subject.id)}
+                                                                        className="text-gray-300 hover:text-blue-500 transition-all p-1"
                                                                     >
-                                                                        <FaCheck size={10} />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={handleCancelEditTopic}
-                                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100"
-                                                                    >
-                                                                        <FaTimes size={10} />
+                                                                        <FaEdit size={12} />
                                                                     </button>
                                                                 </>
-                                                            ) : (
-                                                                <div className="flex items-center gap-1 group/topic">
-                                                                    <button
-                                                                        onClick={() => handleEditTopic(topic)}
-                                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
-                                                                    >
-                                                                        <FaEdit size={10} />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteTopic(topic.id, subject.id)}
-                                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                                                                    >
-                                                                        <FaTrash size={10} />
-                                                                    </button>
-                                                                </div>
                                                             )}
                                                         </div>
-                                                    </li>
+
+                                                        {/* Topics list for this unit */}
+                                                        <ul className="space-y-2 pl-4">
+                                                            {group.topics.map((topic) => (
+                                                                <li key={topic.id} className="group/topic flex items-start justify-between bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md">
+                                                                    <div className="flex items-start gap-3 flex-1">
+                                                                        <span className="text-[#e69b48] font-bold mt-1">•</span>
+                                                                        {editingTopicId === topic.id ? (
+                                                                            <div className="flex-1 mr-4 space-y-2">
+                                                                                <input
+                                                                                    type="text"
+                                                                                    value={editTopicName}
+                                                                                    onChange={(e) => setEditTopicName(e.target.value)}
+                                                                                    className="w-full bg-white border-2 border-[#a0522d] outline-none px-3 py-1 rounded-lg text-sm font-black"
+                                                                                    placeholder="Topic Name"
+                                                                                    autoFocus
+                                                                                />
+                                                                                <textarea
+                                                                                    value={editTopicDesc}
+                                                                                    onChange={(e) => setEditTopicDesc(e.target.value)}
+                                                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none px-3 py-2 rounded-lg text-xs font-medium resize-none shadow-inner"
+                                                                                    placeholder="Description (optional)"
+                                                                                    rows={2}
+                                                                                />
+                                                                                <div className="flex gap-2 items-center">
+                                                                                    <label className="text-[9px] font-black text-gray-400 uppercase">Move to Unit:</label>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        value={editTopicUnitNo}
+                                                                                        onChange={(e) => setEditTopicUnitNo(parseInt(e.target.value))}
+                                                                                        className="w-12 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 text-xs"
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="flex-1">
+                                                                                <p className="font-black text-gray-800 text-[13px] leading-tight mb-0.5">{topic.name}</p>
+                                                                                {topic.description && (
+                                                                                    <p className="text-[11px] text-gray-400 font-medium line-clamp-2">{topic.description}</p>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1 opacity-0 group-hover/topic:opacity-100 transition-opacity">
+                                                                        {editingTopicId === topic.id ? (
+                                                                            <>
+                                                                                <button
+                                                                                    onClick={() => handleSaveTopic(topic.id, subject.id)}
+                                                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-green-500 hover:bg-green-50"
+                                                                                >
+                                                                                    <FaCheck size={10} />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={handleCancelEditTopic}
+                                                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100"
+                                                                                >
+                                                                                    <FaTimes size={10} />
+                                                                                </button>
+                                                                            </>
+                                                                        ) : (
+                                                                            <div className="flex items-center gap-1">
+                                                                                <button
+                                                                                    onClick={() => handleEditTopic(topic)}
+                                                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
+                                                                                >
+                                                                                    <FaEdit size={10} />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleDeleteTopic(topic.id, subject.id)}
+                                                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                                                                >
+                                                                                    <FaTrash size={10} />
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
                                                 ))}
-                                            </ul>
+                                            </div>
                                         )}
 
                                         {/* Add Topic Form */}
                                         {addingTopicFor === subject.id ? (
                                             <div className="bg-white p-4 rounded-[20px] border border-gray-100 shadow-xl space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                                <div className="grid grid-cols-4 gap-2">
+                                                    <div className="col-span-1">
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block ml-1">Unit No</label>
+                                                        <input
+                                                            type="number"
+                                                            value={newUnitNo}
+                                                            onChange={(e) => setNewUnitNo(parseInt(e.target.value))}
+                                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-black text-sm"
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-3">
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block ml-1">Unit Title (e.g. Basics of Reading)</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Optional title..."
+                                                            value={newUnitTitle}
+                                                            onChange={(e) => setNewUnitTitle(e.target.value)}
+                                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-black text-sm"
+                                                        />
+                                                    </div>
+                                                </div>
                                                 <input
                                                     type="text"
-                                                    placeholder="Topic Title (e.g. Calculus I)"
+                                                    placeholder="Topic Title (e.g. The Alphabet)"
                                                     value={newTopicName}
                                                     onChange={(e) => setNewTopicName(e.target.value)}
                                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-black text-sm"
                                                 />
                                                 <textarea
-                                                    placeholder="Module details..."
+                                                    placeholder="Topic description (optional)..."
                                                     value={newTopicDesc}
                                                     onChange={(e) => setNewTopicDesc(e.target.value)}
                                                     rows={2}
@@ -499,7 +644,7 @@ const AdminClasses: React.FC = () => {
                                                         disabled={!newTopicName.trim()}
                                                         className="flex-1 bg-[#1B2A5A] text-white py-2.5 rounded-xl font-black text-xs hover:bg-[#142044] disabled:opacity-50 transition"
                                                     >
-                                                        Add Topic
+                                                        Create Topic
                                                     </button>
                                                     <button
                                                         onClick={() => { setAddingTopicFor(null); setNewTopicName(''); setNewTopicDesc(''); }}
@@ -514,7 +659,7 @@ const AdminClasses: React.FC = () => {
                                                 onClick={() => setAddingTopicFor(subject.id)}
                                                 className="w-full py-2 border-2 border-dashed border-gray-100 rounded-xl text-[10px] font-black text-gray-400 uppercase tracking-widest hover:border-[#a0522d] hover:text-[#a0522d] hover:bg-[#a0522d]/5 transition-all flex items-center justify-center gap-2 mt-2"
                                             >
-                                                <FaPlus size={8} /> Add Topic
+                                                <FaPlus size={8} /> Add New Topic
                                             </button>
                                         )}
                                     </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaInbox, FaImages, FaStar, FaHandshake, FaSignOutAlt, FaListOl, FaChalkboardTeacher, FaUserCircle, FaThLarge, FaBook, FaTrophy, FaBriefcase, FaBars, FaTimes } from 'react-icons/fa';
+import { FaInbox, FaImages, FaStar, FaHandshake, FaSignOutAlt, FaListOl, FaChalkboardTeacher, FaUserCircle, FaThLarge, FaBook, FaTrophy, FaBriefcase, FaBars, FaTimes, FaCalendarCheck } from 'react-icons/fa';
 
 const AdminLayout: React.FC = () => {
     const { signOut } = useAuth();
@@ -17,6 +17,7 @@ const AdminLayout: React.FC = () => {
     const menuItems = [
         { path: '/admin', icon: <FaThLarge />, label: 'Dashboard' },
         { path: '/admin/queries', icon: <FaInbox />, label: 'Queries' },
+        { path: '/admin/bookings', icon: <FaCalendarCheck />, label: 'Bookings' },
         { path: '/admin/sliders', icon: <FaImages />, label: 'Hero Section' },
         { path: '/admin/reviews', icon: <FaStar />, label: 'Reviews' },
         { path: '/admin/brands', icon: <FaHandshake />, label: 'Brands' },
@@ -110,15 +111,12 @@ const AdminLayout: React.FC = () => {
                         </div>
                     </div>
 
-                    <Link to="/" className="flex items-center gap-2 cursor-pointer no-underline pointer-events-auto">
-                        <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
-                        <span className="hidden sm:inline font-black text-gray-900 text-lg tracking-tight">Our Home Tuition</span>
-                    </Link>
+                    {/* Redirection logo removed */}
                 </header>
 
                 {/* Content with proper padding and background */}
                 <main className="flex-1 overflow-y-auto bg-gray-50 p-6 lg:p-10">
-                    <div className="max-w-7xl mx-auto">
+                    <div className="w-full">
                         <Outlet />
                     </div>
                 </main>

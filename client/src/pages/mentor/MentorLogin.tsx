@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaFingerprint, FaArrowRight, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaArrowRight, FaEye, FaEyeSlash, FaChalkboardTeacher } from 'react-icons/fa';
 
-const Login: React.FC = () => {
+const MentorLogin: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -34,13 +34,14 @@ const Login: React.FC = () => {
 
                 const userRole = (profile?.role || '').toLowerCase();
 
-                if (userRole === 'admin') {
-                    navigate('/admin');
-                } else if (userRole === 'mentor') {
-                    setError('This login is for staff only. Please use the Mentor Portal.');
+                if (userRole === 'mentor') {
+                    navigate('/mentor-dashboard');
+                } else if (userRole === 'admin') {
+                    setError('This login is for mentors only. Please use the Admin Portal.');
                     await supabase.auth.signOut();
                 } else {
-                    navigate('/');
+                    setError('Unauthorized access. Only mentors can sign in here.');
+                    await supabase.auth.signOut();
                 }
             }
         } catch (err) {
@@ -54,8 +55,8 @@ const Login: React.FC = () => {
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-gray-50/50 relative overflow-hidden font-['Urbanist']">
             {/* Soft Background Gradients */}
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#1B2A5A]/5 rounded-full blur-[100px] -mr-64 -mt-64"></div>
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-100/30 rounded-full blur-[100px] -ml-48 -mb-48"></div>
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#a0522d]/5 rounded-full blur-[100px] -mr-64 -mt-64"></div>
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#ffb76c]/10 rounded-full blur-[100px] -ml-48 -mb-48"></div>
 
             <motion.div
                 initial={{ opacity: 0, scale: 0.98, y: 10 }}
@@ -73,8 +74,8 @@ const Login: React.FC = () => {
                         >
                             <img src="/logo.png" alt="Our Home Tuition" className="w-full h-full object-contain scale-125" />
                         </div>
-                        <h2 className="text-2xl font-bold text-[#1B2A5A] tracking-tight">Admin Login</h2>
-                        <p className="text-gray-400 text-sm mt-1">Access management portal</p>
+                        <h2 className="text-2xl font-bold text-[#1B2A5A] tracking-tight">Mentor Portal</h2>
+                        <p className="text-gray-400 text-sm mt-1 uppercase tracking-widest font-black text-[10px]">Sign in to your dashboard</p>
                     </div>
 
                     <AnimatePresence mode="wait">
@@ -97,8 +98,8 @@ const Login: React.FC = () => {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#1B2A5A] focus:ring-1 focus:ring-[#1B2A5A] outline-none transition-all font-medium text-gray-800 placeholder:text-gray-400 text-sm"
-                                    placeholder="Email Address"
+                                    className="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none transition-all font-medium text-gray-800 placeholder:text-gray-400 text-sm"
+                                    placeholder="Mentor Email"
                                     required
                                 />
                             </div>
@@ -110,7 +111,7 @@ const Login: React.FC = () => {
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#1B2A5A] focus:ring-1 focus:ring-[#1B2A5A] outline-none transition-all font-medium text-gray-800 placeholder:text-gray-400 text-sm"
+                                    className="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none transition-all font-medium text-gray-800 placeholder:text-gray-400 text-sm"
                                     placeholder="Password"
                                     required
                                 />
@@ -134,15 +135,15 @@ const Login: React.FC = () => {
                             {loading ? (
                                 <>Signing In... <div className="w-5 h-5 border-[3px] border-white/20 border-t-white rounded-full animate-spin"></div></>
                             ) : (
-                                <>Sign In <FaArrowRight size={14} /></>
+                                <>Mentor Sign In <FaArrowRight size={14} /></>
                             )}
                         </motion.button>
                     </form>
 
                     <div className="mt-8 text-center pt-6 border-t border-gray-100">
                         <div className="flex items-center justify-center gap-2 text-[10px] text-gray-300 font-bold uppercase tracking-widest">
-                            <FaFingerprint size={12} className="opacity-50" />
-                            Secure Admin Access
+                            <FaChalkboardTeacher size={12} className="opacity-50" />
+                            Secure Mentor Access
                         </div>
                     </div>
                 </div>
@@ -160,4 +161,4 @@ const Login: React.FC = () => {
     );
 };
 
-export default Login;
+export default MentorLogin;

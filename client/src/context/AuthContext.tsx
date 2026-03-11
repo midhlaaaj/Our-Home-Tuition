@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.error('Error fetching role:', error);
                 return null;
             }
-            return data?.role || 'user';
+            return data?.role?.toLowerCase() || 'user';
         } catch (error) {
             console.error('Error fetching role:', error);
             return null;

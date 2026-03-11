@@ -1,14 +1,18 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CurriculumProvider } from './context/CurriculumContext';
 import ScrollToTop from './components/ScrollToTop';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import Home from './pages/Home';
 import About from './pages/About';
 import Auth from './pages/Auth';
 import Login from './pages/Login';
 import AdminLayout from './layout/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
+import MentorDashboard from './pages/mentor/MentorDashboard';
+import MentorLogin from './pages/mentor/MentorLogin';
+import ProtectedRoute from './components/ProtectedRoute';
 import AdminQueries from './pages/admin/AdminQueries';
+import AdminBookings from './pages/admin/AdminBookings';
 import Sliders from './pages/admin/Sliders';
 import Reviews from './pages/admin/Reviews';
 import Brands from './pages/admin/Brands';
@@ -25,26 +29,6 @@ import Profile from './pages/Profile';
 import ClassPage from './pages/ClassPage';
 import BookingPage from './pages/BookingPage';
 
-// Protected Route Wrapper
-const ProtectedRoute = () => {
-  const { user, role, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  // Check if user is logged in AND has admin role
-  if (!user || role !== 'admin') {
-    return <Navigate to="/admin/login" replace />;
-  }
-
-  return <Outlet />;
-};
-
 function App() {
   return (
     <AuthProvider>
@@ -60,11 +44,14 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/login" element={<Login />} />
+            <Route path="/mentor/login" element={<MentorLogin />} />
 
-            <Route path="/admin" element={<ProtectedRoute />}>
-              <Route element={<AdminLayout />}>
+            {/* Admin Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="queries" element={<AdminQueries />} />
+                <Route path="bookings" element={<AdminBookings />} />
                 <Route path="sliders" element={<Sliders />} />
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="brands" element={<Brands />} />
@@ -77,6 +64,11 @@ function App() {
                 <Route path="applications" element={<AdminApplications />} />
                 <Route path="achievements" element={<AdminAchievements />} />
               </Route>
+            </Route>
+
+            {/* Mentor Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['mentor']} redirectPath="/mentor/login" />}>
+              <Route path="/mentor-dashboard" element={<MentorDashboard />} />
             </Route>
           </Routes>
         </Router>

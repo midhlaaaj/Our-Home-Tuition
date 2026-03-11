@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import { FaInbox, FaUsers, FaBriefcase, FaArrowRight } from 'react-icons/fa';
+import { FaInbox, FaUsers, FaBriefcase, FaArrowRight, FaCalendarCheck } from 'react-icons/fa';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const [stats, setStats] = useState({
         queries: 0,
+        bookings: 0,
         applicants: 0,
         jobs: 0
     });
@@ -20,19 +21,22 @@ const Dashboard: React.FC = () => {
             try {
                 // Using a more robust count method without 'head: true' if it's causing issues, 
                 // but select('id') is enough for a count.
-                const [queriesRes, applicantsRes, jobsRes] = await Promise.all([
+                const [queriesRes, bookingsRes, applicantsRes, jobsRes] = await Promise.all([
                     supabase.from('contact_queries').select('id', { count: 'exact' }).eq('is_resolved', false),
+                    supabase.from('bookings').select('id', { count: 'exact' }).eq('status', 'pending'),
                     supabase.from('job_applications').select('id', { count: 'exact' }),
                     supabase.from('jobs').select('id', { count: 'exact' }).eq('is_active', true)
                 ]);
 
-                if (queriesRes.error || applicantsRes.error || jobsRes.error) {
+                if (queriesRes.error || bookingsRes.error || applicantsRes.error || jobsRes.error) {
                     setHasSyncError(true);
                     if (queriesRes.error) console.error('Queries count error:', queriesRes.error);
+                    if (bookingsRes.error) console.error('Bookings count error:', bookingsRes.error);
                 }
 
                 setStats({
                     queries: queriesRes.count || 0,
+                    bookings: bookingsRes.count || 0,
                     applicants: applicantsRes.count || 0,
                     jobs: jobsRes.count || 0
                 });
@@ -56,6 +60,15 @@ const Dashboard: React.FC = () => {
             color: 'from-orange-400 to-orange-500',
             shadow: 'shadow-orange-200',
             label: 'Unresolved'
+        },
+        {
+            title: 'Active Bookings',
+            count: stats.bookings,
+            icon: <FaCalendarCheck />,
+            path: '/admin/bookings',
+            color: 'from-blue-400 to-blue-600',
+            shadow: 'shadow-blue-200',
+            label: 'Pending'
         },
         {
             title: 'Total Applicants',

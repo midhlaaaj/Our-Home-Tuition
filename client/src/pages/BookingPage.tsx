@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaUsers, FaArrowLeft, FaCheckCircle, FaTrash } from 'react-icons/fa';
+import {
+    FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaUsers,
+    FaArrowLeft, FaCheckCircle, FaTrash, FaClipboardList, FaGraduationCap
+} from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
-import { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LocationState {
     selectedUnits: { subject: any, topic: any }[];
@@ -17,27 +20,6 @@ const BookingPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const state = location.state as LocationState;
-
-    if (!state || !state.selectedUnits || state.selectedUnits.length === 0) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex flex-col font-sans pt-[64px]">
-                <Header />
-                <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
-                    <h2 className="text-2xl font-bold text-gray-800">No session selected</h2>
-                    <p className="text-gray-500 mt-2 mb-6">Please go back to the class page and select units to book.</p>
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="bg-[#a0522d] hover:bg-[#804224] text-white px-6 py-2.5 rounded-lg font-bold transition-colors"
-                    >
-                        Go Back
-                    </button>
-                </div>
-                <Footer />
-            </div>
-        );
-    }
-
-    const { selectedUnits, classInfo, curriculum } = state;
 
     // Form State
     const [name, setName] = useState('');
@@ -87,9 +69,9 @@ const BookingPage: React.FC = () => {
                 .from('bookings')
                 .insert({
                     user_id: user.id,
-                    class_id: classInfo.id,
-                    curriculum,
-                    selected_units: selectedUnits.map(su => ({
+                    class_id: state?.classInfo.id,
+                    curriculum: state?.curriculum,
+                    selected_units: state?.selectedUnits.map(su => ({
                         subject_id: su.subject.id,
                         topic_id: su.topic.id,
                         subject_name: su.subject.name,
@@ -112,22 +94,61 @@ const BookingPage: React.FC = () => {
         }
     };
 
+    if (!state || !state.selectedUnits || state.selectedUnits.length === 0) {
+        return (
+            <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-['Urbanist'] pt-[64px]">
+                <Header />
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-white p-12 rounded-[40px] shadow-xl border border-gray-100 max-w-md w-full"
+                    >
+                        <div className="w-20 h-20 bg-orange-50 text-[#a0522d] rounded-3xl flex items-center justify-center mx-auto mb-6">
+                            <FaClipboardList size={32} />
+                        </div>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Cart Empty</h2>
+                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-2 mb-8">Please select units to proceed with booking</p>
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="w-full bg-[#1B2A5A] hover:bg-[#142044] text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#1B2A5A]/20"
+                        >
+                            Return to Class Page
+                        </button>
+                    </motion.div>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    const { selectedUnits, classInfo, curriculum } = state;
+
     if (isSuccess) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col font-sans pt-[64px]">
+            <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-['Urbanist'] pt-[64px]">
                 <Header />
-                <div className="flex-1 flex flex-col items-center justify-center p-4 text-center max-w-lg mx-auto">
-                    <FaCheckCircle className="text-green-500 text-6xl mb-6" />
-                    <h2 className="text-3xl font-bold text-gray-800">Booking Confirmed!</h2>
-                    <p className="text-gray-500 mt-3 mb-8">
-                        Thank you for booking with Our Home Tuition. We have received your request for {selectedUnits.length} unit(s) and will contact you shortly at {phone}.
-                    </p>
-                    <button
-                        onClick={() => navigate('/')}
-                        className="bg-[#a0522d] hover:bg-[#804224] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-md"
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="bg-white p-12 rounded-[40px] shadow-2xl border border-gray-100 max-w-xl w-full"
                     >
-                        Return Home
-                    </button>
+                        <div className="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-green-100/50">
+                            <FaCheckCircle size={48} />
+                        </div>
+                        <h2 className="text-4xl font-black text-gray-900 tracking-tight mb-4">Request Sent!</h2>
+                        <p className="text-gray-500 text-sm font-medium leading-relaxed max-w-sm mx-auto mb-10">
+                            We've received your booking for <span className="text-[#a0522d] font-bold">{selectedUnits.length} session(s)</span>.
+                            Our team will manually assign a mentor and contact you at <span className="font-bold">{phone}</span> shortly.
+                        </p>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="bg-[#1B2A5A] hover:bg-[#142044] text-white px-10 py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-xl shadow-[#1B2A5A]/20"
+                        >
+                            Back to Home
+                        </button>
+                    </motion.div>
                 </div>
                 <Footer />
             </div>
@@ -135,290 +156,343 @@ const BookingPage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col font-sans pt-[64px]">
+        <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-['Urbanist'] pt-[64px]">
             <Header />
 
-            <main className="flex-grow container mx-auto px-4 py-8">
-                <button
+            <main className="flex-grow container mx-auto px-6 py-12 max-w-7xl">
+                <motion.button
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors font-medium mb-6"
+                    className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-all font-black text-[10px] uppercase tracking-widest mb-10 group"
                 >
-                    <FaArrowLeft size={14} /> Back to {classInfo.label}
-                </button>
+                    <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" /> Back to {classInfo.label}
+                </motion.button>
 
-                <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     {/* Form Section */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                            <h1 className="text-2xl font-bold text-gray-800 mb-6">Complete Your Booking</h1>
+                    <div className="lg:col-span-8 space-y-8">
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            className="bg-white rounded-[40px] shadow-sm border border-gray-100 p-10"
+                        >
+                            <div className="flex items-center gap-4 mb-10">
+                                <div className="w-12 h-12 bg-orange-50 text-[#a0522d] rounded-2xl flex items-center justify-center">
+                                    <FaUser size={20} />
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Booking Registration</h1>
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Provide student information for the tutor</p>
+                                </div>
+                            </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-6">
+                            <form onSubmit={handleSubmit} className="space-y-10">
                                 {/* Personal Details */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Primary Student Details</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                                            <div className="relative">
-                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                    <FaUser />
+                                <div className="space-y-6">
+                                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#a0522d] mb-6 flex items-center gap-3">
+                                        <span className="w-8 h-[1px] bg-[#a0522d]/30"></span> Primary Enrollee
+                                    </h3>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Full Name</label>
+                                            <div className="relative group">
+                                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#a0522d] transition-colors">
+                                                    <FaUser size={14} />
                                                 </div>
                                                 <input
                                                     type="text"
                                                     required
                                                     value={name}
                                                     onChange={e => setName(e.target.value)}
-                                                    className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-[#a0522d] focus:border-[#a0522d] outline-none"
-                                                    placeholder="Enter name"
+                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-300"
+                                                    placeholder="e.g. John Doe"
                                                 />
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
-                                            <div className="relative">
-                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                    <FaEnvelope />
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Contact Email</label>
+                                            <div className="relative group">
+                                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#a0522d] transition-colors">
+                                                    <FaEnvelope size={14} />
                                                 </div>
                                                 <input
                                                     type="email"
                                                     required
                                                     value={email}
                                                     onChange={e => setEmail(e.target.value)}
-                                                    className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-[#a0522d] focus:border-[#a0522d] outline-none"
-                                                    placeholder="Enter email"
+                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-300"
+                                                    placeholder="email@example.com"
                                                 />
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-                                            <div className="relative">
-                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                    <FaPhone />
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Phone Number</label>
+                                            <div className="relative group">
+                                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#a0522d] transition-colors">
+                                                    <FaPhone size={14} />
                                                 </div>
                                                 <input
                                                     type="tel"
                                                     required
                                                     value={phone}
                                                     onChange={e => setPhone(e.target.value)}
-                                                    className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-[#a0522d] focus:border-[#a0522d] outline-none"
-                                                    placeholder="Enter phone number"
+                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-300"
+                                                    placeholder="+91 XXXXX XXXXX"
                                                 />
                                             </div>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between items-end mb-1">
-                                            <label className="block text-sm font-medium text-gray-700">Full Address *</label>
-                                            <button
-                                                type="button"
-                                                onClick={async () => {
-                                                    if (!navigator.geolocation) {
-                                                        alert("Geolocation is not supported by your browser");
-                                                        return;
-                                                    }
-                                                    setAddress("Fetching location...");
-                                                    navigator.geolocation.getCurrentPosition(async (position) => {
-                                                        try {
-                                                            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&addressdetails=1`);
-                                                            const data = await response.json();
-                                                            if (data && data.display_name) {
-                                                                setAddress(data.display_name);
-                                                            } else {
-                                                                setAddress("Could not determine address.");
-                                                            }
-                                                        } catch (error) {
-                                                            console.error("Error fetching address:", error);
-                                                            setAddress("Error fetching address.");
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Full Service Address</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        if (!navigator.geolocation) {
+                                                            alert("Geolocation is not supported by your browser");
+                                                            return;
                                                         }
-                                                    }, () => {
-                                                        setAddress("Location access denied.");
-                                                    });
-                                                }}
-                                                className="text-xs font-semibold text-[#a0522d] hover:text-[#804224] flex items-center gap-1 bg-orange-50 px-2 py-1 rounded border border-orange-200 transition-colors"
-                                            >
-                                                Use Current Location
-                                            </button>
-                                        </div>
-                                        <div className="relative">
-                                            <div className="absolute top-3 left-3 text-gray-400">
-                                                <FaMapMarkerAlt />
+                                                        setAddress("Fetching location...");
+                                                        navigator.geolocation.getCurrentPosition(async (position) => {
+                                                            try {
+                                                                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&addressdetails=1`);
+                                                                const data = await response.json();
+                                                                if (data && data.display_name) {
+                                                                    setAddress(data.display_name);
+                                                                } else {
+                                                                    setAddress("Could not determine address.");
+                                                                }
+                                                            } catch (error) {
+                                                                console.error("Error fetching address:", error);
+                                                                setAddress("Error fetching address.");
+                                                            }
+                                                        }, () => {
+                                                            setAddress("Location access denied.");
+                                                        });
+                                                    }}
+                                                    className="text-[9px] font-black uppercase tracking-widest text-[#a0522d] hover:text-[#804224] flex items-center gap-1.5 transition-colors"
+                                                >
+                                                    <FaMapMarkerAlt size={8} /> Auto-Detect
+                                                </button>
                                             </div>
-                                            <textarea
-                                                required
-                                                value={address}
-                                                onChange={e => setAddress(e.target.value)}
-                                                rows={3}
-                                                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-[#a0522d] focus:border-[#a0522d] outline-none resize-none"
-                                                placeholder="Enter address"
-                                            />
+                                            <div className="relative group col-span-full">
+                                                <textarea
+                                                    required
+                                                    value={address}
+                                                    onChange={e => setAddress(e.target.value)}
+                                                    rows={1}
+                                                    className="w-full px-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-300 resize-none"
+                                                    placeholder="Door No, Street, Landmark, City..."
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Class Type */}
-                                <div className="space-y-4 pt-4">
-                                    <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Class Format</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <label
-                                            className={`flex p-4 border rounded-xl cursor-pointer transition-all ${classType === 'individual' ? 'border-[#a0522d] bg-orange-50/50 ring-1 ring-[#a0522d]' : 'border-gray-200 hover:border-gray-300'}`}
-                                        >
-                                            <div className="flex items-center h-5">
+                                <div className="space-y-6 pt-4">
+                                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#a0522d] mb-6 flex items-center gap-3">
+                                        <span className="w-8 h-[1px] bg-[#a0522d]/30"></span> Session Format
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {[
+                                            { id: 'individual', icon: <FaUser />, title: 'Premium Solo', desc: '1-on-1 personalized academic coaching' },
+                                            { id: 'group', icon: <FaUsers />, title: 'Collaborative Duo', desc: 'Study with siblings or friends (Group)' }
+                                        ].map(option => (
+                                            <label
+                                                key={option.id}
+                                                className={`relative flex flex-col p-6 rounded-[32px] cursor-pointer transition-all border-2 ${classType === option.id
+                                                    ? 'border-[#a0522d] bg-[#a0522d]/5 shadow-xl shadow-[#a0522d]/5'
+                                                    : 'border-transparent bg-gray-50/50 hover:bg-gray-50'
+                                                    }`}
+                                            >
                                                 <input
                                                     type="radio"
                                                     name="classType"
-                                                    value="individual"
-                                                    checked={classType === 'individual'}
-                                                    onChange={() => setClassType('individual')}
-                                                    className="w-4 h-4 text-[#a0522d] border-gray-300 focus:ring-[#a0522d]"
+                                                    value={option.id}
+                                                    checked={classType === option.id}
+                                                    onChange={() => setClassType(option.id as any)}
+                                                    className="absolute top-6 right-6 w-5 h-5 accent-[#a0522d]"
                                                 />
-                                            </div>
-                                            <div className="ml-3">
-                                                <span className="block text-sm font-bold text-gray-800 flex items-center gap-2">
-                                                    <FaUser className={classType === 'individual' ? 'text-[#a0522d]' : 'text-gray-400'} />
-                                                    Individual Class
-                                                </span>
-                                                <span className="block text-xs text-gray-500 mt-1">1-on-1 personalized attention for the student.</span>
-                                            </div>
-                                        </label>
-
-                                        <label
-                                            className={`flex p-4 border rounded-xl cursor-pointer transition-all ${classType === 'group' ? 'border-[#a0522d] bg-orange-50/50 ring-1 ring-[#a0522d]' : 'border-gray-200 hover:border-gray-300'}`}
-                                        >
-                                            <div className="flex items-center h-5">
-                                                <input
-                                                    type="radio"
-                                                    name="classType"
-                                                    value="group"
-                                                    checked={classType === 'group'}
-                                                    onChange={() => setClassType('group')}
-                                                    className="w-4 h-4 text-[#a0522d] border-gray-300 focus:ring-[#a0522d]"
-                                                />
-                                            </div>
-                                            <div className="ml-3">
-                                                <span className="block text-sm font-bold text-gray-800 flex items-center gap-2">
-                                                    <FaUsers className={classType === 'group' ? 'text-[#a0522d]' : 'text-gray-400'} />
-                                                    Group Class
-                                                </span>
-                                                <span className="block text-xs text-gray-500 mt-1">Learn together with friends or siblings.</span>
-                                            </div>
-                                        </label>
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${classType === option.id ? 'bg-[#a0522d] text-white' : 'bg-white text-gray-400'}`}>
+                                                    {option.icon}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <span className="block text-sm font-black text-gray-900 uppercase tracking-widest">{option.title}</span>
+                                                    <span className="block text-[11px] text-gray-500 font-medium leading-relaxed">{option.desc}</span>
+                                                </div>
+                                            </label>
+                                        ))}
                                     </div>
                                 </div>
 
                                 {/* Dynamic Group Fields */}
-                                {classType === 'group' && (
-                                    <div className="space-y-4 pt-4 border-t border-gray-100 p-6 bg-gray-50 rounded-xl mt-6">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <div>
-                                                <h3 className="text-base font-semibold text-gray-800">Additional Students</h3>
-                                                <p className="text-xs text-gray-500 mt-0.5">Please provide basic details for each extra student joining.</p>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={handleAddStudent}
-                                                className="text-[#a0522d] text-sm font-semibold hover:text-[#804224] transition-colors bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm"
-                                            >
-                                                + Add Student
-                                            </button>
-                                        </div>
-
-                                        {additionalStudents.length === 0 ? (
-                                            <div className="text-center py-4 bg-white rounded-lg border border-dashed border-gray-300 text-sm text-gray-400">
-                                                No additional students added yet.
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                {additionalStudents.map((student, index) => (
-                                                    <div key={student.id} className="flex gap-3 items-end bg-white p-3 rounded-lg border border-gray-200 shadow-sm relative group">
-                                                        <div className="absolute -top-2.5 -left-2.5 bg-[#a0522d] text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ring-4 ring-gray-50">
-                                                            {index + 2}
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">Name</label>
-                                                            <input
-                                                                type="text"
-                                                                required
-                                                                value={student.name}
-                                                                onChange={e => handleStudentChange(student.id, 'name', e.target.value)}
-                                                                className="w-full px-3 py-1.5 border border-gray-200 rounded outline-none text-sm focus:border-[#a0522d]"
-                                                                placeholder="Enter name"
-                                                            />
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">Email <span className="font-normal opacity-70">(optional)</span></label>
-                                                            <input
-                                                                type="email"
-                                                                value={student.email}
-                                                                onChange={e => handleStudentChange(student.id, 'email', e.target.value)}
-                                                                className="w-full px-3 py-1.5 border border-gray-200 rounded outline-none text-sm focus:border-[#a0522d]"
-                                                                placeholder="Enter email"
-                                                            />
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleRemoveStudent(student.id)}
-                                                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors mb-[1px]"
-                                                            title="Remove Student"
-                                                        >
-                                                            <FaTrash size={14} />
-                                                        </button>
+                                <AnimatePresence>
+                                    {classType === 'group' && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="space-y-6 pt-8 border-t border-gray-100 bg-[#F8FAFC]/50 p-8 rounded-[40px] mt-6">
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Additional Peers</h3>
+                                                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Multi-student registration</p>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleAddStudent}
+                                                        className="bg-white text-[#a0522d] text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-gray-100 shadow-sm hover:translate-y-[-2px] transition-all"
+                                                    >
+                                                        + Add Student
+                                                    </button>
+                                                </div>
 
-                                <div className="pt-6 border-t mt-8">
+                                                {additionalStudents.length === 0 ? (
+                                                    <div className="text-center py-10 bg-white/40 border-2 border-dashed border-gray-200 rounded-[32px] text-[10px] font-black uppercase tracking-widest text-gray-300">
+                                                        No group members added
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-4">
+                                                        {additionalStudents.map((student, index) => (
+                                                            <motion.div
+                                                                key={student.id}
+                                                                initial={{ x: 20, opacity: 0 }}
+                                                                animate={{ x: 0, opacity: 1 }}
+                                                                className="flex flex-col sm:flex-row gap-4 items-center bg-white p-5 rounded-[28px] border border-gray-100 shadow-sm group"
+                                                            >
+                                                                <div className="w-10 h-10 bg-[#a0522d] text-white rounded-xl flex items-center justify-center text-xs font-black shadow-lg shadow-[#a0522d]/20 shrink-0">
+                                                                    {index + 2}
+                                                                </div>
+                                                                <div className="flex-1 w-full space-y-1">
+                                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">Member Name</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        required
+                                                                        value={student.name}
+                                                                        onChange={e => handleStudentChange(student.id, 'name', e.target.value)}
+                                                                        className="w-full px-5 py-3 bg-gray-50 border border-gray-50 rounded-2xl outline-none text-xs font-bold focus:bg-white focus:border-[#a0522d] transition-all"
+                                                                        placeholder="Full name"
+                                                                    />
+                                                                </div>
+                                                                <div className="flex-1 w-full space-y-1">
+                                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">Email (Optional)</label>
+                                                                    <input
+                                                                        type="email"
+                                                                        value={student.email}
+                                                                        onChange={e => handleStudentChange(student.id, 'email', e.target.value)}
+                                                                        className="w-full px-5 py-3 bg-gray-50 border border-gray-50 rounded-2xl outline-none text-xs font-bold focus:bg-white focus:border-[#a0522d] transition-all"
+                                                                        placeholder="contact@email.com"
+                                                                    />
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleRemoveStudent(student.id)}
+                                                                    className="w-10 h-10 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shrink-0"
+                                                                >
+                                                                    <FaTrash size={12} />
+                                                                </button>
+                                                            </motion.div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                <div className="pt-10">
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="w-full bg-[#a0522d] hover:bg-[#804224] disabled:bg-gray-400 text-white py-3.5 rounded-xl font-bold text-lg transition-all shadow-md flex justify-center items-center"
+                                        className="w-full bg-gradient-to-r from-[#1B2A5A] to-[#2A4185] hover:scale-[1.01] active:scale-95 disabled:bg-gray-300 text-white py-6 rounded-[28px] font-black text-[12px] uppercase tracking-[0.3em] transition-all shadow-2xl shadow-[#1B2A5A]/30 flex justify-center items-center gap-4"
                                     >
                                         {isSubmitting ? (
-                                            <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                         ) : (
-                                            'Confirm Booking'
+                                            <>Confirm Appointment <FaCheckCircle /></>
                                         )}
                                     </button>
                                 </div>
                             </form>
-                        </div>
+                        </motion.div>
                     </div>
 
                     {/* Order Summary Sidebar */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-[80px]">
-                            <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-4">Booking Summary</h2>
+                    <div className="lg:col-span-4">
+                        <motion.div
+                            initial={{ x: 20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            className="bg-white rounded-[40px] shadow-sm border border-gray-100 p-8 sticky top-[100px]"
+                        >
+                            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-8">Summary</h2>
 
-                            <div className="mb-6">
-                                <p className="text-sm font-medium text-gray-500">Class & Curriculum</p>
-                                <p className="text-lg font-bold text-gray-800">{classInfo.label} <span className="text-sm font-semibold bg-gray-100 px-2 py-0.5 rounded text-gray-600 ml-2">{curriculum}</span></p>
-                            </div>
-
-                            <div className="space-y-4">
-                                <p className="text-sm font-medium text-gray-500 border-b pb-2">Selected Units ({selectedUnits.length})</p>
-                                <div className="max-h-[300px] overflow-y-auto pr-2 space-y-3">
-                                    {selectedUnits.map((item, index) => (
-                                        <div key={index} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                            <p className="text-xs font-semibold text-[#a0522d] uppercase tracking-wider mb-1">{item.subject.name}</p>
-                                            <p className="text-sm font-medium text-gray-800">{item.topic.name}</p>
+                            <div className="space-y-8">
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                                            <FaGraduationCap size={14} />
                                         </div>
-                                    ))}
+                                        <div className="space-y-0.5">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{curriculum}</p>
+                                            <p className="text-sm font-black text-gray-900">{classInfo.label}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] border-b border-orange-50 pb-3">Enrolled Units ({selectedUnits.length})</h3>
+                                    <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar space-y-3">
+                                        {selectedUnits.map((item, index) => (
+                                            <div key={index} className="bg-gray-50/50 p-5 rounded-[24px] border border-gray-50 group hover:bg-white hover:border-orange-100 transition-all">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{item.subject.name}</p>
+                                                    <span className="w-1.5 h-1.5 bg-orange-200 rounded-full group-hover:bg-[#a0522d] transition-colors"></span>
+                                                </div>
+                                                <p className="text-xs font-black text-gray-800 leading-relaxed">{item.topic.name}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="pt-6 border-t border-gray-50">
+                                    <div className="bg-[#1B2A5A]/5 p-5 rounded-[24px] border border-[#1B2A5A]/10">
+                                        <div className="flex items-center gap-3 text-[#1B2A5A] mb-2">
+                                            <FaCheckCircle className="shrink-0" size={14} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Pricing Policy</span>
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
+                                            Fees will be finalized by our representative based on mentors' level and scheduling preferences.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div className="mt-6 pt-4 border-t bg-gray-50 p-4 rounded-xl">
-                                <p className="text-xs text-center text-gray-500 font-medium">
-                                    A representative will contact you shortly to confirm the schedule and finalize the payment.
-                                </p>
-                            </div>
-                        </div>
+                        </motion.div>
                     </div>
                 </div>
             </main>
 
             <Footer />
+
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #e2e8f0;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #cbd5e1;
+                }
+            `}</style>
         </div>
     );
 };
