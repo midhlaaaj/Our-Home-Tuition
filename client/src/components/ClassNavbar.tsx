@@ -14,7 +14,7 @@ const ClassNavbar: React.FC = () => {
                         <Link
                             key={cls.id}
                             to={`/class/${cls.id}`}
-                            className={`flex-1 text-center px-2 py-3 text-sm font-medium transition-colors hover:bg-gray-700 hover:text-white ${isActive ? 'bg-[#04AA6D] text-white' : 'text-gray-300'
+                            className={`flex-1 text-center px-2 py-3 text-sm font-medium transition-colors hover:bg-gray-700 hover:text-white ${isActive ? 'bg-[#c75e33] text-white' : 'text-gray-300'
                                 }`}
                         >
                             {cls.label.toUpperCase()}

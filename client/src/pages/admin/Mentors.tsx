@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { FaTrash, FaEdit, FaUpload, FaPlus, FaUserCircle } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaUpload, FaPlus, FaUserCircle, FaInfoCircle, FaMapMarkerAlt } from 'react-icons/fa';
 import { uploadFile } from '../../utils/uploadHelper';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,6 +19,9 @@ interface Mentor {
     rating?: number;
     birth_year?: number;
     auth_user_id?: string;
+    location_address?: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 const Mentors: React.FC = () => {
@@ -87,30 +90,33 @@ const Mentors: React.FC = () => {
         setLoading(true);
 
         try {
-            const mentorData = {
+            let mentorData: any = {
                 name: form.name,
-                subject: form.subject,
-                description: form.description,
-                image_url: form.image_url,
-                is_active: form.is_active,
                 email: form.email,
-                contact_no: form.contact_no,
-                linkedin_url: form.linkedin_url,
-                qualification: form.qualification,
-                work_history: form.work_history,
-                birth_year: form.birth_year ? parseInt(form.birth_year.toString()) : null
+                is_active: true // Default to active for new registrations
             };
 
             if (isEditing && editId) {
+                mentorData = {
+                    name: form.name,
+                    email: form.email,
+                    is_active: form.is_active
+                };
                 const { error } = await supabase
                     .from('mentors')
                     .update(mentorData)
                     .eq('id', editId);
                 if (error) throw error;
             } else {
+                // For new mentors, we also set default values for required fields to avoid DB errors if any
                 const { error } = await supabase
                     .from('mentors')
-                    .insert([mentorData]);
+                    .insert([{
+                        ...mentorData,
+                        subject: 'TBD',
+                        description: 'Profile pending update by mentor.',
+                        image_url: 'https://via.placeholder.com/150'
+                    }]);
                 if (error) throw error;
             }
 
@@ -143,14 +149,12 @@ const Mentors: React.FC = () => {
     };
 
     const handleCreateAccount = async (mentor: Mentor) => {
-        if (!mentor.email || !mentor.birth_year) {
-            alert('Email and Birth Year are required for account creation.');
+        if (!mentor.email) {
+            alert('Email is required for account creation.');
             return;
         }
 
-        const firstName = mentor.name.split(' ')[0].toLowerCase();
-        const lastName = mentor.name.split(' ').slice(1).join('').toLowerCase();
-        const password = `${firstName}${lastName}@${mentor.birth_year}`;
+        const password = `123@ourhometuition`;
 
         if (!window.confirm(`Create account for ${mentor.email} with password: ${password}?`)) return;
 
@@ -196,7 +200,16 @@ const Mentors: React.FC = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Manage Mentors</h1>
-                    <p className="text-sm text-gray-500 font-medium">Configure teacher profiles and system access.</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-500 font-medium">Configure teacher profiles and system access.</p>
+                        <div className="group relative">
+                            <FaInfoCircle className="text-blue-400 cursor-help" size={14} />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-[#1B2A5A] text-white text-[10px] font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-50">
+                                <p className="uppercase tracking-widest mb-1 opacity-60">Portal Access</p>
+                                Default Password: <span className="text-blue-200">123@ourhometuition</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -233,138 +246,18 @@ const Mentors: React.FC = () => {
                                 value={form.name || ''}
                                 onChange={e => {
                                     const name = e.target.value;
-                                    const firstName = name.split(' ')[0].toLowerCase();
-                                    const generatedEmail = name ? `${firstName} @ourhometuition.com` : '';
+                                    const firstName = name.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
+                                    const generatedEmail = name ? `${firstName}@ourhometuition.com` : '';
                                     setForm({ ...form, name, email: form.email || generatedEmail });
                                 }}
                                 required
                             />
                         </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Subject Expertise</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. Mathematics"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
-                                value={form.subject || ''}
-                                onChange={e => setForm({ ...form, subject: e.target.value })}
-                                required
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email (System Access)</label>
-                            <input
-                                type="email"
-                                placeholder="name@ourhometuition.com"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
-                                value={form.email || ''}
-                                onChange={e => setForm({ ...form, email: e.target.value })}
-                                required
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contact Number</label>
-                            <input
-                                type="text"
-                                placeholder="+91 ..."
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
-                                value={form.contact_no || ''}
-                                onChange={e => setForm({ ...form, contact_no: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">LinkedIn URL</label>
-                            <input
-                                type="url"
-                                placeholder="https://linkedin.com/in/..."
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
-                                value={form.linkedin_url || ''}
-                                onChange={e => setForm({ ...form, linkedin_url: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Birth Year (For Password)</label>
-                            <input
-                                type="number"
-                                placeholder="1995"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
-                                value={form.birth_year || ''}
-                                onChange={e => setForm({ ...form, birth_year: parseInt(e.target.value) || undefined })}
-                                required
-                            />
-                        </div>
-
-                        <div className="md:col-span-2 lg:col-span-3 space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Educational Qualification</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. M.Sc in Mathematics, B.Ed"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
-                                value={form.qualification || ''}
-                                onChange={e => setForm({ ...form, qualification: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="md:col-span-2 lg:col-span-3 space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Work History</label>
-                            <textarea
-                                placeholder="Previous experience, schools, etc..."
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-4 rounded-xl transition-all font-medium resize-none text-gray-700 text-sm h-20"
-                                value={form.work_history || ''}
-                                onChange={e => setForm({ ...form, work_history: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="md:col-span-2 lg:col-span-3 space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Professional Bio</label>
-                            <textarea
-                                placeholder="Brief summary of experience..."
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-4 rounded-xl transition-all font-medium resize-none text-gray-700 text-sm h-24"
-                                value={form.description || ''}
-                                onChange={e => setForm({ ...form, description: e.target.value })}
-                                required
-                            />
-                        </div>
-
-                        <div className="md:col-span-2 lg:col-span-3 space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Profile Image</label>
-                            <div className="flex gap-3">
-                                <div className="flex-1 flex gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Image URL"
-                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
-                                        value={form.image_url || ''}
-                                        onChange={e => setForm({ ...form, image_url: e.target.value })}
-                                    />
-                                    <label className="flex items-center justify-center w-12 h-12 bg-white border-2 border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors shadow-sm shrink-0">
-                                        <FaUpload size={14} className="text-gray-400" />
-                                        <input
-                                            type="file"
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={handleFileUpload}
-                                            disabled={uploading}
-                                        />
-                                    </label>
-                                </div>
-                                {form.image_url && (
-                                    <div className="relative shrink-0">
-                                        <img src={form.image_url} alt="Preview" className="w-12 h-12 rounded-xl object-cover border-4 border-gray-50 shadow-md" />
-                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
+                        {/* Hidden Profile Status toggle (Only show in edit mode or remove if not needed) */}
                         <div className="flex items-center gap-3 pt-2">
                             <label className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border-2 border-transparent hover:border-blue-100 transition-all cursor-pointer group">
-                                <div className={`w - 5 h - 5 rounded border - 2 flex items - center justify - center transition - all ${form.is_active ? 'bg-blue-600 border-blue-600' : 'border-gray-200'} `}>
+                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${form.is_active ? 'bg-blue-600 border-blue-600' : 'border-gray-200'} `}>
                                     {form.is_active && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                                 </div>
                                 <input
@@ -556,6 +449,14 @@ const Mentors: React.FC = () => {
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Account Status</p>
                                             <span className="text-[10px] font-black uppercase text-green-500">{selectedMentor.auth_user_id ? 'Active Portal' : 'No Access'}</span>
                                         </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d]">Service Location</h3>
+                                        <p className="text-sm text-gray-800 leading-relaxed font-bold flex items-center gap-2">
+                                            <FaMapMarkerAlt className="text-orange-500" />
+                                            {selectedMentor.location_address || 'No location pinned.'}
+                                        </p>
                                     </div>
 
                                     <div className="space-y-3">

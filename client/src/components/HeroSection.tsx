@@ -5,9 +5,9 @@ import { supabase } from '../supabaseClient';
 const HeroSection: React.FC = () => {
     const [mediaUrl, setMediaUrl] = useState<string | null>(null);
     const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
-    const [title, setTitle] = useState<string>('Helping Young\nMinds Grow\nwith *Confidence*');
+    const [title, setTitle] = useState<string>('');
     const [titleColor, setTitleColor] = useState<string>('#c75e33');
-    const [subtitle, setSubtitle] = useState<string>('Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.');
+    const [subtitle, setSubtitle] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -41,8 +41,16 @@ const HeroSection: React.FC = () => {
                         }
                         setTitle(parsedTitle);
                         setTitleColor(parsedColor);
+                    } else {
+                        setTitle('Helping Young\nMinds Grow\nwith *Confidence*');
                     }
                     if (data.subtitle) setSubtitle(data.subtitle);
+                    else setSubtitle('Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.');
+                } else {
+                    // Fallback if no data at all
+                    setTitle('Helping Young\nMinds Grow\nwith *Confidence*');
+                    setSubtitle('Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.');
+                    setMediaType('image'); // default
                 }
             } catch (err) {
                 console.error("Unexpected error fetching hero media:", err);
@@ -113,7 +121,7 @@ const HeroSection: React.FC = () => {
                         )}
                         {/* Consistent dark transparent overlay covering the entire image to match reference */}
                         <div className="absolute inset-0 bg-black/30 mix-blend-multiply"></div>
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#17242e] via-[#17242e]/80 to-transparent w-full md:w-2/3"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#17242e] via-[#17242e]/60 to-transparent w-full md:w-1/2"></div>
                     </>
                 ) : (
                     <div className="w-full h-full bg-[#17242e] flex items-center justify-center relative overflow-hidden">
@@ -127,27 +135,31 @@ const HeroSection: React.FC = () => {
 
                     {/* Left Content Column */}
                     <div className="w-full lg:w-[65%] flex flex-col items-start text-left mt-24 lg:mt-32">
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[70px] font-extrabold text-white leading-[1.1] mb-6 animate-fade-in-up tracking-tight font-['Urbanist']" style={{ animationDelay: '0.1s' }}>
-                            {renderTitle(title)}
-                        </h1>
-                        <p className="text-lg md:text-xl text-gray-200 mb-10 leading-relaxed animate-fade-in-up drop-shadow-sm max-w-2xl font-normal" style={{ animationDelay: '0.2s' }}>
-                            {renderSubtitle(subtitle)}
-                        </p>
+                        {!loading && (
+                            <>
+                                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[70px] font-extrabold text-white leading-[1.1] mb-6 animate-fade-in-up tracking-tight font-['Urbanist']" style={{ animationDelay: '0.1s' }}>
+                                    {renderTitle(title)}
+                                </h1>
+                                <p className="text-lg md:text-xl text-gray-200 mb-10 leading-relaxed animate-fade-in-up drop-shadow-sm max-w-2xl font-normal" style={{ animationDelay: '0.2s' }}>
+                                    {renderSubtitle(subtitle)}
+                                </p>
 
-                        <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto animate-fade-in-up mb-14" style={{ animationDelay: '0.3s' }}>
-                            <button
-                                onClick={() => navigate('/class/1')}
-                                className="px-8 py-3.5 bg-[#b35a2e] hover:bg-[#c75e33] text-white font-bold rounded-xl outline-none transition-all shadow-lg w-full sm:w-auto text-center"
-                            >
-                                Explore Classes
-                            </button>
-                            <button
-                                onClick={() => document.getElementById('mentors')?.scrollIntoView({ behavior: 'smooth' })}
-                                className="px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white backdrop-blur-md font-bold rounded-xl transition-all shadow-md border border-white/20 hover:border-white/30 w-full sm:w-auto text-center"
-                            >
-                                View Tutors
-                            </button>
-                        </div>
+                                <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto animate-fade-in-up mb-14" style={{ animationDelay: '0.3s' }}>
+                                    <button
+                                        onClick={() => navigate('/class/1')}
+                                        className="px-8 py-3.5 bg-[#b35a2e] hover:bg-[#c75e33] text-white font-bold rounded-xl outline-none transition-all shadow-lg w-full sm:w-auto text-center"
+                                    >
+                                        Explore Classes
+                                    </button>
+                                    <button
+                                        onClick={() => document.getElementById('mentors')?.scrollIntoView({ behavior: 'smooth' })}
+                                        className="px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white backdrop-blur-md font-bold rounded-xl transition-all shadow-md border border-white/20 hover:border-white/30 w-full sm:w-auto text-center"
+                                    >
+                                        View Tutors
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

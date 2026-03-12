@@ -24,6 +24,7 @@ interface Topic {
 const AdminClasses: React.FC = () => {
     const [selectedClassId, setSelectedClassId] = useState<number>(1);
     const [selectedCurriculum, setSelectedCurriculum] = useState<'CBSE' | 'STATE'>('CBSE');
+    const [selectedStateRegion, setSelectedStateRegion] = useState<'ANDHRA' | 'TELANGANA'>('ANDHRA');
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [topics, setTopics] = useState<Record<string, Topic[]>>({});
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
@@ -53,12 +54,18 @@ const AdminClasses: React.FC = () => {
     const fetchSubjects = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('class_subjects')
-                .select('*')
-                .eq('class_id', selectedClassId)
-                .eq('curriculum', selectedCurriculum)
-                .order('created_at', { ascending: true });
+                let query = supabase
+                    .from('class_subjects')
+                    .select('*')
+                    .eq('class_id', selectedClassId)
+                    .eq('curriculum', selectedCurriculum);
+
+                if (selectedCurriculum === 'STATE') {
+                    query = query.eq('state_region', selectedStateRegion);
+                }
+
+                const { data, error } = await query
+                    .order('created_at', { ascending: true });
 
             if (error) throw error;
             setSubjects(data || []);
@@ -91,7 +98,7 @@ const AdminClasses: React.FC = () => {
         setExpandedSubject(null);
         setAddingTopicFor(null);
         setTopics({});
-    }, [selectedClassId, selectedCurriculum]);
+    }, [selectedClassId, selectedCurriculum, selectedStateRegion]);
 
     // Add a new subject
     const handleAddSubject = async () => {
@@ -102,7 +109,8 @@ const AdminClasses: React.FC = () => {
                 .insert([{
                     class_id: selectedClassId,
                     name: newSubjectName.trim(),
-                    curriculum: selectedCurriculum
+                    curriculum: selectedCurriculum,
+                    state_region: selectedCurriculum === 'STATE' ? selectedStateRegion : 'ANDHRA'
                 }]);
 
             if (error) throw error;
@@ -343,6 +351,31 @@ const AdminClasses: React.FC = () => {
                             </button>
                         </div>
                     </div>
+                    {selectedCurriculum === 'STATE' && (
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">State Region</label>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setSelectedStateRegion('ANDHRA')}
+                                    className={`flex-1 py-3 rounded-xl font-black text-xs transition-all shadow-sm ${selectedStateRegion === 'ANDHRA'
+                                        ? 'bg-[#1B2A5A] text-white'
+                                        : 'bg-white border-2 border-gray-100 text-gray-400 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    ANDHRA
+                                </button>
+                                <button
+                                    onClick={() => setSelectedStateRegion('TELANGANA')}
+                                    className={`flex-1 py-3 rounded-xl font-black text-xs transition-all shadow-sm ${selectedStateRegion === 'TELANGANA'
+                                        ? 'bg-[#1B2A5A] text-white'
+                                        : 'bg-white border-2 border-gray-100 text-gray-400 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    TELANGANA
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

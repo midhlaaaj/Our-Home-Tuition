@@ -28,7 +28,7 @@ interface Topic {
 const ClassPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const classInfo = classesData.find(c => c.id.toString() === id);
-    const { curriculum } = useCurriculum();
+    const { curriculum, stateRegion, toggleStateRegion } = useCurriculum();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [topics, setTopics] = useState<Record<string, Topic[]>>({});
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
@@ -45,11 +45,17 @@ const ClassPage: React.FC = () => {
             if (!id) return;
             setLoading(true);
             try {
-                const { data, error } = await supabase
+                let query = supabase
                     .from('class_subjects')
                     .select('*')
                     .eq('class_id', parseInt(id))
-                    .eq('curriculum', curriculum)
+                    .eq('curriculum', curriculum);
+                
+                if (curriculum === 'STATE') {
+                    query = query.eq('state_region', stateRegion);
+                }
+
+                const { data, error } = await query
                     .order('created_at', { ascending: true });
 
                 if (error) throw error;
@@ -64,7 +70,7 @@ const ClassPage: React.FC = () => {
         fetchSubjects();
         setExpandedSubject(null);
         setTopics({});
-    }, [id, curriculum]);
+    }, [id, curriculum, stateRegion]);
 
     // Fetch topics when a subject is expanded
     const fetchTopics = async (subjectId: string) => {
@@ -155,12 +161,32 @@ const ClassPage: React.FC = () => {
                                     {curriculum}
                                 </span>
                             </div>
-                            <button
-                                onClick={handleOpenModal}
-                                className="bg-[#a0522d] hover:bg-[#804224] text-white px-6 py-2.5 rounded-lg font-bold transition-colors shadow-sm flex items-center gap-2"
-                            >
-                                Book Session
-                            </button>
+                            <div className="flex items-center gap-4">
+                                {curriculum === 'STATE' && (
+                                    <button
+                                        onClick={toggleStateRegion}
+                                        className="relative w-40 h-10 bg-[#1B2A5A] rounded-full flex items-center p-1 cursor-pointer shadow-inner overflow-hidden border border-white/10"
+                                        aria-label="Toggle State Region"
+                                    >
+                                        <div className="absolute inset-0 grid grid-cols-2 items-center text-[10px] font-bold text-white/50 pointer-events-none select-none">
+                                            <span className="text-center">ANDHRA</span>
+                                            <span className="text-center">TELANGANA</span>
+                                        </div>
+                                        <div
+                                            className={`w-1/2 h-full bg-white rounded-full shadow-md text-[#1B2A5A] flex items-center justify-center text-[10px] font-bold transition-transform duration-300 ease-in-out ${stateRegion === 'TELANGANA' ? 'translate-x-full' : 'translate-x-0'
+                                                }`}
+                                        >
+                                            {stateRegion}
+                                        </div>
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleOpenModal}
+                                    className="bg-[#a0522d] hover:bg-[#804224] text-white px-6 py-2.5 rounded-lg font-bold transition-colors shadow-sm flex items-center gap-2"
+                                >
+                                    Book Session
+                                </button>
+                            </div>
                         </div>
 
                         {loading ? (
@@ -180,7 +206,7 @@ const ClassPage: React.FC = () => {
                                             onClick={() => toggleSubject(subject.id)}
                                             className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
                                         >
-                                            <span className="font-black text-gray-900 text-lg tracking-tight">{subject.name}</span>
+                                            <span className="font-semibold text-gray-900 text-lg tracking-tight">{subject.name}</span>
                                             <span className="text-gray-400 flex-shrink-0 ml-4">
                                                 {expandedSubject === subject.id ? <FaMinus size={14} /> : <FaPlus size={14} />}
                                             </span>

@@ -4,7 +4,8 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import {
     FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaUsers,
-    FaArrowLeft, FaCheckCircle, FaTrash, FaClipboardList, FaGraduationCap
+    FaArrowLeft, FaCheckCircle, FaTrash, FaClipboardList, FaGraduationCap,
+    FaCalendarAlt, FaClock, FaWifi, FaHome
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
@@ -30,6 +31,11 @@ const BookingPage: React.FC = () => {
     const [additionalStudents, setAdditionalStudents] = useState<{ id: string, name: string, email: string }[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [preferredDate, setPreferredDate] = useState('');
+    const [preferredTimes, setPreferredTimes] = useState<string[]>([]);
+    const [sessionMode, setSessionMode] = useState<'online' | 'offline'>('offline');
+    const [lat, setLat] = useState<number | null>(null);
+    const [lng, setLng] = useState<number | null>(null);
     const { user } = useAuth();
 
     // Pre-fill user data
@@ -80,6 +86,11 @@ const BookingPage: React.FC = () => {
                     primary_student: { name, email, phone, address },
                     class_type: classType,
                     additional_students: classType === 'group' ? additionalStudents : [],
+                     preferred_date: preferredDate || null,
+                    preferred_time: preferredTimes.join(', ') || null,
+                    session_mode: sessionMode,
+                    latitude: lat,
+                    longitude: lng,
                     status: 'pending'
                 });
 
@@ -255,17 +266,20 @@ const BookingPage: React.FC = () => {
                                                         }
                                                         setAddress("Fetching location...");
                                                         navigator.geolocation.getCurrentPosition(async (position) => {
+                                                            const { latitude, longitude } = position.coords;
+                                                            setLat(latitude);
+                                                            setLng(longitude);
                                                             try {
-                                                                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&addressdetails=1`);
+                                                                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`);
                                                                 const data = await response.json();
                                                                 if (data && data.display_name) {
                                                                     setAddress(data.display_name);
                                                                 } else {
-                                                                    setAddress("Could not determine address.");
+                                                                    setAddress(`${latitude}, ${longitude}`);
                                                                 }
                                                             } catch (error) {
                                                                 console.error("Error fetching address:", error);
-                                                                setAddress("Error fetching address.");
+                                                                setAddress(`${latitude}, ${longitude}`);
                                                             }
                                                         }, () => {
                                                             setAddress("Location access denied.");
@@ -297,12 +311,12 @@ const BookingPage: React.FC = () => {
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         {[
-                                            { id: 'individual', icon: <FaUser />, title: 'Premium Solo', desc: '1-on-1 personalized academic coaching' },
-                                            { id: 'group', icon: <FaUsers />, title: 'Collaborative Duo', desc: 'Study with siblings or friends (Group)' }
+                                            { id: 'individual', icon: <FaUser size={14} />, title: 'Premium Solo', desc: '1-on-1 personalized academic coaching' },
+                                            { id: 'group', icon: <FaUsers size={14} />, title: 'Collaborative Duo', desc: 'Study with siblings or friends (Group)' }
                                         ].map(option => (
                                             <label
                                                 key={option.id}
-                                                className={`relative flex flex-col p-6 rounded-[32px] cursor-pointer transition-all border-2 ${classType === option.id
+                                                className={`relative flex items-center gap-4 p-4 rounded-[24px] cursor-pointer transition-all border-2 ${classType === option.id
                                                     ? 'border-[#a0522d] bg-[#a0522d]/5 shadow-xl shadow-[#a0522d]/5'
                                                     : 'border-transparent bg-gray-50/50 hover:bg-gray-50'
                                                     }`}
@@ -313,17 +327,121 @@ const BookingPage: React.FC = () => {
                                                     value={option.id}
                                                     checked={classType === option.id}
                                                     onChange={() => setClassType(option.id as any)}
-                                                    className="absolute top-6 right-6 w-5 h-5 accent-[#a0522d]"
+                                                    className="absolute top-3.5 right-3.5 w-3.5 h-3.5 accent-[#a0522d]"
                                                 />
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${classType === option.id ? 'bg-[#a0522d] text-white' : 'bg-white text-gray-400'}`}>
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${classType === option.id ? 'bg-[#a0522d] text-white' : 'bg-white text-gray-400 border border-gray-100'}`}>
                                                     {option.icon}
                                                 </div>
-                                                <div className="space-y-1">
-                                                    <span className="block text-sm font-black text-gray-900 uppercase tracking-widest">{option.title}</span>
-                                                    <span className="block text-[11px] text-gray-500 font-medium leading-relaxed">{option.desc}</span>
+                                                <div className="space-y-0 pr-6">
+                                                    <span className="block text-[10.5px] font-black text-gray-900 uppercase tracking-widest leading-none mb-1">{option.title}</span>
+                                                    <span className="block text-[9.5px] text-gray-500 font-medium leading-tight">{option.desc}</span>
                                                 </div>
                                             </label>
                                         ))}
+                                    </div>
+                                </div>
+
+                                {/* Row 2: Learning Environment (Styled like Session Format) */}
+                                <div className="space-y-5 pt-4">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a0522d] mb-4 flex items-center gap-3">
+                                        <span className="w-8 h-[1px] bg-[#a0522d]/30"></span> Learning Environment
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {[
+                                            { id: 'offline', icon: <FaHome size={14} />, title: 'Face-to-Face', desc: 'At your home or library' },
+                                            { id: 'online', icon: <FaWifi size={14} />, title: 'Virtual Session', desc: 'Interactive video call' }
+                                        ].map(mode => (
+                                            <label
+                                                key={mode.id}
+                                                className={`relative flex items-center gap-4 p-4 rounded-[24px] cursor-pointer transition-all border-2 ${sessionMode === mode.id
+                                                    ? 'border-[#a0522d] bg-[#a0522d]/5 shadow-xl shadow-[#a0522d]/5'
+                                                    : 'border-transparent bg-gray-50/50 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="sessionMode"
+                                                    value={mode.id}
+                                                    checked={sessionMode === mode.id}
+                                                    onChange={() => setSessionMode(mode.id as any)}
+                                                    className="absolute top-3.5 right-3.5 w-3.5 h-3.5 accent-[#a0522d]"
+                                                />
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${sessionMode === mode.id ? 'bg-[#a0522d] text-white' : 'bg-white text-gray-400 border border-gray-100'}`}>
+                                                    {mode.icon}
+                                                </div>
+                                                <div className="space-y-0 pr-6">
+                                                    <span className="block text-[10.5px] font-black text-gray-900 uppercase tracking-widest leading-none mb-1">{mode.title}</span>
+                                                    <span className="block text-[9.5px] text-gray-500 font-medium leading-tight">{mode.desc}</span>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Row 3: Date (Left) and Time Selection (Right) */}
+                                <div className="space-y-10 pt-10">
+                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                                        {/* Date Selection - 5/12 width */}
+                                        <div className="md:col-span-5 space-y-6">
+                                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#a0522d] flex items-center gap-3">
+                                                <span className="w-8 h-[1px] bg-[#a0522d]/30"></span> Choose Your Date
+                                            </h3>
+                                            <div className="relative group">
+                                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#a0522d] transition-colors">
+                                                    <FaCalendarAlt size={14} />
+                                                </div>
+                                                <input
+                                                    type="date"
+                                                    required
+                                                    value={preferredDate}
+                                                    min={new Date().toISOString().split('T')[0]}
+                                                    onChange={e => setPreferredDate(e.target.value)}
+                                                    className="w-full pl-12 pr-5 py-3.5 bg-white border-2 border-gray-100 rounded-[22px] outline-none focus:border-[#a0522d] focus:bg-white transition-all text-[13px] font-black shadow-sm"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Time Selection - 7/12 width */}
+                                        <div className="md:col-span-7 space-y-5">
+                                            <div className="flex justify-between items-center">
+                                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a0522d] flex items-center gap-3">
+                                                    <span className="w-8 h-[1px] bg-[#a0522d]/30"></span> <FaClock size={11} className="opacity-70" /> Available Hours
+                                                </h3>
+                                                <p className="text-[8.5px] font-black text-gray-400 uppercase tracking-widest">Select multiple</p>
+                                            </div>
+                                            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                                                {[
+                                                    '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+                                                    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM',
+                                                    '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM'
+                                                ].map((time) => {
+                                                    const isSelected = preferredTimes.includes(time);
+                                                    return (
+                                                        <button
+                                                            key={time}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                 if (isSelected) {
+                                                                     setPreferredTimes(preferredTimes.filter(t => t !== time));
+                                                                 } else {
+                                                                     setPreferredTimes([...preferredTimes, time].sort());
+                                                                 }
+                                                            }}
+                                                            className={`py-3 px-1 rounded-xl text-[9px] font-black transition-all border-2 flex flex-col items-center justify-center gap-0 ${isSelected
+                                                                ? 'bg-[#a0522d] border-[#a0522d] text-white shadow-lg shadow-[#a0522d]/20 scale-[1.02]'
+                                                                : 'bg-white border-gray-50 text-gray-400 hover:border-orange-100 hover:text-[#a0522d]'
+                                                                }`}
+                                                        >
+                                                            <span className="text-[10px] tracking-tight">{time.split(' ')[0]}</span>
+                                                            <span className={`text-[7.5px] font-bold uppercase tracking-tighter ${isSelected ? 'text-white/70' : 'text-gray-300'}`}>
+                                                                {time.split(' ')[1]}
+                                                            </span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <input type="hidden" required value={preferredTimes.join(',')} />
+                                        </div>
                                     </div>
                                 </div>
 

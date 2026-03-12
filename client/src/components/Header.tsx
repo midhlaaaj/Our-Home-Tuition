@@ -16,9 +16,11 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
     const { user, signOut } = useAuth();
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authView, setAuthView] = useState<'signin' | 'signup'>('signin');
-    const modalRef = useRef<HTMLDivElement>(null);
+    const profileRef = useRef<HTMLDivElement>(null);
+    const notificationRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
 
     const getDisplayName = () => {
@@ -40,15 +42,18 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
         setIsProfileOpen(false);
     };
 
-    // Close dropdown on click outside
+    // Close dropdowns on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
+            }
+            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+                setIsNotificationOpen(false);
             }
         };
 
-        if (isProfileOpen) {
+        if (isProfileOpen || isNotificationOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         } else {
             document.removeEventListener('mousedown', handleClickOutside);
@@ -57,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isProfileOpen]);
+    }, [isProfileOpen, isNotificationOpen]);
 
 
     // Scroll Logic
@@ -133,15 +138,42 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                     {user ? (
                         <div className="flex items-center gap-4">
                             {/* Notification Bell */}
-                            <button className="w-10 h-10 rounded-full bg-[#1B2A5A] border border-white/10 flex items-center justify-center text-white hover:bg-[#142044] transition-all shadow-sm">
-                                <FaBell size={18} />
-                            </button>
+                            <div className="relative" ref={notificationRef}>
+                                <button
+                                    onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                                    className={`w-10 h-10 rounded-full bg-[#1B2A5A] border border-white/10 flex items-center justify-center text-white hover:bg-[#142044] transition-all shadow-sm ${isNotificationOpen ? 'ring-2 ring-white/50' : ''}`}
+                                >
+                                    <FaBell size={18} />
+                                </button>
+
+                                {/* Notification Dropdown */}
+                                {isNotificationOpen && (
+                                    <div className="absolute right-0 mt-3 w-80 bg-white rounded-[32px] shadow-2xl border border-gray-100 py-6 px-6 z-[100] animate-in fade-in zoom-in duration-200 origin-top-right">
+                                        <div className="flex justify-between items-center mb-10">
+                                            <h3 className="text-xl font-bold text-[#1B2A5A]">Notifications</h3>
+                                            <span className="text-[10px] font-bold bg-[#F3F0FF] text-[#1B2A5A] px-3 py-1 rounded-full uppercase tracking-wider">
+                                                0 NEW
+                                            </span>
+                                        </div>
+
+                                        <div className="flex flex-col items-center py-4">
+                                            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300 mb-6">
+                                                <FaBell size={28} />
+                                            </div>
+                                            <h4 className="text-lg font-bold text-[#1B2A5A] mb-2">No new notifications</h4>
+                                            <p className="text-sm text-gray-400 text-center leading-relaxed">
+                                                We'll let you know when something important happens.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Crown Icon (Premium) Removed */}
 
 
                             {/* Profile Dropdown */}
-                            <div className="relative" ref={modalRef}>
+                            <div className="relative" ref={profileRef}>
                                 <button
                                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                                     className="h-10 flex items-center gap-3 bg-[#1B2A5A] text-white px-2 pr-4 rounded-full hover:bg-[#142044] transition-all border border-white/10 shadow-sm"

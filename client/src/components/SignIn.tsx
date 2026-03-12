@@ -85,12 +85,9 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
         } else if (!/\S+@\S+\.\S+/.test(registerData.email)) {
             newErrors.email = 'Email is invalid';
         }
-        if (!registerData.phone) {
-            newErrors.phone = 'Phone number is required';
-        } else if (!/^\d+$/.test(registerData.phone)) {
+        if (registerData.phone && !/^\d+$/.test(registerData.phone)) {
             newErrors.phone = 'Phone number must be numeric';
         }
-        if (!registerData.address) newErrors.address = 'Address is required';
         if (!registerData.password) newErrors.password = 'Password is required';
         if (!registerData.verifyPassword) newErrors.verifyPassword = 'Please verify your password';
 
@@ -144,8 +141,8 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                 options: {
                     data: {
                         full_name: registerData.name,
-                        phone: registerData.phone,
-                        address: registerData.address,
+                        phone: '',
+                        address: '',
                     },
                 },
             });
@@ -380,20 +377,6 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                 {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                                             </div>
 
-                                            <div>
-                                                <input
-                                                    id="phone"
-                                                    name="phone"
-                                                    type="tel"
-                                                    placeholder="Phone Number"
-                                                    value={registerData.phone}
-                                                    onChange={handleRegisterChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
-                                                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
-                                                />
-                                                {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
-                                            </div>
-
                                             <div className="relative">
                                                 <input
                                                     id="reg-password"
@@ -415,11 +398,25 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                 {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                                             </div>
 
+                                            <div className="relative">
+                                                <input
+                                                    id="verifyPassword"
+                                                    name="verifyPassword"
+                                                    type={showPassword ? "text" : "password"}
+                                                    placeholder="Verify Password"
+                                                    value={registerData.verifyPassword}
+                                                    onChange={handleRegisterChange}
+                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.verifyPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
+                                                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
+                                                />
+                                                {errors.verifyPassword && <p className="mt-1 text-xs text-red-500">{errors.verifyPassword}</p>}
+                                            </div>
+
                                             <div className="pt-2">
                                                 <button
                                                     type="submit"
-                                                    disabled={loading || !(registerData.name && registerData.email && registerData.phone && registerData.password)}
-                                                    className={`group relative w-full flex justify-center py-3 px-4 text-sm font-medium rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-sm ${registerData.name && registerData.email && registerData.phone && registerData.password
+                                                    disabled={loading || !(registerData.name && registerData.email && registerData.password && registerData.verifyPassword)}
+                                                    className={`group relative w-full flex justify-center py-3 px-4 text-sm font-medium rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-sm ${registerData.name && registerData.email && registerData.password && registerData.verifyPassword
                                                         ? 'bg-[#1B2A5A] hover:bg-[#142044]'
                                                         : 'bg-[#1B2A5A]/60'
                                                         }`}

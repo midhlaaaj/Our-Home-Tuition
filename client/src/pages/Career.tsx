@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ApplicationForm from '../components/ApplicationForm';
 import { supabase } from '../supabaseClient';
-import { FaBriefcase, FaGraduationCap, FaChevronRight, FaRegClipboard } from 'react-icons/fa';
+import { FaBriefcase, FaGraduationCap, FaRegClipboard } from 'react-icons/fa';
 import { useSearchParams } from 'react-router-dom';
 
 interface Job {
@@ -83,38 +83,41 @@ const Career: React.FC = () => {
                                 </p>
                             </div>
 
-                            {/* Jobs Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+                            {/* Jobs List */}
+                            <div className="flex flex-col gap-4 mb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
                                 {loading ? (
                                     [1, 2, 3].map(i => (
-                                        <div key={i} className="bg-white h-64 rounded-3xl shadow-sm border border-gray-100 animate-pulse"></div>
+                                        <div key={i} className="bg-white h-24 rounded-2xl shadow-sm border border-gray-100 animate-pulse"></div>
                                     ))
                                 ) : jobs.length > 0 ? (
                                     jobs.map((job) => (
                                         <div
                                             key={job.id}
-                                            className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-0.5 transition-all group"
+                                            className="bg-white p-6 rounded-3xl shadow-sm border border-gray-50 hover:shadow-md transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6"
                                         >
-                                            <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-[#a0522d] mb-6 group-hover:bg-[#a0522d] group-hover:text-white transition-colors">
-                                                <FaBriefcase size={20} />
+                                            <div className="flex-1">
+                                                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#a0522d] transition-colors">{job.title}</h3>
+                                                <div className="flex flex-wrap items-center gap-6 text-gray-400">
+                                                    <div className="flex items-center gap-2">
+                                                        <FaBriefcase className="text-[#a0522d]/40" size={14} />
+                                                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Class {job.class_id}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 border-l border-gray-100 pl-6 h-4">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-green-400/60" />
+                                                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Home Tuition</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 border-l border-gray-100 pl-6 h-4">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400/60" />
+                                                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Part-Time</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <h3 className="text-2xl font-bold text-gray-800 mb-2">{job.title}</h3>
-                                            <div className="flex gap-3 mb-6">
-                                                <span className="text-xs font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full uppercase tracking-wider">
-                                                    Class {job.class_id}
-                                                </span>
-                                                <span className="text-xs font-bold bg-orange-100 text-[#a0522d] px-3 py-1 rounded-full uppercase tracking-wider">
-                                                    Home Tuition
-                                                </span>
-                                            </div>
-                                            <p className="text-gray-500 text-sm mb-8 line-clamp-3 leading-relaxed">
-                                                {job.description || "Looking for a dedicated tutor to help students excel in their academic journey through personalized home sessions."}
-                                            </p>
+                                            
                                             <button
                                                 onClick={() => handleApply(job)}
-                                                className="w-full py-4 rounded-xl font-bold border-2 border-[#a0522d] text-[#a0522d] hover:bg-[#a0522d]/5 transition-all flex items-center justify-center gap-2"
+                                                className="px-8 py-3 rounded-xl font-bold bg-[#1B2A5A]/5 text-[#1B2A5A] hover:bg-[#1B2A5A] hover:text-white transition-all text-sm shadow-sm flex items-center justify-center gap-2"
                                             >
-                                                Apply Now <FaChevronRight size={12} />
+                                                Apply Now
                                             </button>
                                         </div>
                                     ))

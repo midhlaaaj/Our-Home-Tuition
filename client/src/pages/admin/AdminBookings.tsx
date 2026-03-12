@@ -3,7 +3,8 @@ import { supabase } from '../../supabaseClient';
 import { motion } from 'framer-motion';
 import {
     FaCalendarCheck, FaEnvelope, FaPhone, FaMapMarkerAlt,
-    FaChalkboardTeacher, FaCheckCircle, FaUsers, FaTrash, FaUndo, FaHistory
+    FaChalkboardTeacher, FaCheckCircle, FaUsers, FaTrash, FaUndo, FaHistory,
+    FaCalendarAlt, FaClock, FaWifi, FaHome
 } from 'react-icons/fa';
 
 interface Booking {
@@ -17,6 +18,9 @@ interface Booking {
     additional_students: any[];
     status: string;
     assigned_mentor_id: string | null;
+    preferred_date: string | null;
+    preferred_time: string | null;
+    session_mode: string;
     deleted_at?: string | null;
 }
 
@@ -26,9 +30,17 @@ interface Mentor {
     subject: string;
 }
 
+interface Availability {
+    mentor_id: string;
+    day_of_week: string;
+    start_time: string;
+    end_time: string;
+}
+
 const AdminBookings: React.FC = () => {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [mentors, setMentors] = useState<Mentor[]>([]);
+    const [availability, setAvailability] = useState<Availability[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
     const [selectedMentors, setSelectedMentors] = useState<Record<string, string>>({});
@@ -40,16 +52,19 @@ const AdminBookings: React.FC = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [bookingsRes, mentorsRes] = await Promise.all([
+            const [bookingsRes, mentorsRes, availabilityRes] = await Promise.all([
                 supabase.from('bookings').select('*').order('created_at', { ascending: false }),
-                supabase.from('mentors').select('id, name, subject')
+                supabase.from('mentors').select('id, name, subject'),
+                supabase.from('mentor_availability').select('*')
             ]);
 
             if (bookingsRes.error) throw bookingsRes.error;
             if (mentorsRes.error) throw mentorsRes.error;
+            if (availabilityRes.error) throw availabilityRes.error;
 
             setBookings(bookingsRes.data || []);
             setMentors(mentorsRes.data || []);
+            setAvailability(availabilityRes.data || []);
 
             // Initialize selected mentors
             const mentorsMap = (bookingsRes.data || []).reduce((acc: any, b: any) => ({
@@ -84,6 +99,68 @@ const AdminBookings: React.FC = () => {
             } : b));
         } catch (err) {
             console.error('Error assigning mentor:', err);
+        }
+    };
+
+    const handleUpdateStatus = async (bookingId: string, newStatus: string) => {
+        try {
+            const { error } = await supabase
+                .from('bookings')
+                .update({ status: newStatus })
+                .eq('id', bookingId);
+
+            if (error) throw error;
+            setBookings(bookings.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
+            alert(`Booking status updated to ${newStatus}`);
+        } catch (err) {
+            console.error('Error updating status:', err);
+        }
+    };
+
+    const isMentorAvailable = (mentorId: string, booking: Booking) => {
+        if (!booking.preferred_date || !booking.preferred_time) return true;
+
+        try {
+            // 1. Get day of week from date (Fix: Use local parts to avoid timezone shift)
+            const [y, m, d] = booking.preferred_date.split('-').map(Number);
+            const date = new Date(y, m - 1, d);
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const bookingDay = days[date.getDay()];
+
+            // 2. Get mentor availability for that day
+            const mentorAvail = availability.filter(a => a.mentor_id === mentorId && a.day_of_week === bookingDay);
+            if (mentorAvail.length === 0) return false;
+
+            // 3. Parse requested hours (they contain AM/PM from BookingPage)
+            const requestedHours = booking.preferred_time.split(',').map(h => h.trim());
+            
+            return requestedHours.every(reqTime => {
+                // Parse 12h format "09:00 AM" or "9:00 AM"
+                const [timePart, ampm] = reqTime.split(' ');
+                if (!timePart || !ampm) return false;
+
+                const [hStr, mStr] = timePart.split(':');
+                let reqH = parseInt(hStr);
+                const reqM = parseInt(mStr);
+                
+                if (ampm === 'PM' && reqH < 12) reqH += 12;
+                if (ampm === 'AM' && reqH === 12) reqH = 0;
+                
+                const reqTotal = reqH * 60 + reqM;
+
+                return mentorAvail.some(avail => {
+                    const [startH, startM] = avail.start_time.split(':').map(Number);
+                    const [endH, endM] = avail.end_time.split(':').map(Number);
+                    
+                    const startTotal = startH * 60 + startM;
+                    const endTotal = endH * 60 + endM;
+                    
+                    return reqTotal >= startTotal && reqTotal < endTotal;
+                });
+            });
+        } catch (e) {
+            console.error('Availability check error:', e);
+            return true;
         }
     };
 
@@ -227,6 +304,33 @@ const AdminBookings: React.FC = () => {
                                                 </div>
                                                 <span className="text-xs font-bold text-gray-600 leading-snug">{booking.primary_student?.address}</span>
                                             </div>
+
+                                            {/* Requested Schedule info */}
+                                            {(booking.preferred_date || booking.preferred_time || booking.session_mode) && (
+                                                <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-[#a0522d]/5 rounded-2xl border border-[#a0522d]/10">
+                                                    <div className="flex items-center gap-2">
+                                                        <FaCalendarAlt className="text-[#a0522d]" size={12} />
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[8px] font-black uppercase text-gray-400">Date</span>
+                                                            <span className="text-[10px] font-bold text-gray-700">{booking.preferred_date || 'TBD'}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <FaClock className="text-[#a0522d]" size={12} />
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[8px] font-black uppercase text-gray-400">Time</span>
+                                                            <span className="text-[10px] font-bold text-gray-700">{booking.preferred_time || 'TBD'}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {booking.session_mode === 'online' ? <FaWifi className="text-[#a0522d]" size={12} /> : <FaHome className="text-[#a0522d]" size={12} />}
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[8px] font-black uppercase text-gray-400">Mode</span>
+                                                            <span className="text-[10px] font-bold text-gray-700 uppercase">{booking.session_mode || 'offline'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {booking.class_type === 'group' && booking.additional_students?.length > 0 && (
@@ -278,7 +382,7 @@ const AdminBookings: React.FC = () => {
                                                 disabled={booking.status === 'confirmed'}
                                             >
                                                 <option value="unassigned" className="bg-[#1F2937]">Select Mentor</option>
-                                                {mentors.map(m => (
+                                                {mentors.filter(m => isMentorAvailable(m.id, booking)).map(m => (
                                                     <option key={m.id} value={m.id} className="bg-[#1F2937] text-white">
                                                         {m.name} ({m.subject})
                                                     </option>
@@ -305,16 +409,23 @@ const AdminBookings: React.FC = () => {
                                                     </>
                                                 ) : (
                                                     <>
-                                                        {booking.status !== 'confirmed' && (
+                                                        {booking.status === 'awaiting_approval' && (
+                                                            <button
+                                                                onClick={() => handleUpdateStatus(booking.id, 'confirmed')}
+                                                                className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white rounded-xl py-3 transition-all group/btn shadow-lg shadow-green-500/20"
+                                                            >
+                                                                <FaCheckCircle size={10} className="group-hover/btn:scale-110" />
+                                                                <span className="text-[9px] font-black uppercase tracking-widest">Confirm Assignment</span>
+                                                            </button>
+                                                        )}
+                                                        {booking.status === 'pending' && (
                                                             <button
                                                                 onClick={() => handleAssignMentor(booking.id, selectedMentors[booking.id])}
-                                                                disabled={selectedMentors[booking.id] === 'unassigned' || booking.status === 'awaiting_approval'}
+                                                                disabled={selectedMentors[booking.id] === 'unassigned'}
                                                                 className="flex-1 flex items-center justify-center gap-2 bg-[#ffb76c] hover:bg-[#ffa64d] disabled:bg-gray-700 disabled:text-gray-500 text-[#1B2A5A] rounded-xl py-3 transition-all group/btn shadow-lg shadow-[#ffb76c]/20"
                                                             >
                                                                 <FaCheckCircle size={10} className="group-hover/btn:scale-110" />
-                                                                <span className="text-[9px] font-black uppercase tracking-widest">
-                                                                    {booking.status === 'awaiting_approval' ? 'Pending Approval' : 'Assign to Mentor'}
-                                                                </span>
+                                                                <span className="text-[9px] font-black uppercase tracking-widest">Assign to Mentor</span>
                                                             </button>
                                                         )}
                                                         <button
