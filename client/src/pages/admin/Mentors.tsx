@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { FaTrash, FaEdit, FaUpload, FaPlus, FaUserCircle, FaInfoCircle, FaMapMarkerAlt } from 'react-icons/fa';
-import { uploadFile } from '../../utils/uploadHelper';
+import { FaTrash, FaEdit, FaPlus, FaUserCircle, FaInfoCircle, FaMapMarkerAlt } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Mentor {
@@ -27,7 +26,6 @@ interface Mentor {
 const Mentors: React.FC = () => {
     const [mentors, setMentors] = useState<Mentor[]>([]);
     const [loading, setLoading] = useState(false);
-    const [uploading, setUploading] = useState(false);
     const [form, setForm] = useState<Partial<Mentor>>({
         is_active: true,
         name: '',
@@ -68,22 +66,6 @@ const Mentors: React.FC = () => {
         fetchMentors();
     }, []);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
-        const file = e.target.files[0];
-        setUploading(true);
-
-        try {
-            // Upload to 'mentors' bucket
-            const publicUrl = await uploadFile(file, 'mentors', 'mentors');
-            setForm(prev => ({ ...prev, image_url: publicUrl }));
-        } catch (error) {
-            console.error('Upload failed:', error);
-            alert('Failed to upload image. Make sure the "mentors" bucket exists and is public.');
-        } finally {
-            setUploading(false);
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -281,7 +263,7 @@ const Mentors: React.FC = () => {
                             )}
                             <button
                                 type="submit"
-                                disabled={loading || uploading}
+                                disabled={loading}
                                 className="px-6 py-3 bg-[#1B2A5A] text-white rounded-xl font-black hover:bg-[#142044] disabled:opacity-50 transition-all shadow-lg text-[10px] flex items-center justify-center gap-2 min-w-[120px] uppercase tracking-widest"
                             >
                                 {loading ? '...' : (isEditing ? 'Update Mentor' : 'Add Mentor')}
