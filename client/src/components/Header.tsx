@@ -3,6 +3,16 @@ import { useCurriculum } from '../context/CurriculumContext';
 import { FaSignOutAlt, FaBell, FaChevronDown, FaUser } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
+
+interface Notification {
+    id: string;
+    title: string;
+    message: string;
+    type: string;
+    is_read: boolean;
+    created_at: string;
+}
 
 import SignIn from './SignIn';
 
@@ -19,6 +29,8 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authView, setAuthView] = useState<'signin' | 'signup'>('signin');
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const profileRef = useRef<HTMLDivElement>(null);
     const notificationRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
@@ -64,6 +76,64 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
         };
     }, [isProfileOpen, isNotificationOpen]);
 
+
+    // Notifications Logic
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchNotifications = async () => {
+            const { data, error } = await supabase
+                .from('notifications')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (!error && data) {
+                setNotifications(data);
+                setUnreadCount(data.filter(n => !n.is_read).length);
+            }
+        };
+
+        fetchNotifications();
+
+        // Subscribe to real-time notifications
+        const channel = supabase
+            .channel(`notifications-${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `user_id=eq.${user.id}`
+                },
+                (payload) => {
+                    const newNotification = payload.new as Notification;
+                    setNotifications(prev => [newNotification, ...prev].slice(0, 10));
+                    setUnreadCount(prev => prev + 1);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user]);
+
+    const markAllAsRead = async () => {
+        if (!user) return;
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('user_id', user.id)
+            .eq('is_read', false);
+
+        if (!error) {
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            setUnreadCount(0);
+        }
+    };
 
     // Scroll Logic
     useEffect(() => {
@@ -144,26 +214,72 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                     className={`w-10 h-10 rounded-full bg-[#1B2A5A] border border-white/10 flex items-center justify-center text-white hover:bg-[#142044] transition-all shadow-sm ${isNotificationOpen ? 'ring-2 ring-white/50' : ''}`}
                                 >
                                     <FaBell size={18} />
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white animate-pulse">
+                                            {unreadCount}
+                                        </span>
+                                    )}
                                 </button>
 
                                 {/* Notification Dropdown */}
                                 {isNotificationOpen && (
-                                    <div className="absolute right-0 mt-3 w-80 bg-white rounded-[32px] shadow-2xl border border-gray-100 py-6 px-6 z-[100] animate-in fade-in zoom-in duration-200 origin-top-right">
-                                        <div className="flex justify-between items-center mb-10">
+                                    <div className="absolute right-0 mt-3 w-80 bg-white rounded-[32px] shadow-2xl border border-gray-100 py-6 px-0 z-[100] animate-in fade-in zoom-in duration-200 origin-top-right overflow-hidden">
+                                        <div className="flex justify-between items-center mb-6 px-6">
                                             <h3 className="text-xl font-bold text-[#1B2A5A]">Notifications</h3>
-                                            <span className="text-[10px] font-bold bg-[#F3F0FF] text-[#1B2A5A] px-3 py-1 rounded-full uppercase tracking-wider">
-                                                0 NEW
-                                            </span>
+                                            <div className="flex items-center gap-3">
+                                                {unreadCount > 0 && (
+                                                    <button onClick={markAllAsRead} className="text-[9px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-700">
+                                                        Mark All Read
+                                                    </button>
+                                                )}
+                                                <span className="text-[10px] font-bold bg-[#F3F0FF] text-[#1B2A5A] px-3 py-1 rounded-full uppercase tracking-wider">
+                                                    {unreadCount} NEW
+                                                </span>
+                                            </div>
                                         </div>
 
-                                        <div className="flex flex-col items-center py-4">
-                                            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300 mb-6">
-                                                <FaBell size={28} />
-                                            </div>
-                                            <h4 className="text-lg font-bold text-[#1B2A5A] mb-2">No new notifications</h4>
-                                            <p className="text-sm text-gray-400 text-center leading-relaxed">
-                                                We'll let you know when something important happens.
-                                            </p>
+                                        <div className="max-h-[350px] overflow-y-auto px-2 custom-scrollbar">
+                                            {notifications.length > 0 ? (
+                                                <>
+                                                    <div className="space-y-1 pb-4">
+                                                        {notifications.map((n) => (
+                                                            <div 
+                                                                key={n.id} 
+                                                                className={`p-4 rounded-2xl transition-all border-l-4 ${n.is_read ? 'bg-white border-transparent' : 'bg-blue-50/50 border-blue-500'}`}
+                                                            >
+                                                                <div className="flex justify-between items-start mb-1">
+                                                                    <p className="text-xs font-black text-gray-900 leading-tight">{n.title}</p>
+                                                                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">
+                                                                        {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                                                                    {n.message}
+                                                                </p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="px-6 pb-4 flex justify-center">
+                                                        <Link 
+                                                            to="/notifications" 
+                                                            onClick={() => setIsNotificationOpen(false)}
+                                                            className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-[#1B2A5A] transition-all"
+                                                        >
+                                                            View All Messages
+                                                        </Link>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="flex flex-col items-center py-10 px-6">
+                                                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300 mb-6">
+                                                        <FaBell size={28} />
+                                                    </div>
+                                                    <h4 className="text-lg font-bold text-[#1B2A5A] mb-2">No notifications</h4>
+                                                    <p className="text-sm text-gray-400 text-center leading-relaxed">
+                                                        We'll let you know when something important happens.
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -179,7 +295,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                     className="h-10 flex items-center gap-3 bg-[#1B2A5A] text-white px-2 pr-4 rounded-full hover:bg-[#142044] transition-all border border-white/10 shadow-sm"
                                 >
                                     <div className="w-8 h-8 rounded-full overflow-hidden bg-white/20 border-2 border-white/50 flex-shrink-0">
-                                        {user.user_metadata?.avatar_url ? (
+                                        {user?.user_metadata?.avatar_url ? (
                                             <img
                                                 src={user.user_metadata.avatar_url}
                                                 alt="Profile"
@@ -187,7 +303,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center bg-white text-[#1B2A5A] font-bold">
-                                                {user.email?.charAt(0).toUpperCase()}
+                                                {user?.email?.charAt(0).toUpperCase()}
                                             </div>
                                         )}
                                     </div>
@@ -196,7 +312,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                             {getDisplayName()}
                                         </span>
                                         <span className="text-[10px] text-[#22c55e] font-bold leading-none mt-0.5 drop-shadow-[0_0_3px_rgba(34,197,94,0.4)]">
-                                            {user.user_metadata?.role || "Student"}
+                                            {user?.user_metadata?.role || "Student"}
                                         </span>
                                     </div>
                                     <FaChevronDown size={12} className={`text-white/80 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
@@ -207,7 +323,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                     <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-[100] animate-in fade-in zoom-in duration-200 origin-top-right">
                                         <div className="px-5 py-3 border-b border-gray-50 mb-2">
                                             <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Account</p>
-                                            <p className="text-sm font-black text-gray-800 truncate">{user.email}</p>
+                                            <p className="text-sm font-black text-gray-800 truncate">{user?.email}</p>
                                         </div>
 
                                         <Link

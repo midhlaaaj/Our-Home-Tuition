@@ -28,6 +28,7 @@ import Career from './pages/Career';
 import Profile from './pages/Profile';
 import ClassPage from './pages/ClassPage';
 import BookingPage from './pages/BookingPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/career" element={<Career />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/login" element={<Login />} />
             <Route path="/mentor/login" element={<MentorLogin />} />

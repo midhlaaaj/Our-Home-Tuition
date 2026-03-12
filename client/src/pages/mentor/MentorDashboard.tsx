@@ -63,6 +63,7 @@ const MentorDashboard: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [visibleTasksCount, setVisibleTasksCount] = useState(5);
     const [nearbyOffers, setNearbyOffers] = useState<any[]>([]);
+    const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const [editForm, setEditForm] = useState({
@@ -244,13 +245,59 @@ const MentorDashboard: React.FC = () => {
     };
 
     const handleAcceptTask = async (taskId: string, type: 'query' | 'booking') => {
+        if (processingTaskId) return;
+        setProcessingTaskId(taskId);
         try {
             if (type === 'booking') {
+                // 1. Fetch current status and OTP
+                const { data: bookingData, error: fetchError } = await supabase
+                    .from('bookings')
+                    .select('user_id, status, otp')
+                    .eq('id', taskId)
+                    .single();
+
+                if (fetchError || !bookingData) throw new Error("Could not fetch booking details");
+                if (!bookingData.user_id) throw new Error("No parent ID associated with this booking");
+
+                // 2. Stop if already confirmed (Prevents duplicate notifications)
+                if (bookingData.status === 'confirmed') {
+                    alert("This booking is already confirmed.");
+                    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed'} : t));
+                    return;
+                }
+
+                // 3. OTP Recovery: Generate if missing
+                let currentOtp = bookingData.otp;
+                if (!currentOtp || currentOtp === '---') {
+                    currentOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                    await supabase
+                        .from('bookings')
+                        .update({ otp: currentOtp })
+                        .eq('id', taskId);
+                }
+
+                // 4. Confirm Booking
                 const { error } = await supabase
                     .from('bookings')
                     .update({ status: 'confirmed' })
                     .eq('id', taskId);
+                
                 if (error) throw error;
+
+                // 5. Notify Parent
+                const { error: notifError } = await supabase.from('notifications').insert({
+                    user_id: bookingData.user_id,
+                    title: 'Booking Confirmed!',
+                    message: `Great news! ${profile?.name} has been assigned as your mentor. Your Session OTP is: ${currentOtp}. ⚠️ Do not share this OTP at any other time except during the session.`,
+                    type: 'booking_confirmed'
+                });
+
+                if (notifError) {
+                    console.error("Notification Error:", notifError);
+                    alert("Task accepted, but failed to notify parent: " + notifError.message);
+                } else {
+                    alert("Task accepted and parent notified!");
+                }
             } else {
                 const { error } = await supabase
                     .from('contact_queries')
@@ -260,8 +307,11 @@ const MentorDashboard: React.FC = () => {
             }
             setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed', is_accepted: true } : t));
             alert("Task accepted successfully!");
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error accepting task:', err);
+            alert("Error: " + err.message);
+        } finally {
+            setProcessingTaskId(null);
         }
     };
 
@@ -751,9 +801,19 @@ const MentorDashboard: React.FC = () => {
                                                         </div>
                                                         <button
                                                             onClick={() => handleAcceptOffer(offer.id)}
-                                                            className="w-full md:w-auto px-8 py-4 bg-[#1B2A5A] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#142044] transition-all shadow-xl shadow-[#1B2A5A]/10 flex items-center justify-center gap-2"
+                                                            disabled={processingTaskId === offer.id}
+                                                            className="w-full md:w-auto px-8 py-4 bg-[#1B2A5A] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#142044] transition-all shadow-xl shadow-[#1B2A5A]/10 flex items-center justify-center gap-2 disabled:opacity-50"
                                                         >
-                                                            <FaCheckCircle size={12} /> Show Interest
+                                                            {processingTaskId === offer.id ? (
+                                                                <span className="flex items-center gap-2">
+                                                                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                                    Processing...
+                                                                </span>
+                                                            ) : (
+                                                                <>
+                                                                    <FaCheckCircle size={12} /> Show Interest
+                                                                </>
+                                                            )}
                                                         </button>
                                                     </div>
                                                 ))}
@@ -828,9 +888,19 @@ const MentorDashboard: React.FC = () => {
                                                             <>
                                                                 <button
                                                                     onClick={() => handleAcceptTask(task.id, task.type)}
-                                                                    className="px-6 py-3 bg-[#1B2A5A] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#142044] transition-all shadow-lg shadow-[#1B2A5A]/10 flex items-center gap-2"
+                                                                    disabled={processingTaskId === task.id}
+                                                                    className="px-6 py-3 bg-[#1B2A5A] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#142044] transition-all shadow-lg shadow-[#1B2A5A]/10 flex items-center gap-2 disabled:opacity-50"
                                                                 >
-                                                                    <FaCheckCircle size={12} /> Accept Task
+                                                                    {processingTaskId === task.id ? (
+                                                                        <span className="flex items-center gap-2">
+                                                                            <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                                            Processing...
+                                                                        </span>
+                                                                    ) : (
+                                                                        <>
+                                                                            <FaCheckCircle size={12} /> Accept Task
+                                                                        </>
+                                                                    )}
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleDeclineTask(task.id, task.type)}

@@ -104,16 +104,74 @@ const AdminBookings: React.FC = () => {
 
     const handleUpdateStatus = async (bookingId: string, newStatus: string) => {
         try {
-            const { error } = await supabase
+            // 1. Fetch current status and OTP if we are confirming
+            let currentOtp = '---';
+            let userId = '';
+            let shouldSendNotification = false;
+
+            if (newStatus === 'confirmed') {
+                const { data: bookingData, error: fetchError } = await supabase
+                    .from('bookings')
+                    .select('user_id, otp, status')
+                    .eq('id', bookingId)
+                    .single();
+
+                if (fetchError || !bookingData) throw new Error("Could not fetch booking details");
+
+                // If already confirmed, just synchronize local state and finish
+                if (bookingData.status === 'confirmed') {
+                    setBookings(bookings.map(b => b.id === bookingId ? { ...b, status: 'confirmed' } : b));
+                    alert("Booking is already confirmed.");
+                    return;
+                }
+
+                if (!bookingData.user_id) throw new Error("No parent ID associated with this booking");
+                
+                userId = bookingData.user_id;
+                shouldSendNotification = true;
+
+                // 3. OTP Recovery: Generate if missing
+                currentOtp = bookingData.otp;
+                if (!currentOtp || currentOtp === '---') {
+                    currentOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                    await supabase
+                        .from('bookings')
+                        .update({ otp: currentOtp })
+                        .eq('id', bookingId);
+                }
+            }
+
+            // 4. Update the actual status
+            const { error: updateError } = await supabase
                 .from('bookings')
                 .update({ status: newStatus })
                 .eq('id', bookingId);
 
-            if (error) throw error;
-            setBookings(bookings.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
+            if (updateError) throw updateError;
+            
+            // 5. Notify Parent
+            if (shouldSendNotification) {
+                const { error: notifError } = await supabase.from('notifications').insert({
+                    user_id: userId,
+                    title: 'Booking Confirmed!',
+                    message: `Your booking has been confirmed by the administration. Your Session OTP is: ${currentOtp}. ⚠️ Do not share this OTP at any other time except during the session.`,
+                    type: 'booking_confirmed'
+                });
+
+                if (notifError) {
+                    console.error("Notification Error:", notifError);
+                    alert("Status updated, but failed to notify parent: " + notifError.message);
+                } else {
+                    console.log("Notification sent successfully to:", userId);
+                    alert("Booking confirmed and parent notified!");
+                }
+            }
+
+            setBookings(bookings.map(b => b.id === bookingId ? { ...b, status: newStatus, otp: currentOtp } : b));
             alert(`Booking status updated to ${newStatus}`);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error updating status:', err);
+            alert("Error: " + err.message);
         }
     };
 

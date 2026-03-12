@@ -70,6 +70,9 @@ const BookingPage: React.FC = () => {
 
         setIsSubmitting(true);
 
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
         try {
             const { error } = await supabase
                 .from('bookings')
@@ -91,10 +94,23 @@ const BookingPage: React.FC = () => {
                     session_mode: sessionMode,
                     latitude: lat,
                     longitude: lng,
-                    status: 'pending'
+                    status: 'pending',
+                    otp: otp
                 });
 
             if (error) throw error;
+
+            // Send Notification to Parent
+            const { error: notifError } = await supabase.from('notifications').insert({
+                user_id: user.id,
+                title: 'Order Summary',
+                message: 'Payment completed and booking is initiated. Our team will contact you soon.',
+                type: 'booking_initiated'
+            });
+
+            if (notifError) {
+                console.error("Notification Error:", notifError);
+            }
 
             setIsSuccess(true);
         } catch (err: any) {
