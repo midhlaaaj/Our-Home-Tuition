@@ -236,13 +236,13 @@ const Mentors: React.FC = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div className="space-y-1.5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
+                        <div className="lg:col-span-4 space-y-1.5">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Mentor Name</label>
                             <input
                                 type="text"
                                 placeholder="FullName"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-medium text-sm"
                                 value={form.name || ''}
                                 onChange={e => {
                                     const name = e.target.value;
@@ -254,10 +254,9 @@ const Mentors: React.FC = () => {
                             />
                         </div>
 
-                        {/* Hidden Profile Status toggle (Only show in edit mode or remove if not needed) */}
-                        <div className="flex items-center gap-3 pt-2">
-                            <label className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border-2 border-transparent hover:border-blue-100 transition-all cursor-pointer group">
-                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${form.is_active ? 'bg-blue-600 border-blue-600' : 'border-gray-200'} `}>
+                        <div className="lg:col-span-4 pb-0.5">
+                            <label className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-xl border-2 border-transparent hover:border-blue-100 transition-all cursor-pointer group">
+                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${form.is_active ? 'bg-blue-600 border-blue-600' : 'border-gray-200'} `}>
                                     {form.is_active && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                                 </div>
                                 <input
@@ -266,16 +265,16 @@ const Mentors: React.FC = () => {
                                     checked={form.is_active}
                                     onChange={e => setForm({ ...form, is_active: e.target.checked })}
                                 />
-                                <span className="text-xs font-black text-gray-800 uppercase tracking-widest">Public Profile</span>
+                                <span className="text-[10px] font-black text-gray-800 uppercase tracking-widest">Show on Homepage</span>
                             </label>
                         </div>
 
-                        <div className="flex gap-2 justify-end col-span-1 md:col-span-2 lg:col-span-1 lg:ml-auto">
+                        <div className="lg:col-span-4 flex gap-2 justify-end">
                             {isEditing && (
                                 <button
                                     type="button"
                                     onClick={resetForm}
-                                    className="px-6 py-3.5 bg-gray-100 text-gray-500 rounded-xl font-black hover:bg-gray-200 transition-all text-sm uppercase tracking-widest"
+                                    className="px-4 py-3 bg-gray-100 text-gray-500 rounded-xl font-black hover:bg-gray-200 transition-all text-[10px] uppercase tracking-widest"
                                 >
                                     Cancel
                                 </button>
@@ -283,9 +282,9 @@ const Mentors: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={loading || uploading}
-                                className="px-8 py-3.5 bg-[#1B2A5A] text-white rounded-xl font-black hover:bg-[#142044] disabled:opacity-50 transition-all shadow-xl shadow-[#1B2A5A]/10 text-sm flex items-center justify-center gap-2 min-w-[140px] uppercase tracking-widest"
+                                className="px-6 py-3 bg-[#1B2A5A] text-white rounded-xl font-black hover:bg-[#142044] disabled:opacity-50 transition-all shadow-lg text-[10px] flex items-center justify-center gap-2 min-w-[120px] uppercase tracking-widest"
                             >
-                                {loading ? 'Saving...' : (isEditing ? 'Update Mentor' : 'Add Mentor')}
+                                {loading ? '...' : (isEditing ? 'Update Mentor' : 'Add Mentor')}
                             </button>
                         </div>
                     </div>
