@@ -68,11 +68,11 @@ const AdminLayout: React.FC = () => {
                             to={item.path}
                             onClick={() => setIsSidebarOpen(false)}
                             className={`flex items-center space-x-4 px-5 py-4 rounded-2xl transition-all duration-300 group ${location.pathname === item.path
-                                ? 'bg-[#ffb76c] text-[#1F2937] shadow-lg shadow-[#ffb76c]/20 font-black scale-[1.02]'
-                                : 'text-white/60 hover:bg-white/5 hover:text-white font-bold'
+                                ? 'bg-[#ffb76c] text-[#1B2A5A] shadow-lg shadow-[#ffb76c]/20 font-black scale-[1.02]'
+                                : 'text-white/90 hover:bg-white/10 hover:text-white font-bold'
                                 }`}
                         >
-                            <span className={`text-xl transition-transform group-hover:scale-110 ${location.pathname === item.path ? 'text-[#1F2937]' : 'text-white/40 group-hover:text-[#ffb76c]'}`}>
+                            <span className={`text-xl transition-all duration-300 group-hover:scale-110 ${location.pathname === item.path ? 'text-[#1B2A5A]' : 'text-[#ffb76c] group-hover:text-white'}`}>
                                 {item.icon}
                             </span>
                             <span className="text-sm tracking-wide">{item.label}</span>

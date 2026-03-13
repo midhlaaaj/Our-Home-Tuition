@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { FaTrash, FaEdit, FaUpload, FaStar } from 'react-icons/fa';
-import { uploadFile } from '../../utils/uploadHelper';
+import { FaTrash, FaStar, FaUserGraduate, FaChalkboardTeacher, FaCheckCircle, FaTimesCircle, FaEdit } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 
-interface Review {
+interface Testimonial {
     id: string;
     name: string;
     role: string;
@@ -13,365 +13,290 @@ interface Review {
     is_active: boolean;
 }
 
+interface MentorReview {
+    id: string;
+    created_at: string;
+    booking_id: string;
+    mentor_id: string;
+    parent_id: string;
+    rating: number;
+    comment: string;
+    is_public: boolean;
+    mentors?: { name: string; subject: string; image_url: string };
+    bookings?: { primary_student: any; curriculum: string };
+}
+
 const Reviews: React.FC = () => {
-    const [reviews, setReviews] = useState<Review[]>([]);
+    const [view, setView] = useState<'testimonials' | 'mentor'>('mentor');
+    const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+    const [mentorReviews, setMentorReviews] = useState<MentorReview[]>([]);
     const [loading, setLoading] = useState(false);
-    const [uploading, setUploading] = useState(false);
-    const [form, setForm] = useState<Partial<Review>>({ role: 'Student', rating: 5, is_active: true });
+    const [uploading] = useState(false); // Placeholder for upload state
+    
+    // Form state for Testimonials
+    const [testForm, setTestForm] = useState<Partial<Testimonial>>({ role: 'Student', rating: 5, is_active: true });
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState<string | null>(null);
 
+    useEffect(() => {
+        if (view === 'testimonials') fetchTestimonials();
+        else fetchMentorReviews();
+    }, [view]);
 
-
-    const fetchReviews = async () => {
+    const fetchTestimonials = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('reviews')
-                .select('*')
-                .order('created_at', { ascending: false });
-
+            const { data, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
             if (error) throw error;
-            setReviews(data || []);
-
+            setTestimonials(data || []);
         } catch (err) {
-            console.error('Error fetching reviews:', err);
+            console.error('Error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchReviews();
-    }, []);
-
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
-        const file = e.target.files[0];
-        setUploading(true);
-
+    const fetchMentorReviews = async () => {
+        setLoading(true);
         try {
-            const publicUrl = await uploadFile(file, 'uploads', 'reviews');
-            setForm(prev => ({ ...prev, avatar_url: publicUrl }));
-        } catch (error) {
-            console.error('Upload failed:', error);
-            alert('Failed to upload avatar. Make sure the "uploads" bucket exists and is public.');
+            const { data, error } = await supabase
+                .from('mentor_reviews')
+                .select('*, mentors(name, subject, image_url), bookings(primary_student, curriculum)')
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            setMentorReviews(data || []);
+        } catch (err) {
+            console.error('Error:', err);
         } finally {
-            setUploading(false);
+            setLoading(false);
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleToggleVisibility = async (id: string, currentStatus: boolean) => {
+        try {
+            const { error } = await supabase.from('mentor_reviews').update({ is_public: !currentStatus }).eq('id', id);
+            if (error) throw error;
+            setMentorReviews(mentorReviews.map(r => r.id === id ? { ...r, is_public: !currentStatus } : r));
+        } catch (err) {
+            console.error('Error toggling visibility:', err);
+        }
+    };
+
+    const handleToggleTestimonialVisibility = async (id: string, currentStatus: boolean) => {
+        try {
+            const { error } = await supabase.from('reviews').update({ is_active: !currentStatus }).eq('id', id);
+            if (error) throw error;
+            setTestimonials(testimonials.map(t => t.id === id ? { ...t, is_active: !currentStatus } : t));
+        } catch (err) {
+            console.error('Error toggling testimonial visibility:', err);
+        }
+    };
+
+    const handleDeleteMentorReview = async (id: string) => {
+        if (!window.confirm("Are you sure you want to delete this review?")) return;
+        try {
+            const { error } = await supabase.from('mentor_reviews').delete().eq('id', id);
+            if (error) throw error;
+            setMentorReviews(mentorReviews.filter(r => r.id !== id));
+        } catch (err) {
+            console.error('Error deleting review:', err);
+        }
+    };
+
+    const handleTestimonialSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const reviewData = {
-                name: form.name,
-                role: form.role,
-                rating: form.rating,
-                message: form.message,
-                avatar_url: form.avatar_url,
-                is_active: form.is_active
-            };
-
+            const data = { ...testForm };
             if (isEditing && editId) {
-                const { error } = await supabase
-                    .from('reviews')
-                    .update(reviewData)
-                    .eq('id', editId);
+                const { error } = await supabase.from('reviews').update(data).eq('id', editId);
                 if (error) throw error;
             } else {
-                const { error } = await supabase
-                    .from('reviews')
-                    .insert([reviewData]);
+                const { error } = await supabase.from('reviews').insert([data]);
                 if (error) throw error;
             }
-
-            setForm({ role: 'Student', rating: 5, is_active: true, name: '', message: '', avatar_url: '' });
+            setTestForm({ role: 'Student', rating: 5, is_active: true, name: '', message: '', avatar_url: '' });
             setIsEditing(false);
             setEditId(null);
-            fetchReviews();
+            fetchTestimonials();
         } catch (err) {
-            console.error('Error saving review:', err);
-            alert('Failed to save review. Make sure the database table exists.');
+            console.error('Error:', err);
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (window.confirm('Are you sure?')) {
-            try {
-                const { error } = await supabase
-                    .from('reviews')
-                    .delete()
-                    .eq('id', id);
-                if (error) throw error;
-                fetchReviews();
-            } catch (err) {
-                console.error('Error deleting review:', err);
-            }
-        }
-    };
-
-    const handleEdit = (review: Review) => {
-        setForm(review);
-        setIsEditing(true);
-        setEditId(review.id);
-    };
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-6 pt-4 animate-in fade-in duration-700">
+            {/* Header & Tabs */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl font-black text-gray-900 mb-1">Manage Reviews</h1>
-                    <p className="text-sm text-gray-500 font-medium">Control home page testimonials.</p>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Reviews & Testimonials</h1>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Manage parent feedback and site testimonials</p>
                 </div>
-                <button
-                    onClick={() => {
-                        const formElement = document.getElementById('review-form');
-                        formElement?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="bg-[#a0522d] text-white px-6 py-3 rounded-xl font-black hover:bg-[#804224] transition-all shadow-lg shadow-[#a0522d]/20 text-sm"
-                >
-                    Add New Review
-                </button>
+                
+                <div className="flex gap-2 bg-white p-1.5 rounded-[20px] border border-gray-100 shadow-sm self-start">
+                    <button
+                        onClick={() => setView('mentor')}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${view === 'mentor' ? 'bg-[#1B2A5A] text-white shadow-xl shadow-[#1B2A5A]/20' : 'text-gray-400 hover:text-gray-900'}`}
+                    >
+                        <FaChalkboardTeacher size={12} /> Mentor Reviews
+                    </button>
+                    <button
+                        onClick={() => setView('testimonials')}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${view === 'testimonials' ? 'bg-[#a0522d] text-white shadow-xl shadow-[#a0522d]/20' : 'text-gray-400 hover:text-gray-900'}`}
+                    >
+                        <FaUserGraduate size={12} /> Site Testimonials
+                    </button>
+                </div>
             </div>
 
-            {/* Form */}
-            <div id="review-form" className="bg-white p-6 md:p-8 rounded-[24px] shadow-xl border border-gray-50 mb-8">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#a0522d] flex items-center justify-center">
-                        <FaEdit size={16} />
-                    </div>
-                    <h2 className="text-xl font-black text-gray-900 tracking-tight">
-                        {isEditing ? 'Update Selection' : 'Register New Review'}
-                    </h2>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
-                            <input
-                                type="text"
-                                placeholder="e.g., Sarah Thompson"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
-                                value={form.name || ''}
-                                onChange={e => setForm({ ...form, name: e.target.value })}
-                                required
-                            />
+            {view === 'mentor' ? (
+                <div className="grid grid-cols-1 gap-6">
+                    {loading ? (
+                        <div className="p-20 text-center"><div className="w-12 h-12 border-4 border-[#ffb76c]/20 border-t-[#ffb76c] rounded-full animate-spin mx-auto"></div></div>
+                    ) : mentorReviews.length === 0 ? (
+                        <div className="bg-white p-20 rounded-[40px] border-2 border-dashed border-gray-100 text-center">
+                            <FaStar size={40} className="text-gray-100 mx-auto mb-4" />
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No mentor reviews yet</p>
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Role / Subtitle</label>
-                            <input
-                                type="text"
-                                placeholder="Student, Parent, etc."
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
-                                value={form.role || ''}
-                                onChange={e => setForm({ ...form, role: e.target.value })}
-                                required
-                            />
-                        </div>
-                    </div>
+                    ) : (
+                        mentorReviews.map(review => (
+                            <motion.div layout key={review.id} className="bg-white rounded-[40px] border border-gray-100 shadow-xl overflow-hidden group hover:border-[#ffb76c]/30 transition-all duration-500">
+                                <div className="p-8">
+                                    <div className="flex flex-col lg:flex-row gap-10">
+                                        <div className="flex-1 space-y-8">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-16 h-16 rounded-[20px] bg-orange-50 flex items-center justify-center text-[#ffb76c]">
+                                                        <FaUserGraduate size={24} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-[#a0522d] uppercase tracking-widest mb-1">Parent Feedback for {review.mentors?.name}</p>
+                                                        <h3 className="text-xl font-black text-gray-900 tracking-tight leading-none">{review.bookings?.primary_student?.name}</h3>
+                                                        <div className="flex items-center gap-1 mt-3">
+                                                            {[...Array(5)].map((_, i) => <FaStar key={i} size={14} className={i < review.rating ? 'text-[#ffb76c]' : 'text-gray-100'} />)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Booking ID</span>
+                                                    <p className="text-xs font-black text-gray-900">{review.booking_id.slice(0, 8)}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="p-6 bg-gray-50 rounded-[32px] border border-gray-100/50 relative">
+                                                <span className="absolute -top-3 left-8 px-4 py-1 bg-white border border-gray-100 rounded-full text-[9px] font-black text-gray-400 uppercase tracking-widest shadow-sm italic">"Review Message"</span>
+                                                <p className="text-gray-600 font-bold leading-relaxed italic">"{review.comment}"</p>
+                                            </div>
+                                        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Rating (Out of 5)</label>
-                            <div className="flex items-center gap-3 bg-gray-50 p-3.5 rounded-xl border-2 border-transparent focus-within:border-[#a0522d] focus-within:bg-white transition-all">
-                                <div className="flex items-center gap-2">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <button
-                                            key={star}
-                                            type="button"
-                                            onClick={() => setForm({ ...form, rating: star })}
-                                            className="transition-transform active:scale-95 group"
-                                        >
-                                            <FaStar
-                                                size={20}
-                                                className={`transition-colors ${(form.rating || 0) >= star
-                                                    ? 'text-orange-400'
-                                                    : 'text-gray-200 group-hover:text-orange-200'
-                                                    }`}
-                                            />
-                                        </button>
-                                    ))}
-                                </div>
-                                <span className="ml-2 text-xs font-black text-gray-400 uppercase tracking-widest">
-                                    {form.rating || 1} Star{(form.rating || 1) > 1 ? 's' : ''}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Avatar Image</label>
-                            <div className="flex gap-3">
-                                <div className="flex-1 flex gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Avatar URL (Optional)"
-                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
-                                        value={form.avatar_url || ''}
-                                        onChange={e => setForm({ ...form, avatar_url: e.target.value })}
-                                    />
-                                    <label className="flex items-center justify-center w-12 h-12 bg-white border-2 border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors shadow-sm shrink-0">
-                                        <FaUpload size={14} className="text-gray-400" />
-                                        <input
-                                            type="file"
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={handleFileUpload}
-                                            disabled={uploading}
-                                        />
-                                    </label>
-                                </div>
-                                {form.avatar_url && (
-                                    <div className="relative shrink-0">
-                                        <img src={form.avatar_url} alt="Preview" className="w-12 h-12 rounded-xl object-cover border-4 border-gray-50 shadow-md" />
-                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                                        <div className="lg:w-72">
+                                            <div className="p-6 bg-gray-900 rounded-[32px] space-y-6">
+                                                <div className="flex items-center gap-3">
+                                                    <img src={review.mentors?.image_url} alt="" className="w-10 h-10 rounded-xl object-cover border border-white/10" />
+                                                    <div>
+                                                        <p className="text-[9px] font-black text-[#ffb76c] uppercase tracking-widest leading-none mb-1">{review.mentors?.subject}</p>
+                                                        <p className="text-xs font-black text-white">{review.mentors?.name}</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="h-px bg-white/5"></div>
+                                                
+                                                <div className="space-y-3">
+                                                    <button 
+                                                        onClick={() => handleToggleVisibility(review.id, review.is_public)}
+                                                        className={`w-full py-4 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${review.is_public ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-white/5 text-white/40 border border-white/10 hover:border-green-500/50 hover:text-green-500'}`}
+                                                    >
+                                                        {review.is_public ? <FaCheckCircle /> : <FaTimesCircle />}
+                                                        {review.is_public ? 'Visible to Public' : 'Hidden from Public'}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeleteMentorReview(review.id)}
+                                                        className="w-full py-4 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
+                                                    >
+                                                        <FaTrash size={10} /> Delete Review
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">The Review Message</label>
-                        <textarea
-                            placeholder="What did they say about us?"
-                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-4 rounded-xl transition-all font-medium resize-none text-gray-700 leading-relaxed text-sm"
-                            rows={3}
-                            value={form.message || ''}
-                            onChange={e => setForm({ ...form, message: e.target.value })}
-                            required
-                        />
-                    </div>
-
-                    <div className="flex flex-col md:flex-row gap-4 pt-2">
-                        <label className="flex-grow flex items-center gap-3 bg-gray-50 p-4 rounded-xl border-2 border-transparent hover:border-blue-100 transition-all cursor-pointer group">
-                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${form.is_active ? 'bg-blue-600 border-blue-600' : 'border-gray-200'}`}>
-                                {form.is_active && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-                            </div>
-                            <input
-                                type="checkbox"
-                                className="hidden"
-                                checked={form.is_active}
-                                onChange={e => setForm({ ...form, is_active: e.target.checked })}
-                            />
-                            <div>
-                                <p className="text-xs font-black text-gray-800">Publicly Visible</p>
-                            </div>
-                        </label>
-
-                        <div className="flex gap-2">
-                            {isEditing && (
-                                <button
-                                    type="button"
-                                    onClick={() => { setIsEditing(false); setForm({ role: 'Student', rating: 5, is_active: true, name: '', message: '', avatar_url: '' }); }}
-                                    className="px-6 py-3.5 bg-gray-100 text-gray-500 rounded-xl font-black hover:bg-gray-200 transition-all text-sm"
-                                >
-                                    Cancel
-                                </button>
-                            )}
-                            <button
-                                type="submit"
-                                disabled={uploading}
-                                className="px-8 py-3.5 bg-[#1B2A5A] text-white rounded-xl font-black hover:bg-[#142044] disabled:opacity-50 transition-all shadow-xl shadow-[#1B2A5A]/10 text-sm flex items-center justify-center gap-2 shrink-0"
-                            >
-                                {isEditing ? 'Update Review' : 'Publish Review'}
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            {/* List */}
-            <div className="bg-white rounded-[24px] shadow-sm border border-gray-50 overflow-hidden">
-                <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white">
-                    <h2 className="text-lg font-black text-gray-900 tracking-tight flex items-center gap-2">
-                        <FaStar size={16} className="text-orange-400" /> Published Reviews
-                    </h2>
-                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-gray-200/50">
-                        {reviews.length} total
-                    </span>
+                                </div>
+                            </motion.div>
+                        ))
+                    )}
                 </div>
+            ) : (
+                <div className="space-y-8">
+                    {/* Testimonials Form Source */}
+                    <div className="bg-white p-10 rounded-[40px] shadow-2xl border border-gray-50">
+                        <h2 className="text-2xl font-black text-gray-900 mb-8 tracking-tight flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><FaEdit size={16} /></div>
+                            {isEditing ? 'Update Testimonial' : 'Register New Testimonial'}
+                        </h2>
+                        <form onSubmit={handleTestimonialSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Person's Name</label>
+                                    <input type="text" value={testForm.name || ''} onChange={e => setTestForm({...testForm, name: e.target.value})} className="w-full px-6 py-4 bg-gray-50 border border-transparent focus:border-[#a0522d] rounded-2xl outline-none font-bold text-sm" placeholder="e.g. Sarah Thompson" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Role / Title</label>
+                                    <input type="text" value={testForm.role || ''} onChange={e => setTestForm({...testForm, role: e.target.value})} className="w-full px-6 py-4 bg-gray-50 border border-transparent focus:border-[#a0522d] rounded-2xl outline-none font-bold text-sm" placeholder="e.g. Parent of Grade 8 Student" required />
+                                </div>
+                            </div>
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Testimonial Message</label>
+                                    <textarea value={testForm.message || ''} onChange={e => setTestForm({...testForm, message: e.target.value})} className="w-full px-6 py-4 bg-gray-50 border border-transparent focus:border-[#a0522d] rounded-2xl outline-none font-bold text-sm min-h-[140px] resize-none" placeholder="What was their experience?" required />
+                                </div>
+                                <div className="flex gap-4">
+                                    <button type="submit" disabled={uploading} className="flex-1 py-4 bg-[#1B2A5A] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#142044] transition-all shadow-xl shadow-[#1B2A5A]/20">
+                                        {isEditing ? 'Update Records' : 'Publish Testimonial'}
+                                    </button>
+                                    {isEditing && <button type="button" onClick={() => { setIsEditing(false); setTestForm({}); }} className="px-8 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 transition-all">Cancel</button>}
+                                </div>
+                            </div>
+                        </form>
+                    </div>
 
-                {loading ? (
-                    <div className="p-12 text-center animate-pulse">
-                        <div className="inline-block w-8 h-8 border-4 border-[#ffb76c]/20 border-t-[#ffb76c] rounded-full animate-spin"></div>
-                    </div>
-                ) : reviews.length === 0 ? (
-                    <div className="p-12 text-center text-gray-400">
-                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <FaStar size={24} className="opacity-20" />
-                        </div>
-                        <h3 className="text-lg font-black text-gray-800 mb-1">No reviews found</h3>
-                        <p className="text-sm font-medium">Add a new review to get started.</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
+                    {/* Testimonials List */}
+                    <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl overflow-hidden text-sm">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-gray-50/50">
-                                    <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Contributor</th>
-                                    <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Identity</th>
-                                    <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">Sentiment</th>
-                                    <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 text-center">Visibility</th>
-                                    <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 text-right">Actions</th>
+                                <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                    <th className="px-8 py-6">Contributor</th>
+                                    <th className="px-6 py-6 font-mono">Rating</th>
+                                    <th className="px-6 py-6">Visibility</th>
+                                    <th className="px-6 py-6 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
-                                {reviews.map(review => (
-                                    <tr key={review.id} className="group hover:bg-gray-50/50 transition-all duration-300">
-                                        <td className="p-4">
+                                {testimonials.map(t => (
+                                    <tr key={t.id} className="group hover:bg-gray-50/50 transition-colors">
+                                        <td className="px-8 py-6">
                                             <div className="flex items-center gap-3">
-                                                <div className="relative">
-                                                    <img
-                                                        src={review.avatar_url || `https://ui-avatars.com/api/?name=${review.name}`}
-                                                        className="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm"
-                                                        alt=""
-                                                    />
-                                                    <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${review.is_active ? 'bg-green-500' : 'bg-red-400'}`}></div>
-                                                </div>
+                                                <img src={t.avatar_url || `https://ui-avatars.com/api/?name=${t.name}`} className="w-10 h-10 rounded-xl object-cover" alt="" />
                                                 <div>
-                                                    <p className="font-black text-gray-900 group-hover:text-[#a0522d] transition-colors text-sm">{review.name}</p>
-                                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Review Entry</p>
+                                                    <p className="font-black text-gray-900">{t.name}</p>
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">{t.role}</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="p-4">
-                                            <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-[10px] font-black tracking-tight border border-blue-100 italic">
-                                                {review.role}
-                                            </span>
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex items-center gap-1 text-orange-400">
-                                                {[...Array(review.rating)].map((_, i) => (
-                                                    <FaStar key={i} size={10} />
-                                                ))}
-                                                <span className="ml-1 text-[10px] font-black text-gray-300">{review.rating}.0</span>
+                                        <td className="px-6 py-6">
+                                            <div className="flex items-center gap-1 text-[#ffb76c]">
+                                                {Number(t.rating).toFixed(1)} <FaStar size={10} />
                                             </div>
                                         </td>
-                                        <td className="p-4 text-center">
-                                            <span className={`px-2.5 py-1 rounded-full text-[9px] font-black tracking-[0.1em] uppercase border shadow-sm ${review.is_active
-                                                ? 'bg-green-50 text-green-600 border-green-100'
-                                                : 'bg-red-50 text-red-500 border-red-100'
-                                                }`}>
-                                                {review.is_active ? 'Live' : 'Hidden'}
-                                            </span>
+                                        <td className="px-6 py-6">
+                                            <button 
+                                                onClick={() => handleToggleTestimonialVisibility(t.id, t.is_active)}
+                                                className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all hover:scale-105 active:scale-95 ${t.is_active ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-500 border-red-100'}`}
+                                            >
+                                                {t.is_active ? 'Live' : 'Hidden'}
+                                            </button>
                                         </td>
-                                        <td className="p-4">
-                                            <div className="flex items-center justify-end gap-1.5">
-                                                <button
-                                                    onClick={() => handleEdit(review)}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-all"
-                                                    title="Edit Review"
-                                                >
-                                                    <FaEdit size={14} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(review.id)}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
-                                                    title="Delete Review"
-                                                >
-                                                    <FaTrash size={14} />
-                                                </button>
+                                        <td className="px-6 py-6 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <button onClick={() => { setTestForm(t); setIsEditing(true); setEditId(t.id); }} className="p-2 text-gray-400 hover:text-blue-500 transition-colors"><FaEdit size={14}/></button>
+                                                <button onClick={async () => { if(window.confirm('Delete?')) { await supabase.from('reviews').delete().eq('id', t.id); fetchTestimonials(); } }} className="p-2 text-gray-400 hover:text-red-500 transition-colors"><FaTrash size={14}/></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -379,9 +304,9 @@ const Reviews: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
-                )}
-            </div>
-        </div >
+                </div>
+            )}
+        </div>
     );
 };
 

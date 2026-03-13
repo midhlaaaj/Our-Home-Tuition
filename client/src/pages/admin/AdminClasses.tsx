@@ -8,6 +8,8 @@ interface Subject {
     class_id: number;
     name: string;
     curriculum: 'CBSE' | 'STATE';
+    full_subject_price: number;
+    estimated_duration: number; // in minutes
     created_at: string;
 }
 
@@ -18,6 +20,8 @@ interface Topic {
     description: string | null;
     unit_no: number;
     unit_title: string | null;
+    unit_price: number;
+    estimated_duration: number; // in minutes
     created_at: string;
 }
 
@@ -29,8 +33,12 @@ const AdminClasses: React.FC = () => {
     const [topics, setTopics] = useState<Record<string, Topic[]>>({});
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
     const [newSubjectName, setNewSubjectName] = useState('');
+    const [newSubjectPrice, setNewSubjectPrice] = useState<number>(0);
+    const [newSubjectDuration, setNewSubjectDuration] = useState<number>(0);
     const [newTopicName, setNewTopicName] = useState('');
     const [newTopicDesc, setNewTopicDesc] = useState('');
+    const [newUnitPrice, setNewUnitPrice] = useState<number>(100);
+    const [newTopicDuration, setNewTopicDuration] = useState<number>(60);
     const [newUnitNo, setNewUnitNo] = useState<number>(1);
     const [newUnitTitle, setNewUnitTitle] = useState('');
     const [addingTopicFor, setAddingTopicFor] = useState<string | null>(null);
@@ -39,9 +47,13 @@ const AdminClasses: React.FC = () => {
     // Edit states
     const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
     const [editSubjectName, setEditSubjectName] = useState('');
+    const [editSubjectPrice, setEditSubjectPrice] = useState<number>(0);
+    const [editSubjectDuration, setEditSubjectDuration] = useState<number>(0);
     const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
     const [editTopicName, setEditTopicName] = useState('');
     const [editTopicDesc, setEditTopicDesc] = useState('');
+    const [editTopicUnitPrice, setEditTopicUnitPrice] = useState<number>(100);
+    const [editTopicDuration, setEditTopicDuration] = useState<number>(60);
     const [editTopicUnitNo, setEditTopicUnitNo] = useState<number>(1);
     const [editTopicUnitTitle, setEditTopicUnitTitle] = useState('');
 
@@ -110,11 +122,14 @@ const AdminClasses: React.FC = () => {
                     class_id: selectedClassId,
                     name: newSubjectName.trim(),
                     curriculum: selectedCurriculum,
-                    state_region: selectedCurriculum === 'STATE' ? selectedStateRegion : 'ANDHRA'
+                    state_region: selectedCurriculum === 'STATE' ? selectedStateRegion : 'ANDHRA',
+                    full_subject_price: newSubjectPrice,
+                    estimated_duration: newSubjectDuration
                 }]);
 
             if (error) throw error;
             setNewSubjectName('');
+            setNewSubjectPrice(0);
             fetchSubjects();
         } catch (err) {
             console.error('Error adding subject:', err);
@@ -162,12 +177,15 @@ const AdminClasses: React.FC = () => {
                     name: newTopicName.trim(),
                     description: newTopicDesc.trim() || null,
                     unit_no: newUnitNo,
-                    unit_title: newUnitTitle.trim() || null
+                    unit_title: newUnitTitle.trim() || null,
+                    unit_price: newUnitPrice,
+                    estimated_duration: newTopicDuration
                 }]);
 
             if (error) throw error;
             setNewTopicName('');
             setNewTopicDesc('');
+            setNewUnitPrice(100);
             // Keep unit settings for easy consecutive adding if preferred, 
             // or reset them. Let's keep them but maybe increment unit_no if user wants?
             // For now, let's just reset name/desc.
@@ -200,6 +218,8 @@ const AdminClasses: React.FC = () => {
     const handleEditSubject = (subject: Subject) => {
         setEditingSubjectId(subject.id);
         setEditSubjectName(subject.name);
+        setEditSubjectPrice(subject.full_subject_price || 0);
+        setEditSubjectDuration(subject.estimated_duration || 0);
     };
 
     const handleSaveSubject = async (subjectId: string) => {
@@ -207,7 +227,11 @@ const AdminClasses: React.FC = () => {
         try {
             const { error } = await supabase
                 .from('class_subjects')
-                .update({ name: editSubjectName.trim() })
+                .update({ 
+                    name: editSubjectName.trim(),
+                    full_subject_price: editSubjectPrice,
+                    estimated_duration: editSubjectDuration
+                })
                 .eq('id', subjectId);
 
             if (error) throw error;
@@ -230,6 +254,8 @@ const AdminClasses: React.FC = () => {
         setEditTopicDesc(topic.description || '');
         setEditTopicUnitNo(topic.unit_no);
         setEditTopicUnitTitle(topic.unit_title || '');
+        setEditTopicUnitPrice(topic.unit_price || 100);
+        setEditTopicDuration(topic.estimated_duration || 60);
     };
 
     const handleSaveTopic = async (topicId: string, subjectId: string) => {
@@ -241,7 +267,9 @@ const AdminClasses: React.FC = () => {
                     name: editTopicName.trim(),
                     description: editTopicDesc.trim() || null,
                     unit_no: editTopicUnitNo,
-                    unit_title: editTopicUnitTitle.trim() || null
+                    unit_title: editTopicUnitTitle.trim() || null,
+                    unit_price: editTopicUnitPrice,
+                    estimated_duration: editTopicDuration
                 })
                 .eq('id', topicId);
 
@@ -288,6 +316,24 @@ const AdminClasses: React.FC = () => {
 
     const handleCancelEditUnit = () => {
         setEditingUnitKey(null);
+    };
+
+    const handleAutoCalculate = (subjectId: string, isEditing: boolean) => {
+        const subjectTopics = topics[subjectId] || [];
+        if (subjectTopics.length === 0) return;
+
+        // Group by unit to sum up unit prices (distinct units)
+        const units = groupTopicsByUnit(subjectTopics);
+        const totalPrice = units.reduce((acc, u) => acc + (u.topics[0]?.unit_price || 0), 0);
+        const totalDuration = units.reduce((acc, u) => acc + (u.topics[0]?.estimated_duration || 0), 0);
+
+        if (isEditing) {
+            setEditSubjectPrice(totalPrice);
+            setEditSubjectDuration(totalDuration);
+        } else {
+            setNewSubjectPrice(totalPrice);
+            setNewSubjectDuration(totalDuration);
+        }
     };
 
     // Helper to group topics by unit_no
@@ -398,6 +444,26 @@ const AdminClasses: React.FC = () => {
                         onKeyDown={(e) => e.key === 'Enter' && handleAddSubject()}
                         className="flex-1 bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-medium text-sm"
                     />
+                    <div className="w-32 relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">₹</span>
+                        <input
+                            type="number"
+                            placeholder="Price"
+                            value={newSubjectPrice}
+                            onChange={(e) => setNewSubjectPrice(Number(e.target.value))}
+                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none pl-6 pr-3 py-3 rounded-xl transition-all font-medium text-sm"
+                        />
+                    </div>
+                    <div className="w-24 relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">Min</span>
+                        <input
+                            type="number"
+                            placeholder="Duration"
+                            value={newSubjectDuration}
+                            onChange={(e) => setNewSubjectDuration(Number(e.target.value))}
+                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none pl-10 pr-3 py-3 rounded-xl transition-all font-medium text-sm"
+                        />
+                    </div>
                     <button
                         onClick={handleAddSubject}
                         disabled={!newSubjectName.trim()}
@@ -453,6 +519,30 @@ const AdminClasses: React.FC = () => {
                                                     autoFocus
                                                     onKeyDown={(e) => e.key === 'Enter' && handleSaveSubject(subject.id)}
                                                 />
+                                                <div className="w-24 relative">
+                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">₹</span>
+                                                    <input
+                                                        type="number"
+                                                        value={editSubjectPrice}
+                                                        onChange={(e) => setEditSubjectPrice(Number(e.target.value))}
+                                                        className="w-full bg-white border-2 border-[#a0522d] outline-none pl-5 pr-2 py-1.5 rounded-lg text-sm font-black"
+                                                    />
+                                                </div>
+                                                <div className="w-24 relative">
+                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-[10px]">Min</span>
+                                                    <input
+                                                        type="number"
+                                                        value={editSubjectDuration}
+                                                        onChange={(e) => setEditSubjectDuration(Number(e.target.value))}
+                                                        className="w-full bg-white border-2 border-[#a0522d] outline-none pl-8 pr-2 py-1.5 rounded-lg text-sm font-black"
+                                                    />
+                                                </div>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); handleAutoCalculate(subject.id, true); }}
+                                                    className="bg-orange-50 text-orange-600 px-2 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-orange-100"
+                                                >
+                                                    Auto
+                                                </button>
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2">
@@ -466,6 +556,12 @@ const AdminClasses: React.FC = () => {
                                                             {topics[subject.id].length} topics
                                                         </span>
                                                     )}
+                                                    <span className="text-[9px] font-black bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                                                        ₹{subject.full_subject_price || 0}
+                                                    </span>
+                                                    <span className="text-[9px] font-black bg-green-100 text-green-600 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                                                        {subject.estimated_duration || 0} Min
+                                                    </span>
                                                 </div>
                                             </div>
                                         )}
@@ -541,6 +637,13 @@ const AdminClasses: React.FC = () => {
                                                                         Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
                                                                     </h3>
                                                                     <button
+                                                                        onClick={() => handleAutoCalculate(subject.id, editingSubjectId === subject.id)}
+                                                                        className="text-orange-500 hover:text-orange-700 transition-all p-1 text-[10px] font-black underline decoration-orange-300"
+                                                                        title="Auto-calculate subject price/time from units"
+                                                                    >
+                                                                        SUM
+                                                                    </button>
+                                                                    <button
                                                                         onClick={() => handleEditUnit(group.unit_no, group.unit_title, subject.id)}
                                                                         className="text-gray-300 hover:text-blue-500 transition-all p-1"
                                                                     >
@@ -573,23 +676,44 @@ const AdminClasses: React.FC = () => {
                                                                                     placeholder="Description (optional)"
                                                                                     rows={2}
                                                                                 />
-                                                                                <div className="flex gap-2 items-center">
-                                                                                    <label className="text-[9px] font-black text-gray-400 uppercase">Move to Unit:</label>
-                                                                                    <input
-                                                                                        type="number"
-                                                                                        value={editTopicUnitNo}
-                                                                                        onChange={(e) => setEditTopicUnitNo(parseInt(e.target.value))}
-                                                                                        className="w-12 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 text-xs"
-                                                                                    />
-                                                                                </div>
+                                                                          <div className="flex gap-2 items-center">
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase">Unit Price:</label>
+                                                        <div className="relative w-20">
+                                                            <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">₹</span>
+                                                            <input
+                                                                type="number"
+                                                                value={editTopicUnitPrice}
+                                                                onChange={(e) => setEditTopicUnitPrice(Number(e.target.value))}
+                                                                className="w-full bg-gray-50 border border-gray-200 rounded pl-4 pr-1.5 py-0.5 text-xs font-bold"
+                                                            />
+                                                        </div>
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Move to Unit:</label>
+                                                        <input
+                                                            type="number"
+                                                            value={editTopicUnitNo}
+                                                            onChange={(e) => setEditTopicUnitNo(parseInt(e.target.value))}
+                                                            className="w-12 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 text-xs font-bold"
+                                                        />
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Min:</label>
+                                                        <input
+                                                            type="number"
+                                                            value={editTopicDuration}
+                                                            onChange={(e) => setEditTopicDuration(Number(e.target.value))}
+                                                            className="w-16 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 text-xs font-bold"
+                                                        />
+                                                    </div>
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="flex-1">
-                                                                                <p className="font-black text-gray-800 text-[13px] leading-tight mb-0.5">{topic.name}</p>
-                                                                                {topic.description && (
-                                                                                    <p className="text-[11px] text-gray-400 font-medium line-clamp-2">{topic.description}</p>
-                                                                                )}
-                                                                            </div>
+                                                                      <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-black text-gray-800 text-[13px] leading-tight mb-0.5">{topic.name}</p>
+                                                        <span className="text-[9px] font-black text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded">₹{topic.unit_price || 100}</span>
+                                                        <span className="text-[9px] font-black text-green-500 bg-green-50 px-1.5 py-0.5 rounded">{topic.estimated_duration || 60}m</span>
+                                                    </div>
+                                                    {topic.description && (
+                                                        <p className="text-[11px] text-gray-400 font-medium line-clamp-2">{topic.description}</p>
+                                                    )}
+                                                </div>
                                                                         )}
                                                                     </div>
                                                                     <div className="flex items-center gap-1 opacity-0 group-hover/topic:opacity-100 transition-opacity">
@@ -646,13 +770,22 @@ const AdminClasses: React.FC = () => {
                                                             className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-black text-sm"
                                                         />
                                                     </div>
-                                                    <div className="col-span-3">
-                                                        <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block ml-1">Unit Title (e.g. Basics of Reading)</label>
+                                                    <div className="col-span-2">
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block ml-1">Unit Title</label>
                                                         <input
                                                             type="text"
-                                                            placeholder="Optional title..."
+                                                            placeholder="Basics..."
                                                             value={newUnitTitle}
                                                             onChange={(e) => setNewUnitTitle(e.target.value)}
+                                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-black text-sm"
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-1">
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block ml-1">Duration (Min)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={newTopicDuration}
+                                                            onChange={(e) => setNewTopicDuration(Number(e.target.value))}
                                                             className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-black text-sm"
                                                         />
                                                     </div>

@@ -29,6 +29,7 @@ import Profile from './pages/Profile';
 import ClassPage from './pages/ClassPage';
 import BookingPage from './pages/BookingPage';
 import NotificationsPage from './pages/NotificationsPage';
+import WriteReview from './pages/WriteReview';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
             <Route path="/career" element={<Career />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/write-review/:bookingId" element={<WriteReview />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/login" element={<Login />} />
             <Route path="/mentor/login" element={<MentorLogin />} />

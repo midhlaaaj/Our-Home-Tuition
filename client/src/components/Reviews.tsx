@@ -30,14 +30,26 @@ const Reviews: React.FC = () => {
     useEffect(() => {
         const fetchReviews = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('reviews')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('created_at', { ascending: false });
+                const [siteRes, mentorRes] = await Promise.all([
+                    supabase.from('reviews').select('*').eq('is_active', true).order('created_at', { ascending: false }),
+                    supabase.from('mentor_reviews').select('*, mentors(image_url), bookings(primary_student)').eq('is_public', true).order('created_at', { ascending: false })
+                ]);
 
-                if (error) throw error;
-                setReviews(data || []);
+                if (siteRes.error) throw siteRes.error;
+                if (mentorRes.error) throw mentorRes.error;
+
+                const siteReviews: Review[] = siteRes.data || [];
+                const mentorReviews: Review[] = (mentorRes.data || []).map((mr: any) => ({
+                    id: mr.id,
+                    name: mr.bookings?.primary_student?.name || 'Parent',
+                    role: 'Verified Parent',
+                    rating: mr.rating,
+                    message: mr.comment,
+                    avatar_url: mr.mentors?.image_url || '',
+                    is_active: true
+                }));
+
+                setReviews([...siteReviews, ...mentorReviews]);
             } catch (err) {
                 console.error('Error fetching reviews:', err);
             } finally {
@@ -115,15 +127,17 @@ const Reviews: React.FC = () => {
 
     if (loading || reviews.length === 0) return null;
 
-    // Use the full list for both rows to ensure equal width (and thus equal speed)
-    // Shift the second row's data by half to ensure we don't show the same review vertically aligned
-    const midPoint = Math.floor(reviews.length / 2);
-    const shiftedReviews = [...reviews.slice(midPoint), ...reviews.slice(0, midPoint)];
+    // Split reviews between rows automatically
+    const row1Data = reviews.filter((_, i) => i % 2 === 0);
+    const row2Data = reviews.filter((_, i) => i % 2 !== 0);
 
-    // Duplicate both lists to ensure seamless infinite scroll
-    // Using 4x distinct copies ensures enough buffer for most screens
-    const marqueeRow1 = [...reviews, ...reviews, ...reviews, ...reviews];
-    const marqueeRow2 = [...shiftedReviews, ...shiftedReviews, ...shiftedReviews, ...shiftedReviews];
+    // If one row is empty (only 1 review), duplicate to keep layout
+    const finalRow1 = row1Data.length > 0 ? row1Data : reviews;
+    const finalRow2 = row2Data.length > 0 ? row2Data : reviews;
+
+    // Duplicate lists to ensure seamless infinite scroll
+    const marqueeRow1 = [...finalRow1, ...finalRow1, ...finalRow1, ...finalRow1];
+    const marqueeRow2 = [...finalRow2, ...finalRow2, ...finalRow2, ...finalRow2];
 
     return (
         <section className="py-10 overflow-hidden" style={{ backgroundColor: '#1F2937' }}>

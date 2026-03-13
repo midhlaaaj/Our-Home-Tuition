@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { FaTrash, FaEdit, FaPlus, FaUserCircle, FaInfoCircle, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaPlus, FaUserCircle, FaInfoCircle, FaMapMarkerAlt, FaStar } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Mentor {
@@ -44,17 +44,32 @@ const Mentors: React.FC = () => {
     const [accountLoading, setAccountLoading] = useState(false);
     const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [mentorReviews, setMentorReviews] = useState<any[]>([]);
 
     const fetchMentors = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('mentors')
-                .select('*')
-                .order('created_at', { ascending: false });
+            const [mentorsRes, reviewsRes] = await Promise.all([
+                supabase.from('mentors').select('*').order('created_at', { ascending: false }),
+                supabase.from('mentor_reviews').select('*')
+            ]);
 
-            if (error) throw error;
-            setMentors(data || []);
+            if (mentorsRes.error) throw mentorsRes.error;
+            
+            const mentorsData = mentorsRes.data || [];
+            const reviewsData = reviewsRes.data || [];
+            
+            // Calculate ratings
+            const updatedMentors = mentorsData.map(m => {
+                const mReviews = reviewsData.filter((r: any) => r.mentor_id === m.id);
+                const avgRating = mReviews.length > 0 
+                    ? (mReviews.reduce((acc: number, curr: any) => acc + curr.rating, 0) / mReviews.length).toFixed(1)
+                    : '0.0';
+                return { ...m, rating: parseFloat(avgRating) };
+            });
+
+            setMentors(updatedMentors);
+            setMentorReviews(reviewsData);
         } catch (err) {
             console.error('Error fetching mentors:', err);
         } finally {
@@ -445,7 +460,32 @@ const Mentors: React.FC = () => {
                                         <p className="text-sm text-gray-600 leading-relaxed font-medium">{selectedMentor.description}</p>
                                     </div>
 
-                                    <div className="space-y-3">
+                                    <div className="space-y-4">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d]">Recent Reviews</h3>
+                                        <div className="space-y-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                            {mentorReviews.filter(r => r.mentor_id === selectedMentor.id).length === 0 ? (
+                                                <p className="text-xs text-gray-400 font-medium italic">No reviews yet.</p>
+                                            ) : (
+                                                mentorReviews.filter(r => r.mentor_id === selectedMentor.id).map(review => (
+                                                    <div key={review.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-1">
+                                                                {[...Array(5)].map((_, i) => (
+                                                                    <FaStar key={i} size={10} className={i < review.rating ? 'text-[#ffb76c]' : 'text-gray-200'} />
+                                                                ))}
+                                                            </div>
+                                                            <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">
+                                                                {new Date(review.created_at).toLocaleDateString()}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-gray-600 font-medium italic leading-relaxed">"{review.comment}"</p>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-3 pt-4 border-t border-gray-50">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d]">Work History</h3>
                                         <p className="text-sm text-gray-600 leading-relaxed font-medium whitespace-pre-line">{selectedMentor.work_history || 'No work history provided.'}</p>
                                     </div>

@@ -223,7 +223,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
 
                                 {/* Notification Dropdown */}
                                 {isNotificationOpen && (
-                                    <div className="absolute right-0 mt-3 w-80 bg-white rounded-[32px] shadow-2xl border border-gray-100 py-6 px-0 z-[100] animate-in fade-in zoom-in duration-200 origin-top-right overflow-hidden">
+                                    <div className="absolute right-0 mt-3 w-80 bg-white rounded-[32px] shadow-2xl border border-gray-100 pt-6 pb-0 px-0 z-[100] animate-in fade-in zoom-in duration-200 origin-top-right overflow-hidden">
                                         <div className="flex justify-between items-center mb-6 px-6">
                                             <h3 className="text-xl font-bold text-[#1B2A5A]">Notifications</h3>
                                             <div className="flex items-center gap-3">
@@ -240,35 +240,24 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
 
                                         <div className="max-h-[350px] overflow-y-auto px-2 custom-scrollbar">
                                             {notifications.length > 0 ? (
-                                                <>
-                                                    <div className="space-y-1 pb-4">
-                                                        {notifications.map((n) => (
-                                                            <div 
-                                                                key={n.id} 
-                                                                className={`p-4 rounded-2xl transition-all border-l-4 ${n.is_read ? 'bg-white border-transparent' : 'bg-blue-50/50 border-blue-500'}`}
-                                                            >
-                                                                <div className="flex justify-between items-start mb-1">
-                                                                    <p className="text-xs font-black text-gray-900 leading-tight">{n.title}</p>
-                                                                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">
-                                                                        {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})}
-                                                                    </span>
-                                                                </div>
-                                                                <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                                                                    {n.message}
-                                                                </p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <div className="px-6 pb-4 flex justify-center">
-                                                        <Link 
-                                                            to="/notifications" 
-                                                            onClick={() => setIsNotificationOpen(false)}
-                                                            className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-[#1B2A5A] transition-all"
+                                                <div className="space-y-1 pb-4">
+                                                    {notifications.map((n) => (
+                                                        <div 
+                                                            key={n.id} 
+                                                            className={`p-4 rounded-2xl transition-all border-l-4 ${n.is_read ? 'bg-white border-transparent' : 'bg-blue-50/50 border-blue-500'}`}
                                                         >
-                                                            View All Messages
-                                                        </Link>
-                                                    </div>
-                                                </>
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <p className="text-xs font-black text-gray-900 leading-tight">{n.title}</p>
+                                                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">
+                                                                    {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                                                                {n.message}
+                                                            </p>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             ) : (
                                                 <div className="flex flex-col items-center py-10 px-6">
                                                     <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300 mb-6">
@@ -281,6 +270,17 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                                 </div>
                                             )}
                                         </div>
+                                        {notifications.length > 0 && (
+                                            <div className="px-6 pb-5 pt-3 flex justify-center border-t border-gray-50 bg-gray-50/30">
+                                                <Link 
+                                                    to="/notifications" 
+                                                    onClick={() => setIsNotificationOpen(false)}
+                                                    className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-[#1B2A5A] transition-all"
+                                                >
+                                                    View All Messages
+                                                </Link>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

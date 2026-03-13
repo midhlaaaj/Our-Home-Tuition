@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { FaUser, FaEnvelope, FaPhone, FaHistory, FaFileAlt, FaVideo, FaTrash } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaPhone, FaHistory, FaFileAlt, FaVideo, FaTrash, FaExternalLinkAlt, FaDownload, FaFolderOpen } from 'react-icons/fa';
 
 interface JobApplication {
     id: string;
@@ -172,14 +172,47 @@ const AdminApplications: React.FC = () => {
                                             <FaVideo size={10} className="text-red-500" /> Video Pitch
                                         </h3>
                                         {selectedApp.video_url ? (
-                                            <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-xl bg-black aspect-video flex items-center justify-center relative">
-                                                <video
-                                                    src={selectedApp.video_url}
-                                                    controls
-                                                    className="w-full h-full object-contain"
-                                                />
-                                                <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-full text-[8px] font-black text-white uppercase tracking-widest border border-white/10">External Link</div>
-                                            </div>
+                                            (() => {
+                                                const isFile = selectedApp.video_url.includes('intro-videos');
+                                                return isFile ? (
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <a
+                                                            href={selectedApp.video_url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-red-50 rounded-2xl hover:bg-red-50 transition-all group bg-white"
+                                                        >
+                                                            <FaFolderOpen size={20} className="text-red-400 group-hover:scale-110 transition-transform mb-2" />
+                                                            <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Open Video</span>
+                                                        </a>
+                                                        <a
+                                                            href={selectedApp.video_url}
+                                                            download
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-100 rounded-2xl hover:bg-gray-50 transition-all group bg-white"
+                                                        >
+                                                            <FaDownload size={20} className="text-gray-400 group-hover:scale-110 transition-transform mb-2" />
+                                                            <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Download</span>
+                                                        </a>
+                                                    </div>
+                                                ) : (
+                                                    <a
+                                                        href={selectedApp.video_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="flex items-center gap-4 p-4 border-2 border-dashed border-blue-50 rounded-2xl hover:bg-blue-50 transition-all group bg-white"
+                                                    >
+                                                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+                                                            <FaExternalLinkAlt size={16} />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest block mb-0.5">External Link</span>
+                                                            <p className="text-[11px] font-medium text-gray-500 truncate">{selectedApp.video_url}</p>
+                                                        </div>
+                                                    </a>
+                                                );
+                                            })()
                                         ) : (
                                             <div className="p-6 bg-gray-50 rounded-2xl text-center text-gray-400 text-[10px] font-black uppercase tracking-widest border border-dashed border-gray-200">No Video Submission</div>
                                         )}

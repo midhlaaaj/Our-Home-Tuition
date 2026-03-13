@@ -17,6 +17,12 @@ interface LocationState {
     curriculum: string;
 }
 
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
+
 const BookingPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -60,6 +66,40 @@ const BookingPage: React.FC = () => {
         setAdditionalStudents(additionalStudents.map(s => s.id === id ? { ...s, [field]: value } : s));
     };
 
+    const totalPrice = state?.selectedUnits?.reduce((acc, curr) => acc + (curr.topic.unit_price || 100), 0) || 0;
+    const totalDuration = state?.selectedUnits?.reduce((acc, curr) => acc + (curr.topic.estimated_duration || 60), 0) || 0;
+
+    const handleRazorpayPayment = async () => {
+        return new Promise((resolve, reject) => {
+            const options = {
+                key: "rzp_live_9sUUrcW0TGM2K2",
+                amount: totalPrice * 100, // Amount in paise
+                currency: "INR",
+                name: "Our Home Tuition",
+                description: `Booking for ${state?.classInfo?.label}`,
+                image: "/logo.png",
+                handler: function (response: any) {
+                    resolve(response);
+                },
+                prefill: {
+                    name,
+                    email,
+                    contact: phone
+                },
+                theme: {
+                    color: "#1B2A5A"
+                },
+                modal: {
+                    ondismiss: function() {
+                        reject(new Error("Payment cancelled by user"));
+                    }
+                }
+            };
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -70,10 +110,13 @@ const BookingPage: React.FC = () => {
 
         setIsSubmitting(true);
 
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
         try {
+            // Initiate Razorpay Payment
+            const paymentResponse: any = await handleRazorpayPayment();
+            
+            // Generate 6-digit OTP
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
             const { error } = await supabase
                 .from('bookings')
                 .insert({
@@ -84,7 +127,8 @@ const BookingPage: React.FC = () => {
                         subject_id: su.subject.id,
                         topic_id: su.topic.id,
                         subject_name: su.subject.name,
-                        topic_name: su.topic.name
+                        topic_name: su.topic.name,
+                        price: su.topic.unit_price || 100
                     })),
                     primary_student: { name, email, phone, address },
                     class_type: classType,
@@ -95,7 +139,11 @@ const BookingPage: React.FC = () => {
                     latitude: lat,
                     longitude: lng,
                     status: 'pending',
-                    otp: otp
+                    otp: otp,
+                    paid_amount: totalPrice,
+                    total_duration: totalDuration,
+                    razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                    razorpay_order_id: paymentResponse.razorpay_order_id
                 });
 
             if (error) throw error;
@@ -115,7 +163,9 @@ const BookingPage: React.FC = () => {
             setIsSuccess(true);
         } catch (err: any) {
             console.error("Booking Error:", err);
-            alert("Failed to confirm booking: " + err.message);
+            if (err.message !== "Payment cancelled by user") {
+                alert("Failed to confirm booking: " + err.message);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -566,7 +616,23 @@ const BookingPage: React.FC = () => {
 
                             <div className="space-y-8">
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex justify-between items-center bg-gray-900 p-4 rounded-2xl shadow-xl shadow-gray-900/10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-[#ffb76c] text-[#1B2A5A] rounded-xl flex items-center justify-center font-black">
+                                                ₹
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Payable Amount</p>
+                                                <p className="text-lg font-black text-white tracking-tight">₹{totalPrice}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end pr-1">
+                                            <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Total Time</p>
+                                            <p className="text-sm font-black text-[#ffb76c]">{totalDuration} Min</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 px-1">
                                         <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
                                             <FaGraduationCap size={14} />
                                         </div>
@@ -584,7 +650,10 @@ const BookingPage: React.FC = () => {
                                             <div key={index} className="bg-gray-50/50 p-5 rounded-[24px] border border-gray-50 group hover:bg-white hover:border-orange-100 transition-all">
                                                 <div className="flex justify-between items-start mb-1">
                                                     <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{item.subject.name}</p>
-                                                    <span className="w-1.5 h-1.5 bg-orange-200 rounded-full group-hover:bg-[#a0522d] transition-colors"></span>
+                                                    <div className="text-right">
+                                                        <p className="text-[10px] font-black text-[#a0522d]">₹{item.topic.unit_price || 100}</p>
+                                                        <p className="text-[8px] font-bold text-green-600">{item.topic.estimated_duration || 60}m</p>
+                                                    </div>
                                                 </div>
                                                 <p className="text-xs font-black text-gray-800 leading-relaxed">{item.topic.name}</p>
                                             </div>
@@ -596,10 +665,10 @@ const BookingPage: React.FC = () => {
                                     <div className="bg-[#1B2A5A]/5 p-5 rounded-[24px] border border-[#1B2A5A]/10">
                                         <div className="flex items-center gap-3 text-[#1B2A5A] mb-2">
                                             <FaCheckCircle className="shrink-0" size={14} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Pricing Policy</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Instant Activation</span>
                                         </div>
                                         <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
-                                            Fees will be finalized by our representative based on mentors' level and scheduling preferences.
+                                            Upon successful payment, your booking will be initiated and a mentor will be assigned within 24 hours.
                                         </p>
                                     </div>
                                 </div>

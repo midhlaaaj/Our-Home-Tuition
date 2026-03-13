@@ -23,6 +23,8 @@ interface Topic {
     description: string | null;
     unit_no: number;
     unit_title: string | null;
+    unit_price: number;
+    estimated_duration: number;
 }
 
 const ClassPage: React.FC = () => {
@@ -235,7 +237,10 @@ const ClassPage: React.FC = () => {
                                                                                 •
                                                                             </span>
                                                                             <div>
-                                                                                <p className="text-gray-800 font-medium text-sm">{topic.name}</p>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <p className="text-gray-800 font-medium text-sm">{topic.name}</p>
+                                                                                    <span className="text-[10px] font-bold text-green-500 bg-green-50 px-1.5 py-0.5 rounded">{topic.estimated_duration || 60}m</span>
+                                                                                </div>
                                                                                 {topic.description && (
                                                                                     <p className="text-gray-500 text-xs mt-1">{topic.description}</p>
                                                                                 )}
@@ -324,9 +329,13 @@ const ClassPage: React.FC = () => {
                                                                                 />
                                                                             </div>
                                                                             <div className="flex-1">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <span className="text-[#e69b48]">•</span>
-                                                                                    <p className={`text-sm font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <span className="text-[#e69b48]">•</span>
+                                                                                        <p className={`text-sm font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
+                                                                                        <span className="text-[10px] font-bold text-green-500">({topic.estimated_duration || 60}m)</span>
+                                                                                    </div>
+                                                                                    <span className="text-[10px] font-black text-gray-400">₹{topic.unit_price || 100}</span>
                                                                                 </div>
                                                                                 {topic.description && (
                                                                                     <p className="text-xs text-gray-500 mt-1 ml-4 line-clamp-2">{topic.description}</p>
@@ -348,8 +357,21 @@ const ClassPage: React.FC = () => {
 
                         {/* Modal Footer */}
                         <div className="px-6 py-4 border-t border-gray-100 bg-white flex items-center justify-between sticky bottom-0 z-10">
-                            <div className="text-sm font-medium text-gray-600">
-                                {selectedUnits.length} unit{selectedUnits.length !== 1 ? 's' : ''} selected
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Total Selected</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-xl font-black text-gray-900 leading-none">
+                                        ₹{selectedUnits.reduce((acc, curr) => acc + (curr.topic.unit_price || 100), 0)}
+                                    </span>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-gray-400">
+                                            ({selectedUnits.length} unit{selectedUnits.length !== 1 ? 's' : ''})
+                                        </span>
+                                        <span className="text-[10px] font-bold text-green-600">
+                                            {selectedUnits.reduce((acc, curr) => acc + (curr.topic.estimated_duration || 60), 0)} Minutes Est.
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                             <div className="flex gap-3">
                                 <button

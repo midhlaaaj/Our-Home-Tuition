@@ -47,6 +47,7 @@ interface Task {
     status?: string;
     preferred_date?: string | null;
     preferred_time?: string | null;
+    selected_time?: string | null;
     session_mode?: string;
 }
 
@@ -64,6 +65,9 @@ const MentorDashboard: React.FC = () => {
     const [visibleTasksCount, setVisibleTasksCount] = useState(5);
     const [nearbyOffers, setNearbyOffers] = useState<any[]>([]);
     const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
+    const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
+    const [selectedTaskForTime, setSelectedTaskForTime] = useState<Task | null>(null);
+    const [selectedTime, setSelectedTime] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const [editForm, setEditForm] = useState({
@@ -105,6 +109,40 @@ const MentorDashboard: React.FC = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const handleValidateOTP = async (taskId: string, enteredOtp: string) => {
+        setProcessingTaskId(taskId);
+        try {
+            const { data: booking, error: fetchError } = await supabase
+                .from('bookings')
+                .select('otp')
+                .eq('id', taskId)
+                .single();
+
+            if (fetchError || !booking) throw new Error("Could not verify OTP");
+
+            if (booking.otp === enteredOtp) {
+                const { error: updateError } = await supabase
+                    .from('bookings')
+                    .update({ 
+                        status: 'completed'
+                    })
+                    .eq('id', taskId);
+
+                if (updateError) throw updateError;
+                
+                setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'completed' } : t));
+                alert("OTP Validated! Session marked as completed.");
+            } else {
+                alert("Invalid OTP. Please check with the parent.");
+            }
+        } catch (err: any) {
+            console.error("OTP validation error:", err);
+            alert("Error: " + err.message);
+        } finally {
+            setProcessingTaskId(null);
+        }
+    };
 
     const fetchMentorData = async () => {
         // Only set loading true if it's the first time we're fetching
@@ -244,59 +282,77 @@ const MentorDashboard: React.FC = () => {
         }
     };
 
+    const finalizeAcceptTask = async (taskId: string, selectedTime: string, bookingData: any) => {
+        if (!profile) return;
+
+        // 1. Stop if already confirmed (Prevents duplicate notifications)
+        if (bookingData.status === 'confirmed') {
+            alert("This booking is already confirmed.");
+            setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed'} : t));
+            return;
+        }
+
+        // 2. OTP Recovery: Generate if missing
+        let currentOtp = bookingData.otp;
+        if (!currentOtp || currentOtp === '---') {
+            currentOtp = Math.floor(100000 + Math.random() * 900000).toString();
+            await supabase
+                .from('bookings')
+                .update({ otp: currentOtp })
+                .eq('id', taskId);
+        }
+
+        // 3. Confirm Booking
+        const { error } = await supabase
+            .from('bookings')
+            .update({ status: 'confirmed', selected_time: selectedTime })
+            .eq('id', taskId);
+        
+        if (error) throw error;
+
+        // 4. Notify Parent
+        const { error: notifError } = await supabase.from('notifications').insert({
+            user_id: bookingData.user_id,
+            title: 'Booking Confirmed!',
+            message: `Great news! ${profile?.name} has been assigned as your mentor. Your session is scheduled for ${selectedTime}. Your Session OTP is: ${currentOtp}. ⚠️ Do not share this OTP at any other time except during the session.`,
+            type: 'booking_confirmed'
+        });
+
+        if (notifError) {
+            console.error("Notification Error:", notifError);
+            alert("Task accepted, but failed to notify parent: " + notifError.message);
+        } else {
+            alert("Task accepted and parent notified!");
+        }
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed', selected_time: selectedTime } : t));
+    };
+
     const handleAcceptTask = async (taskId: string, type: 'query' | 'booking') => {
         if (processingTaskId) return;
         setProcessingTaskId(taskId);
         try {
             if (type === 'booking') {
-                // 1. Fetch current status and OTP
                 const { data: bookingData, error: fetchError } = await supabase
                     .from('bookings')
-                    .select('user_id, status, otp')
+                    .select('*')
                     .eq('id', taskId)
                     .single();
 
                 if (fetchError || !bookingData) throw new Error("Could not fetch booking details");
-                if (!bookingData.user_id) throw new Error("No parent ID associated with this booking");
-
-                // 2. Stop if already confirmed (Prevents duplicate notifications)
-                if (bookingData.status === 'confirmed') {
-                    alert("This booking is already confirmed.");
-                    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed'} : t));
-                    return;
-                }
-
-                // 3. OTP Recovery: Generate if missing
-                let currentOtp = bookingData.otp;
-                if (!currentOtp || currentOtp === '---') {
-                    currentOtp = Math.floor(100000 + Math.random() * 900000).toString();
-                    await supabase
-                        .from('bookings')
-                        .update({ otp: currentOtp })
-                        .eq('id', taskId);
-                }
-
-                // 4. Confirm Booking
-                const { error } = await supabase
-                    .from('bookings')
-                    .update({ status: 'confirmed' })
-                    .eq('id', taskId);
                 
-                if (error) throw error;
-
-                // 5. Notify Parent
-                const { error: notifError } = await supabase.from('notifications').insert({
-                    user_id: bookingData.user_id,
-                    title: 'Booking Confirmed!',
-                    message: `Great news! ${profile?.name} has been assigned as your mentor. Your Session OTP is: ${currentOtp}. ⚠️ Do not share this OTP at any other time except during the session.`,
-                    type: 'booking_confirmed'
-                });
-
-                if (notifError) {
-                    console.error("Notification Error:", notifError);
-                    alert("Task accepted, but failed to notify parent: " + notifError.message);
+                const times = (bookingData.preferred_time || '').split(',').map((t: string) => t.trim()).filter(Boolean);
+                
+                if (times.length > 1) {
+                    setSelectedTaskForTime({ ...bookingData, type: 'booking' });
+                    setIsTimeModalOpen(true);
+                    setProcessingTaskId(null); // Release processing state for modal
+                    return;
+                } else if (times.length === 1) {
+                    // Auto-select if only one
+                    await finalizeAcceptTask(taskId, times[0], bookingData);
                 } else {
-                    alert("Task accepted and parent notified!");
+                    // No time specified? (Shouldn't happen with current logic but stay safe)
+                    await finalizeAcceptTask(taskId, 'TBD', bookingData);
                 }
             } else {
                 const { error } = await supabase
@@ -304,9 +360,8 @@ const MentorDashboard: React.FC = () => {
                     .update({ is_accepted: true })
                     .eq('id', taskId);
                 if (error) throw error;
+                setTasks(tasks.map(t => t.id === taskId ? { ...t, is_accepted: true } : t));
             }
-            setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed', is_accepted: true } : t));
-            alert("Task accepted successfully!");
         } catch (err: any) {
             console.error('Error accepting task:', err);
             alert("Error: " + err.message);
@@ -911,9 +966,36 @@ const MentorDashboard: React.FC = () => {
                                                                 </button>
                                                             </>
                                                         ) : (
-                                                            <div className="flex items-center gap-2 text-green-500 px-4 py-2 bg-green-50 rounded-xl border border-green-100">
-                                                                <FaCheckCircle size={12} />
-                                                                <span className="text-[10px] font-black uppercase tracking-widest">Active & Confirmed</span>
+                                                            <div className="flex flex-col items-end gap-3">
+                                                                <div className="flex items-center gap-2 text-green-500 px-4 py-2 bg-green-50 rounded-xl border border-green-100">
+                                                                    <FaCheckCircle size={12} />
+                                                                    <span className="text-[10px] font-black uppercase tracking-widest">{task.status === 'completed' ? 'Session Completed' : 'Active & Confirmed'}</span>
+                                                                </div>
+                                                                
+                                                                {task.type === 'booking' && task.status === 'confirmed' && (
+                                                                    <div className="flex items-center gap-2">
+                                                                        <input 
+                                                                            type="text" 
+                                                                            placeholder="Enter Session OTP"
+                                                                            maxLength={6}
+                                                                            className="w-32 px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest outline-none focus:border-[#a0522d] transition-all"
+                                                                            onKeyDown={(e) => {
+                                                                                if (e.key === 'Enter') {
+                                                                                    handleValidateOTP(task.id, (e.target as HTMLInputElement).value);
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                        <button 
+                                                                            onClick={(e) => {
+                                                                                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                                                                handleValidateOTP(task.id, input.value);
+                                                                            }}
+                                                                            className="px-4 py-2 bg-[#a0522d] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#804224] transition-all"
+                                                                        >
+                                                                            Validate
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
@@ -945,15 +1027,61 @@ const MentorDashboard: React.FC = () => {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -20 }}
-                                    className="bg-white p-12 rounded-[40px] shadow-sm border border-gray-100 text-center"
+                                    className="space-y-4"
                                 >
-                                    <div className="w-20 h-20 bg-gray-50 text-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                                        <FaHistory size={32} />
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Session History</h2>
+                                        <span className="text-[10px] font-black uppercase tracking-widest bg-green-50 text-green-600 px-4 py-1.5 rounded-full border border-green-100">
+                                            {tasks.filter(t => t.status === 'completed').length} Completed
+                                        </span>
                                     </div>
-                                    <h3 className="text-xl font-black text-gray-900 mb-2 tracking-tight">Booking Lifecycle</h3>
-                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest max-w-xs mx-auto leading-loose">
-                                        Your completed sessions and student feedback history will appear here once sessions are finalized.
-                                    </p>
+
+                                    {tasks.filter(t => t.status === 'completed').length === 0 ? (
+                                        <div className="bg-white p-20 rounded-[40px] shadow-sm border border-gray-100 text-center">
+                                            <div className="w-20 h-20 bg-gray-50 text-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                <FaHistory size={32} />
+                                            </div>
+                                            <h3 className="text-xl font-black text-gray-900 mb-2 tracking-tight">Booking Lifecycle</h3>
+                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest max-w-xs mx-auto leading-loose">
+                                                Your completed sessions and student feedback history will appear here once sessions are finalized.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {tasks.filter(t => t.status === 'completed').map(task => (
+                                                <div key={task.id} className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-6">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <h3 className="font-black text-gray-900">{task.name}</h3>
+                                                            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded bg-green-50 text-green-600">
+                                                                Completed
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-[#a0522d] font-black uppercase tracking-widest mb-4">
+                                                            {task.curriculum} • Level {task.class_id}
+                                                        </p>
+                                                        <div className="flex flex-wrap gap-4">
+                                                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-lg border border-gray-100">
+                                                                <FaCalendarAlt size={10} className="text-[#a0522d]" />
+                                                                <span className="text-[10px] font-bold text-gray-600">{task.preferred_date}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-lg border border-gray-100">
+                                                                <FaClock size={10} className="text-[#a0522d]" />
+                                                                <span className="text-[10px] font-bold text-gray-600">{task.selected_time || task.preferred_time}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-2 text-right">
+                                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Attendance Status</span>
+                                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-lg border border-green-100">
+                                                            <FaCheckCircle size={12} />
+                                                            <span className="text-[9px] font-black uppercase tracking-widest">OTP Verified</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -1109,6 +1237,84 @@ const MentorDashboard: React.FC = () => {
                                     className="px-8 py-4 border-2 border-gray-100 text-gray-400 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-gray-50 transition-all"
                                 >
                                     Discard
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Time Selection Modal */}
+            <AnimatePresence>
+                {isTimeModalOpen && selectedTaskForTime && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white w-full max-w-md rounded-[40px] shadow-2xl overflow-hidden p-8"
+                        >
+                            <div className="text-center mb-8">
+                                <div className="w-16 h-16 bg-orange-50 text-[#a0522d] rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <FaClock size={24} />
+                                </div>
+                                <h2 className="text-2xl font-black text-gray-900 leading-none">Select Session Time</h2>
+                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-2 px-1">Multiple slots requested</p>
+                            </div>
+
+                            <div className="space-y-3 mb-8">
+                                {(selectedTaskForTime.preferred_time || '').split(',').map((time, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setSelectedTime(time.trim())}
+                                        className={`w-full p-5 rounded-2xl border-2 transition-all text-left flex items-center justify-between group ${
+                                            selectedTime === time.trim() 
+                                            ? 'border-[#a0522d] bg-orange-50/50' 
+                                            : 'border-gray-100 hover:border-gray-200 bg-gray-50/30'
+                                        }`}
+                                    >
+                                        <span className={`font-bold ${selectedTime === time.trim() ? 'text-[#a0522d]' : 'text-gray-600'}`}>
+                                            {time.trim()}
+                                        </span>
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                            selectedTime === time.trim() ? 'border-[#a0522d] bg-[#a0522d]' : 'border-gray-200'
+                                        }`}>
+                                            {selectedTime === time.trim() && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="flex gap-4">
+                                <button
+                                    disabled={!selectedTime || processingTaskId === selectedTaskForTime.id}
+                                    onClick={async () => {
+                                        if (!selectedTime) return;
+                                        setProcessingTaskId(selectedTaskForTime.id);
+                                        try {
+                                            await finalizeAcceptTask(selectedTaskForTime.id, selectedTime, selectedTaskForTime);
+                                            setIsTimeModalOpen(false);
+                                            setSelectedTaskForTime(null);
+                                            setSelectedTime('');
+                                        } catch (e) {
+                                            console.error(e);
+                                        } finally {
+                                            setProcessingTaskId(null);
+                                        }
+                                    }}
+                                    className="flex-1 py-4 bg-[#1B2A5A] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#142044] transition-all shadow-xl shadow-[#1B2A5A]/20 disabled:opacity-50"
+                                >
+                                    {processingTaskId === selectedTaskForTime.id ? "Processing..." : "Confirm Schedule"}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsTimeModalOpen(false);
+                                        setSelectedTaskForTime(null);
+                                        setSelectedTime('');
+                                    }}
+                                    className="px-6 py-4 border-2 border-gray-100 text-gray-400 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-gray-50 transition-all"
+                                >
+                                    Cancel
                                 </button>
                             </div>
                         </motion.div>

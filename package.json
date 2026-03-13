@@ -15,5 +15,8 @@
   "type": "commonjs",
   "dependencies": {
     "concurrently": "^9.2.1"
+  },
+  "devDependencies": {
+    "supabase": "^2.78.1"
   }
 }
