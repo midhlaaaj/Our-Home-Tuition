@@ -8,7 +8,7 @@ const Footer: React.FC = () => {
     const linksCol1 = [
         { label: 'Home', to: '/' },
         { label: 'About Us', to: '/about' },
-        { label: 'Classes', to: '/#browse-classes' },
+        { label: 'Classes', to: '/class/1' },
     ];
 
     const linksCol2 = [

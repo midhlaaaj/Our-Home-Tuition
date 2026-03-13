@@ -90,31 +90,48 @@ const Mentors: React.FC = () => {
             let mentorData: any = {
                 name: form.name,
                 email: form.email,
-                is_active: true // Default to active for new registrations
+                subject: form.subject || 'TBD',
+                qualification: form.qualification,
+                contact_no: form.contact_no,
+                birth_year: form.birth_year,
+                is_active: form.is_active ?? true
             };
 
             if (isEditing && editId) {
-                mentorData = {
-                    name: form.name,
-                    email: form.email,
-                    is_active: form.is_active
-                };
                 const { error } = await supabase
                     .from('mentors')
                     .update(mentorData)
                     .eq('id', editId);
                 if (error) throw error;
             } else {
-                // For new mentors, we also set default values for required fields to avoid DB errors if any
-                const { error } = await supabase
+                const { data: newMentor, error } = await supabase
                     .from('mentors')
                     .insert([{
                         ...mentorData,
-                        subject: 'TBD',
-                        description: 'Profile pending update by mentor.',
-                        image_url: 'https://via.placeholder.com/150'
-                    }]);
+                        description: form.description || 'Profile pending update by mentor.',
+                        image_url: form.image_url || 'https://via.placeholder.com/150'
+                    }])
+                    .select()
+                    .single();
+                
                 if (error) throw error;
+
+                // AUTOMATION: Create portal access immediately for new mentors
+                if (newMentor && mentorData.email) {
+                    try {
+                        const password = `123@ourhometuition`;
+                        const { data: accData, error: accError } = await supabase.rpc('create_mentor_account', {
+                            mentor_email: mentorData.email,
+                            mentor_password: password,
+                            mentor_id: newMentor.id
+                        });
+                        
+                        if (accError) console.error('Auto account creation failed:', accError);
+                        if (accData?.error) console.error('Auto account creation RPC error:', accData.error);
+                    } catch (accErr) {
+                        console.error('Catch: Auto account creation failed:', accErr);
+                    }
+                }
             }
 
             setForm({ is_active: true, name: '', subject: '', description: '', image_url: '', email: '', contact_no: '', linkedin_url: '', qualification: '', work_history: '', birth_year: undefined });
@@ -219,7 +236,7 @@ const Mentors: React.FC = () => {
                     <h2 className="text-lg font-black text-gray-900 tracking-tight">
                         {isEditing ? 'Edit Mentor Profile' : 'Register New Mentor'}
                     </h2>
-                    {isEditing && !form.auth_user_id && form.id && form.birth_year && (
+                    {isEditing && !form.auth_user_id && form.id && (
                         <button
                             type="button"
                             onClick={() => handleCreateAccount(form as any)}
@@ -251,19 +268,16 @@ const Mentors: React.FC = () => {
                             />
                         </div>
 
-                        <div className="lg:col-span-4 pb-0.5">
-                            <label className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-xl border-2 border-transparent hover:border-blue-100 transition-all cursor-pointer group">
-                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${form.is_active ? 'bg-blue-600 border-blue-600' : 'border-gray-200'} `}>
-                                    {form.is_active && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    className="hidden"
-                                    checked={form.is_active}
-                                    onChange={e => setForm({ ...form, is_active: e.target.checked })}
-                                />
-                                <span className="text-[10px] font-black text-gray-800 uppercase tracking-widest">Show on Homepage</span>
-                            </label>
+                        <div className="lg:col-span-4 space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
+                            <input
+                                type="email"
+                                placeholder="email@example.com"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-medium text-sm"
+                                value={form.email || ''}
+                                onChange={e => setForm({ ...form, email: e.target.value })}
+                                required
+                            />
                         </div>
 
                         <div className="lg:col-span-4 flex gap-2 justify-end">
@@ -355,7 +369,7 @@ const Mentors: React.FC = () => {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center justify-end gap-1.5">
-                                                {!mentor.auth_user_id && mentor.birth_year && (
+                                                {!mentor.auth_user_id && (
                                                     <button
                                                         onClick={() => handleCreateAccount(mentor)}
                                                         disabled={accountLoading}

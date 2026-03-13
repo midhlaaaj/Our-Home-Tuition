@@ -81,9 +81,10 @@ const Sliders: React.FC = () => {
             else if (file.type.startsWith('video/')) type = 'video';
 
             setForm(prev => ({ ...prev, media_url: publicUrl, type }));
-        } catch (error) {
+        } catch (error: any) {
             console.error('Upload failed:', error);
-            alert('Failed to upload file. Make sure the "uploads" bucket exists and is public.');
+            const errorMessage = error.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+            alert('Upload Error: ' + errorMessage);
         } finally {
             setUploading(false);
         }
