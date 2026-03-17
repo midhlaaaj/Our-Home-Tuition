@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import { FaUser, FaHistory, FaSignOutAlt, FaPen, FaSave, FaCamera, FaCalendarAlt, FaChevronRight, FaGraduationCap, FaHome } from 'react-icons/fa';
 import AvatarSelectionModal from '../components/AvatarSelectionModal';
+import { useModal } from '../context/ModalContext';
 
 interface Booking {
     id: string;
@@ -19,6 +20,7 @@ interface Booking {
 
 const Profile: React.FC = () => {
     const { user, signOut } = useAuth();
+    const { showAlert, showSuccess } = useModal();
     const navigate = useNavigate();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
@@ -31,7 +33,8 @@ const Profile: React.FC = () => {
         role: '',
         class: '',
         phone: '',
-        address: ''
+        address: '',
+        email: ''
     });
 
     useEffect(() => {
@@ -41,7 +44,8 @@ const Profile: React.FC = () => {
                 role: user.user_metadata?.role || 'Student',
                 class: user.user_metadata?.class || '',
                 phone: user.user_metadata?.phone || '',
-                address: user.user_metadata?.address || ''
+                address: user.user_metadata?.address || '',
+                email: user.email || ''
             });
 
             const fetchBookings = async () => {
@@ -69,7 +73,7 @@ const Profile: React.FC = () => {
         if (!user) return;
         setIsSaving(true);
         try {
-            const { error } = await supabase.auth.updateUser({
+            const updateParams: any = {
                 data: {
                     full_name: editForm.displayName,
                     role: editForm.role,
@@ -77,11 +81,23 @@ const Profile: React.FC = () => {
                     phone: editForm.phone,
                     address: editForm.address
                 }
-            });
+            };
+
+            if (editForm.email && editForm.email !== user.email) {
+                updateParams.email = editForm.email;
+            }
+
+            const { error } = await supabase.auth.updateUser(updateParams);
+            
             if (error) throw error;
+            
+            if (updateParams.email) {
+                showSuccess("Confirmation email sent to " + editForm.email + ". Please verify to complete the change.");
+            }
+            
             setIsEditing(false);
         } catch (err: any) {
-            alert("Failed to update profile: " + err.message);
+            showAlert("Failed to update profile: " + err.message);
         } finally {
             setIsSaving(false);
         }
@@ -223,24 +239,37 @@ const Profile: React.FC = () => {
 
                                         <div className="space-y-2">
                                             <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Phone Number</label>
-                                            <input
-                                                type="text"
-                                                name="phone"
-                                                value={editForm.phone}
-                                                onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white rounded-2xl px-5 py-4 font-bold text-gray-800 outline-none transition-all"
-                                                placeholder="+91..."
-                                            />
+                                            <div className="relative group flex items-center bg-gray-50 border-2 border-transparent focus-within:border-[#a0522d] focus-within:bg-white rounded-2xl transition-all overflow-hidden">
+                                                <div className="flex items-center pl-5 pr-3 text-gray-400 border-r border-gray-100 py-4 h-full">
+                                                    <span className="font-black text-xs">+91</span>
+                                                </div>
+                                                <input
+                                                    type="tel"
+                                                    name="phone"
+                                                    value={editForm.phone}
+                                                    onChange={e => {
+                                                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                                        setEditForm(prev => ({ ...prev, phone: val }));
+                                                    }}
+                                                    className="w-full px-4 py-4 bg-transparent font-bold text-gray-800 outline-none"
+                                                    placeholder="00000 00000"
+                                                />
+                                            </div>
                                         </div>
 
                                         <div className="space-y-2">
                                             <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Email</label>
                                             <input
                                                 type="email"
-                                                value={user.email || ''}
-                                                disabled
-                                                className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-400 cursor-not-allowed"
-                                                placeholder="Enter your email"
+                                                id="profile-email"
+                                                name="email"
+                                                value={editForm.email}
+                                                onChange={e => {
+                                                    const newEmail = e.target.value;
+                                                    setEditForm(prev => ({ ...prev, email: newEmail }));
+                                                }}
+                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white rounded-2xl px-5 py-4 font-bold text-gray-800 outline-none transition-all cursor-text"
+                                                placeholder="name@email.com"
                                             />
                                         </div>
 

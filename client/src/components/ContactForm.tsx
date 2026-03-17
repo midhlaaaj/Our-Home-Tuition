@@ -95,7 +95,7 @@ const ContactForm: React.FC = () => {
                                             value={formData.name}
                                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                                             className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium text-gray-900 placeholder:text-gray-300 text-sm"
-                                            placeholder="Enter student name"
+                                            placeholder="Enter your name"
                                         />
                                     </div>
 
@@ -127,7 +127,7 @@ const ContactForm: React.FC = () => {
                                                 value={formData.email}
                                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                                                 className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium text-gray-900 placeholder:text-gray-300 text-sm"
-                                                placeholder="guardian@email.com"
+                                                placeholder="name@email.com"
                                             />
                                         </div>
                                     </div>

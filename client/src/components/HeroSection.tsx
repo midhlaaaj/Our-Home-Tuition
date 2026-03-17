@@ -13,6 +13,16 @@ const HeroSection: React.FC = () => {
 
     useEffect(() => {
         const fetchHeroMedia = async () => {
+            const timeoutId = setTimeout(() => {
+                if (loading) {
+                    console.warn("Hero media fetch timed out, using fallbacks");
+                    setLoading(false);
+                    setTitle('Helping Young\nMinds Grow\nwith *Confidence*');
+                    setSubtitle('Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.');
+                    setMediaType('image');
+                }
+            }, 3000);
+
             try {
                 // Fetch the first active slider which acts as our Hero Media
                 const { data, error } = await supabase
@@ -22,6 +32,8 @@ const HeroSection: React.FC = () => {
                     .order('created_at', { ascending: false })
                     .limit(1)
                     .single();
+
+                clearTimeout(timeoutId);
 
                 if (error && error.code !== 'PGRST116') {
                     // PGRST116 means no rows returned, which is fine

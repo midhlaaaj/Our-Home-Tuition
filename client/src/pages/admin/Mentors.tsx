@@ -255,7 +255,7 @@ const Mentors: React.FC = () => {
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Mentor Name</label>
                             <input
                                 type="text"
-                                placeholder="FullName"
+                                placeholder="Enter your name"
                                 className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-medium text-sm"
                                 value={form.name || ''}
                                 onChange={e => {
@@ -272,7 +272,7 @@ const Mentors: React.FC = () => {
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
                             <input
                                 type="email"
-                                placeholder="email@example.com"
+                                placeholder="name@email.com"
                                 className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-medium text-sm"
                                 value={form.email || ''}
                                 onChange={e => setForm({ ...form, email: e.target.value })}

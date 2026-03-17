@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CurriculumProvider } from './context/CurriculumContext';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './context/AuthContext';
+import { ModalProvider } from './context/ModalContext';
 import Home from './pages/Home';
 import About from './pages/About';
 import Auth from './pages/Auth';
@@ -34,7 +35,8 @@ import WriteReview from './pages/WriteReview';
 function App() {
   return (
     <AuthProvider>
-      <CurriculumProvider>
+      <ModalProvider>
+        <CurriculumProvider>
         <Router>
           <ScrollToTop />
           <Routes>
@@ -77,7 +79,8 @@ function App() {
           </Routes>
         </Router>
       </CurriculumProvider>
-    </AuthProvider>
+    </ModalProvider>
+  </AuthProvider>
   );
 }
 

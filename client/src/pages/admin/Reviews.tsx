@@ -235,7 +235,7 @@ const Reviews: React.FC = () => {
                             <div className="space-y-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Person's Name</label>
-                                    <input type="text" value={testForm.name || ''} onChange={e => setTestForm({...testForm, name: e.target.value})} className="w-full px-6 py-4 bg-gray-50 border border-transparent focus:border-[#a0522d] rounded-2xl outline-none font-bold text-sm" placeholder="e.g. Sarah Thompson" required />
+                                    <input type="text" value={testForm.name || ''} onChange={e => setTestForm({...testForm, name: e.target.value})} className="w-full px-6 py-4 bg-gray-50 border border-transparent focus:border-[#a0522d] rounded-2xl outline-none font-bold text-sm" placeholder="Enter your name" required />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Role / Title</label>

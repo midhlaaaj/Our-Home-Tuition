@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.warn("Auth check timed out, forcing loading to false");
                 setLoading(false);
             }
-        }, 3000);
+        }, 2000);
 
         // Get initial session
         const getInitialSession = async () => {

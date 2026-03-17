@@ -1,0 +1,47 @@
+# Walkthrough: Restoring Admin Access
+
+I have implemented a fix for the login issue caused by a synchronization mismatch between Supabase's internal authentication system and your database profiles.
+
+## Steps to Restore Access
+
+### 1. Run the Rescue Script
+To fix the account, you need to run the following SQL script in your **Supabase SQL Editor**:
+
+[rescue_admin_access.sql](file:///c:/Users/midhl/Downloads/Our%20Home%20Tuition/rescue_admin_access.sql)
+
+> [!NOTE]
+> Make sure you run this in the **SQL Editor** tab of your Supabase dashboard, selecting the `postgres` role if prompted.
+
+### 2. Verify Database State
+After running the script, the bottom of the SQL results should show:
+- 1 row in `auth.users` with email `ourhometuition.web@gmail.com`
+- 1 row in `public.profiles` with email `ourhometuition.web@gmail.com` and role `admin`
+
+### 3. Log In
+Open your local application at the preview URL:
+[http://localhost:5174/admin/login](http://localhost:5174/admin/login)
+
+![Admin Login Page](C:/Users/midhl/.gemini/antigravity/brain/55b03591-aeea-4f59-8a1f-2aadf3174233/admin_login_page_1773404253953.png)
+
+Use the following credentials:
+- **Email**: `ourhometuition.web@gmail.com`
+- **Password**: `Ourhometuition@123`
+
+## New Slider Images (Improved)
+
+Based on your feedback, I have regenerated the slider images with:
+- **Landscape orientation** (16:9)
+- **Indian ethnicity representation**
+- **Significantly smaller and subtle logo watermarks**
+
+````carousel
+![Slider Page 1: Home Tuition (Landscape)](C:/Users/midhl/.gemini/antigravity/brain/55b03591-aeea-4f59-8a1f-2aadf3174233/sliderpage1_new_1773404862151.png)
+<!-- slide -->
+![Slider Page 2: Student Success (Landscape)](C:/Users/midhl/.gemini/antigravity/brain/55b03591-aeea-4f59-8a1f-2aadf3174233/sliderpage2_new_1773404882652.png)
+<!-- slide -->
+![Slider Page 3: Resources (Landscape)](C:/Users/midhl/.gemini/antigravity/brain/55b03591-aeea-4f59-8a1f-2aadf3174233/sliderpage3_new_1773404901325.png)
+<!-- slide -->
+![Slider Page 4: Professional Mentors (Landscape)](C:/Users/midhl/.gemini/antigravity/brain/55b03591-aeea-4f59-8a1f-2aadf3174233/sliderpage4_new_1773404920279.png)
+````
+
+You can download these images from the artifacts folder to use for your partner slides.

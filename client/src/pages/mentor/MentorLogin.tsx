@@ -99,7 +99,7 @@ const MentorLogin: React.FC = () => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none transition-all font-medium text-gray-800 placeholder:text-gray-400 text-sm"
-                                    placeholder="Mentor Email"
+                                    placeholder="name@email.com"
                                     required
                                 />
                             </div>

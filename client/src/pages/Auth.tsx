@@ -147,7 +147,7 @@ const Auth = () => {
                                         name="email"
                                         type="email"
                                         autoComplete="email"
-                                        placeholder="Enter your email"
+                                        placeholder="name@email.com"
                                         value={loginData.email}
                                         onChange={handleLoginChange}
                                         className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
@@ -204,7 +204,7 @@ const Auth = () => {
                                         id="name"
                                         name="name"
                                         type="text"
-                                        placeholder="Enter your full name"
+                                        placeholder="Enter your name"
                                         value={registerData.name}
                                         onChange={handleRegisterChange}
                                         className={`appearance-none block w-full px-4 py-3 border ${errors.name ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
@@ -222,7 +222,7 @@ const Auth = () => {
                                             id="reg-email"
                                             name="email"
                                             type="email"
-                                            placeholder="Enter your email"
+                                            placeholder="name@email.com"
                                             value={registerData.email}
                                             onChange={handleRegisterChange}
                                             className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
@@ -234,16 +234,24 @@ const Auth = () => {
                                         <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                                             Phone Number
                                         </label>
-                                        <input
-                                            id="phone"
-                                            name="phone"
-                                            type="tel"
-                                            placeholder="Enter phone number"
-                                            value={registerData.phone}
-                                            onChange={handleRegisterChange}
-                                            className={`appearance-none block w-full px-4 py-3 border ${errors.phone ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
-                                                } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-200`}
-                                        />
+                                        <div className={`relative group flex items-center bg-white rounded-xl border ${errors.phone ? 'border-red-500 focus-within:ring-red-500' : 'border-gray-200 focus-within:ring-blue-500'} focus-within:ring-2 transition-all overflow-hidden`}>
+                                            <div className="flex items-center pl-4 pr-2 text-gray-400 border-r border-gray-100 py-3 h-full">
+                                                <span className="font-black text-xs">+91</span>
+                                            </div>
+                                            <input
+                                                id="phone"
+                                                name="phone"
+                                                type="tel"
+                                                placeholder="00000 00000"
+                                                value={registerData.phone}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                                    setRegisterData({ ...registerData, phone: val });
+                                                    if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                                                }}
+                                                className="w-full px-3 py-3 bg-transparent outline-none text-sm"
+                                            />
+                                        </div>
                                         {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
                                     </div>
                                 </div>

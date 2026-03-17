@@ -169,7 +169,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                                     value={formData.fullName}
                                     onChange={e => setFormData({ ...formData, fullName: e.target.value })}
                                     className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none transition-all font-medium"
-                                    placeholder="your name"
+                                    placeholder="Enter your name"
                                 />
                             </div>
                         </label>
@@ -184,7 +184,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none transition-all font-medium"
-                                        placeholder="email@example.com"
+                                        placeholder="name@email.com"
                                     />
                                 </div>
                             </label>

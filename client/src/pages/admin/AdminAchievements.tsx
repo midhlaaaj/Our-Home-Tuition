@@ -49,7 +49,7 @@ const AdminAchievements: React.FC = () => {
 
             const uploads = await Promise.all(
                 files.map(async (file, idx) => {
-                    const publicUrl = await uploadFile(file, 'achievements', 'achievements');
+                    const publicUrl = await uploadFile(file, 'uploads', 'achievements');
                     return {
                         icon: publicUrl,
                         display_order: maxOrder + 1 + idx,

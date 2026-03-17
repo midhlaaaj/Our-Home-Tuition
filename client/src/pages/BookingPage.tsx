@@ -3,13 +3,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import {
-    FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaUsers,
+    FaUser, FaEnvelope, FaMapMarkerAlt, FaUsers,
     FaArrowLeft, FaCheckCircle, FaTrash, FaClipboardList, FaGraduationCap,
     FaCalendarAlt, FaClock, FaWifi, FaHome
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useModal } from '../context/ModalContext';
 
 interface LocationState {
     selectedUnits: { subject: any, topic: any }[];
@@ -26,6 +27,7 @@ declare global {
 const BookingPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { showAlert } = useModal();
     const state = location.state as LocationState;
 
     // Form State
@@ -90,7 +92,7 @@ const BookingPage: React.FC = () => {
                     color: "#1B2A5A"
                 },
                 modal: {
-                    ondismiss: function() {
+                    ondismiss: function () {
                         reject(new Error("Payment cancelled by user"));
                     }
                 }
@@ -104,7 +106,7 @@ const BookingPage: React.FC = () => {
         e.preventDefault();
 
         if (!user) {
-            alert("Please sign in to book a session.");
+            showAlert("Please sign in to book a session.");
             return;
         }
 
@@ -113,7 +115,7 @@ const BookingPage: React.FC = () => {
         try {
             // Initiate Razorpay Payment
             const paymentResponse: any = await handleRazorpayPayment();
-            
+
             // Generate 6-digit OTP
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -133,7 +135,7 @@ const BookingPage: React.FC = () => {
                     primary_student: { name, email, phone, address },
                     class_type: classType,
                     additional_students: classType === 'group' ? additionalStudents : [],
-                     preferred_date: preferredDate || null,
+                    preferred_date: preferredDate || null,
                     preferred_time: preferredTimes.join(', ') || null,
                     session_mode: sessionMode,
                     latitude: lat,
@@ -164,7 +166,7 @@ const BookingPage: React.FC = () => {
         } catch (err: any) {
             console.error("Booking Error:", err);
             if (err.message !== "Payment cancelled by user") {
-                alert("Failed to confirm booking: " + err.message);
+                showAlert("Failed to confirm booking: " + err.message);
             }
         } finally {
             setIsSubmitting(false);
@@ -284,7 +286,7 @@ const BookingPage: React.FC = () => {
                                                     value={name}
                                                     onChange={e => setName(e.target.value)}
                                                     className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-300"
-                                                    placeholder="e.g. John Doe"
+                                                    placeholder="Enter your name"
                                                 />
                                             </div>
                                         </div>
@@ -300,23 +302,26 @@ const BookingPage: React.FC = () => {
                                                     value={email}
                                                     onChange={e => setEmail(e.target.value)}
                                                     className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-300"
-                                                    placeholder="email@example.com"
+                                                    placeholder="name@email.com"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Phone Number</label>
-                                            <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#a0522d] transition-colors">
-                                                    <FaPhone size={14} />
+                                            <div className="relative group flex items-center bg-gray-50/50 rounded-[20px] border border-gray-100 focus-within:bg-white focus-within:border-[#a0522d] transition-all overflow-hidden">
+                                                <div className="flex items-center pl-5 pr-3 text-gray-400 group-focus-within:text-[#a0522d] border-r border-gray-100 py-4 h-full">
+                                                    <span className="font-black text-xs">+91</span>
                                                 </div>
                                                 <input
                                                     type="tel"
                                                     required
                                                     value={phone}
-                                                    onChange={e => setPhone(e.target.value)}
-                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-300"
-                                                    placeholder="+91 XXXXX XXXXX"
+                                                    onChange={e => {
+                                                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                                        setPhone(val);
+                                                    }}
+                                                    className="w-full px-4 py-4 bg-transparent outline-none text-sm font-bold placeholder:text-gray-300"
+                                                    placeholder="00000 00000"
                                                 />
                                             </div>
                                         </div>
@@ -327,7 +332,7 @@ const BookingPage: React.FC = () => {
                                                     type="button"
                                                     onClick={async () => {
                                                         if (!navigator.geolocation) {
-                                                            alert("Geolocation is not supported by your browser");
+                                                            showAlert("Geolocation is not supported by your browser");
                                                             return;
                                                         }
                                                         setAddress("Fetching location...");
@@ -487,11 +492,11 @@ const BookingPage: React.FC = () => {
                                                             key={time}
                                                             type="button"
                                                             onClick={() => {
-                                                                 if (isSelected) {
-                                                                     setPreferredTimes(preferredTimes.filter(t => t !== time));
-                                                                 } else {
-                                                                     setPreferredTimes([...preferredTimes, time].sort());
-                                                                 }
+                                                                if (isSelected) {
+                                                                    setPreferredTimes(preferredTimes.filter(t => t !== time));
+                                                                } else {
+                                                                    setPreferredTimes([...preferredTimes, time].sort());
+                                                                }
                                                             }}
                                                             className={`py-3 px-1 rounded-xl text-[9px] font-black transition-all border-2 flex flex-col items-center justify-center gap-0 ${isSelected
                                                                 ? 'bg-[#a0522d] border-[#a0522d] text-white shadow-lg shadow-[#a0522d]/20 scale-[1.02]'
@@ -559,7 +564,7 @@ const BookingPage: React.FC = () => {
                                                                         value={student.name}
                                                                         onChange={e => handleStudentChange(student.id, 'name', e.target.value)}
                                                                         className="w-full px-5 py-3 bg-gray-50 border border-gray-50 rounded-2xl outline-none text-xs font-bold focus:bg-white focus:border-[#a0522d] transition-all"
-                                                                        placeholder="Full name"
+                                                                        placeholder="Enter your name"
                                                                     />
                                                                 </div>
                                                                 <div className="flex-1 w-full space-y-1">
@@ -569,7 +574,7 @@ const BookingPage: React.FC = () => {
                                                                         value={student.email}
                                                                         onChange={e => handleStudentChange(student.id, 'email', e.target.value)}
                                                                         className="w-full px-5 py-3 bg-gray-50 border border-gray-50 rounded-2xl outline-none text-xs font-bold focus:bg-white focus:border-[#a0522d] transition-all"
-                                                                        placeholder="contact@email.com"
+                                                                        placeholder="name@email.com"
                                                                     />
                                                                 </div>
                                                                 <button

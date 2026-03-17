@@ -117,8 +117,8 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
             } else {
                 onClose();
             }
-        } catch (error) {
-            setErrors({ auth: 'An unexpected error occurred.' });
+        } catch (error: any) {
+            setErrors({ auth: error?.message || 'An unexpected error occurred.' });
             console.error('Login error:', error);
         } finally {
             setLoading(false);
@@ -159,8 +159,8 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
             } else {
                 onClose();
             }
-        } catch (error) {
-            setErrors({ auth: 'An unexpected error occurred.' });
+        } catch (error: any) {
+            setErrors({ auth: error?.message || 'An unexpected error occurred.' });
             console.error('Register error:', error);
         } finally {
             setLoading(false);

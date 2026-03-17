@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { classesData } from '../../constants/classesData';
 import { FaPlus, FaTrash, FaChevronDown, FaChevronRight, FaBook, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 interface Subject {
     id: string;
@@ -26,6 +27,7 @@ interface Topic {
 }
 
 const AdminClasses: React.FC = () => {
+    const { showAlert, showConfirm } = useModal();
     const [selectedClassId, setSelectedClassId] = useState<number>(1);
     const [selectedCurriculum, setSelectedCurriculum] = useState<'CBSE' | 'STATE'>('CBSE');
     const [selectedStateRegion, setSelectedStateRegion] = useState<'ANDHRA' | 'TELANGANA'>('ANDHRA');
@@ -131,15 +133,15 @@ const AdminClasses: React.FC = () => {
             setNewSubjectName('');
             setNewSubjectPrice(0);
             fetchSubjects();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error adding subject:', err);
-            alert('Failed to add subject.');
+            showAlert('Failed to add subject: ' + (err.message || 'Unknown error'));
         }
     };
 
     // Delete a subject
     const handleDeleteSubject = async (id: string) => {
-        if (!confirm('Delete this subject and all its topics?')) return;
+        if (!await showConfirm('Delete this subject and all its topics?')) return;
         try {
             const { error } = await supabase
                 .from('class_subjects')
@@ -150,7 +152,7 @@ const AdminClasses: React.FC = () => {
             fetchSubjects();
         } catch (err) {
             console.error('Error deleting subject:', err);
-            alert('Failed to delete subject.');
+            showAlert('Failed to delete subject.');
         }
     };
 
@@ -193,13 +195,13 @@ const AdminClasses: React.FC = () => {
             fetchTopics(subjectId);
         } catch (err) {
             console.error('Error adding topic:', err);
-            alert('Failed to add topic.');
+            showAlert('Failed to add topic.');
         }
     };
 
     // Delete a topic
     const handleDeleteTopic = async (topicId: string, subjectId: string) => {
-        if (!confirm('Delete this topic?')) return;
+        if (!await showConfirm('Delete this topic?')) return;
         try {
             const { error } = await supabase
                 .from('class_topics')
@@ -210,7 +212,7 @@ const AdminClasses: React.FC = () => {
             fetchTopics(subjectId);
         } catch (err) {
             console.error('Error deleting topic:', err);
-            alert('Failed to delete topic.');
+            showAlert('Failed to delete topic.');
         }
     };
 
@@ -239,7 +241,7 @@ const AdminClasses: React.FC = () => {
             fetchSubjects();
         } catch (err) {
             console.error('Error updating subject:', err);
-            alert('Failed to update subject.');
+            showAlert('Failed to update subject.');
         }
     };
 
@@ -278,7 +280,7 @@ const AdminClasses: React.FC = () => {
             fetchTopics(subjectId);
         } catch (err) {
             console.error('Error updating topic:', err);
-            alert('Failed to update topic.');
+            showAlert('Failed to update topic.');
         }
     };
 
@@ -310,7 +312,7 @@ const AdminClasses: React.FC = () => {
             fetchTopics(editingUnitKey.subjectId);
         } catch (err) {
             console.error('Error updating unit:', err);
-            alert('Failed to update unit.');
+            showAlert('Failed to update unit.');
         }
     };
 
@@ -566,7 +568,7 @@ const AdminClasses: React.FC = () => {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                                    <div className={`flex items-center gap-1 transition-opacity ${editingSubjectId === subject.id ? 'opacity-100' : 'opacity-40 group-hover:opacity-100'}`}>
                                         {editingSubjectId === subject.id ? (
                                             <>
                                                 <button
@@ -609,7 +611,7 @@ const AdminClasses: React.FC = () => {
                                         ) : (
                                             <div className="space-y-6 mb-6">
                                                 {groupTopicsByUnit(topics[subject.id] || []).map((group) => (
-                                                    <div key={group.unit_no} className="space-y-3">
+                                                    <div key={group.unit_no} className="bg-white p-5 rounded-[24px] border border-gray-100 shadow-sm space-y-4 mb-6 last:mb-2 transition-all hover:shadow-md">
                                                         {/* Unit Header */}
                                                         <div className="flex items-center justify-between group/unit w-full">
                                                             {editingUnitKey?.subjectId === subject.id && editingUnitKey?.unitNo === group.unit_no ? (
@@ -636,13 +638,6 @@ const AdminClasses: React.FC = () => {
                                                                     <h3 className="text-xs font-black text-[#a0522d] tracking-wider">
                                                                         Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
                                                                     </h3>
-                                                                    <button
-                                                                        onClick={() => handleAutoCalculate(subject.id, editingSubjectId === subject.id)}
-                                                                        className="text-orange-500 hover:text-orange-700 transition-all p-1 text-[10px] font-black underline decoration-orange-300"
-                                                                        title="Auto-calculate subject price/time from units"
-                                                                    >
-                                                                        SUM
-                                                                    </button>
                                                                     <button
                                                                         onClick={() => handleEditUnit(group.unit_no, group.unit_title, subject.id)}
                                                                         className="text-gray-300 hover:text-blue-500 transition-all p-1"
@@ -716,7 +711,7 @@ const AdminClasses: React.FC = () => {
                                                 </div>
                                                                         )}
                                                                     </div>
-                                                                    <div className="flex items-center gap-1 opacity-0 group-hover/topic:opacity-100 transition-opacity">
+                                                                    <div className={`flex items-center gap-1 transition-opacity ${editingTopicId === topic.id ? 'opacity-100' : 'opacity-0 group-hover/topic:opacity-100'}`}>
                                                                         {editingTopicId === topic.id ? (
                                                                             <>
                                                                                 <button
@@ -752,14 +747,38 @@ const AdminClasses: React.FC = () => {
                                                                 </li>
                                                             ))}
                                                         </ul>
+                                                        {/* Add Topic per Unit */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setAddingTopicFor(subject.id);
+                                                                setNewUnitNo(group.unit_no);
+                                                                setNewUnitTitle(group.unit_title || '');
+                                                            }}
+                                                            className="w-full py-2 border-2 border-dashed border-gray-100 rounded-xl text-[10px] font-black text-gray-400 uppercase tracking-widest hover:border-[#a0522d] hover:text-[#a0522d] hover:bg-[#a0522d]/5 transition-all flex items-center justify-center gap-2 mt-2"
+                                                        >
+                                                            <FaPlus size={8} /> Add Topic to Unit {group.unit_no}
+                                                        </button>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
 
-                                        {/* Add Topic Form */}
+                                        {/* Add Topic / Unit Selector */}
                                         {addingTopicFor === subject.id ? (
                                             <div className="bg-white p-4 rounded-[20px] border border-gray-100 shadow-xl space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <h4 className="text-[10px] font-black text-[#a0522d] uppercase tracking-widest">Adding to Unit {newUnitNo}</h4>
+                                                    <button 
+                                                        onClick={() => {
+                                                            const maxUnit = (topics[subject.id] || []).reduce((max, t) => Math.max(max, t.unit_no), 0);
+                                                            setNewUnitNo(maxUnit + 1);
+                                                            setNewUnitTitle('');
+                                                        }}
+                                                        className="text-[9px] font-black text-blue-500 hover:underline"
+                                                    >
+                                                        Switch to New Unit
+                                                    </button>
+                                                </div>
                                                 <div className="grid grid-cols-4 gap-2">
                                                     <div className="col-span-1">
                                                         <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block ml-1">Unit No</label>
@@ -821,12 +840,19 @@ const AdminClasses: React.FC = () => {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <button
-                                                onClick={() => setAddingTopicFor(subject.id)}
-                                                className="w-full py-2 border-2 border-dashed border-gray-100 rounded-xl text-[10px] font-black text-gray-400 uppercase tracking-widest hover:border-[#a0522d] hover:text-[#a0522d] hover:bg-[#a0522d]/5 transition-all flex items-center justify-center gap-2 mt-2"
-                                            >
-                                                <FaPlus size={8} /> Add New Topic
-                                            </button>
+                                            <div className="flex gap-2 mt-4">
+                                                <button
+                                                    onClick={() => {
+                                                        const maxUnit = (topics[subject.id] || []).reduce((max, t) => Math.max(max, t.unit_no), 0);
+                                                        setAddingTopicFor(subject.id);
+                                                        setNewUnitNo(maxUnit + 1);
+                                                        setNewUnitTitle('');
+                                                    }}
+                                                    className="flex-1 py-3 border-2 border-[#1B2A5A] rounded-xl text-[10px] font-black text-[#1B2A5A] uppercase tracking-widest hover:bg-[#1B2A5A] hover:text-white transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <FaPlus size={8} /> Add New Unit
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 )}

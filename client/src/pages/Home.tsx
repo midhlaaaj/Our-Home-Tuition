@@ -10,6 +10,7 @@ import PartnerSlider from '../components/PartnerSlider';
 import FAQs from '../components/FAQs';
 import BrowseClasses from '../components/BrowseClasses';
 import ContactForm from '../components/ContactForm';
+import Reveal from '../components/Reveal';
 
 const Home: React.FC = () => {
     return (
@@ -17,15 +18,33 @@ const Home: React.FC = () => {
             <Header showToggle={false} />
 
             <main className="flex-grow">
-                <HeroSection />
-                <CounterSection />
-                <BrowseClasses />
-                <PartnerSlider />
-                <AffiliatedLogos />
-                <MentorsSection />
-                <Reviews />
-                <FAQs />
-                <ContactForm />
+                <Reveal>
+                    <HeroSection />
+                </Reveal>
+                <Reveal delay={0.3}>
+                    <CounterSection />
+                </Reveal>
+                <Reveal>
+                    <BrowseClasses />
+                </Reveal>
+                <Reveal>
+                    <PartnerSlider />
+                </Reveal>
+                <Reveal>
+                    <AffiliatedLogos />
+                </Reveal>
+                <Reveal>
+                    <MentorsSection />
+                </Reveal>
+                <Reveal>
+                    <Reviews />
+                </Reveal>
+                <Reveal>
+                    <FAQs />
+                </Reveal>
+                <Reveal>
+                    <ContactForm />
+                </Reveal>
             </main>
 
             <Footer />

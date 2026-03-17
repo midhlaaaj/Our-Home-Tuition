@@ -20,7 +20,50 @@ const MentorsSection: React.FC = () => {
     const trackRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        const fallbackMentors: Mentor[] = [
+            {
+                id: '1',
+                name: 'Dr. Sarah Wilson',
+                subject: 'Mathematics',
+                description: 'Expert in Algebra and Calculus with over 10 years of teaching experience.',
+                image_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=300&fit=crop',
+                is_active: true
+            },
+            {
+                id: '2',
+                name: 'Prof. David Chen',
+                subject: 'Physics',
+                description: 'Specializes in Quantum Mechanics and High School Physics preparation.',
+                image_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=300&fit=crop',
+                is_active: true
+            },
+            {
+                id: '3',
+                name: 'Emily Thompson',
+                subject: 'English',
+                description: 'PhD in Literature, helping students master creative writing and grammar.',
+                image_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=300&fit=crop',
+                is_active: true
+            },
+            {
+                id: '4',
+                name: 'James Rodriguez',
+                subject: 'Science',
+                description: 'Biology and Chemistry expert focused on making complex concepts simple.',
+                image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=300&fit=crop',
+                is_active: true
+            }
+        ];
+
         const fetchMentors = async () => {
+            const timeoutId = setTimeout(() => {
+                if (loading) {
+                    console.warn("Mentors fetch timed out, using fallbacks");
+                    setMentors(fallbackMentors);
+                    setLoading(false);
+                }
+            }, 3000);
+
             try {
                 const { data, error } = await supabase
                     .from('mentors')
@@ -28,13 +71,20 @@ const MentorsSection: React.FC = () => {
                     .eq('is_active', true)
                     .order('created_at', { ascending: false });
 
+                clearTimeout(timeoutId);
+                
                 if (error) throw error;
-                const uniqueMentors = Array.from(new Set(data?.map(m => m.id)))
-                    .map(id => data?.find(m => m.id === id));
-
-                setMentors(uniqueMentors as Mentor[] || []);
+                
+                if (data && data.length > 0) {
+                    const uniqueMentors = Array.from(new Set(data.map(m => m.id)))
+                        .map(id => data.find(m => m.id === id));
+                    setMentors(uniqueMentors as Mentor[]);
+                } else {
+                    setMentors(fallbackMentors);
+                }
             } catch (err) {
                 console.error('Error fetching mentors:', err);
+                setMentors(fallbackMentors);
             } finally {
                 setLoading(false);
             }

@@ -7,7 +7,9 @@ VALUES
   ('uploads', 'uploads', true),
   ('avatars', 'avatars', true),
   ('sliders', 'sliders', true),
-  ('mentors', 'mentors', true)
+  ('mentors', 'mentors', true),
+  ('achievements', 'achievements', true),
+  ('partners', 'partners', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
 -- 2. Clear existing policies to avoid "already exists" errors

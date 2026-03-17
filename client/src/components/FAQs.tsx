@@ -16,17 +16,55 @@ const FAQs: React.FC = () => {
 
     useEffect(() => {
         const fetchFaqs = async () => {
-            const { data, error } = await supabase
-                .from('faqs')
-                .select('*')
-                .order('order', { ascending: true });
+            const timeoutId = setTimeout(() => {
+                if (faqs.length === 0) {
+                    console.warn("FAQs fetch timed out, using fallbacks");
+                    setFaqs(fallbackFaqs);
+                }
+            }, 3000);
 
-            if (error) {
-                console.error('Error fetching FAQs:', error);
-            } else {
-                setFaqs(data || []);
+            try {
+                const { data, error } = await supabase
+                    .from('faqs')
+                    .select('*')
+                    .order('order', { ascending: true });
+
+                clearTimeout(timeoutId);
+
+                if (error) {
+                    console.error('Error fetching FAQs:', error);
+                    setFaqs(fallbackFaqs);
+                } else if (data && data.length > 0) {
+                    setFaqs(data);
+                } else {
+                    setFaqs(fallbackFaqs);
+                }
+            } catch (err) {
+                console.error('Unexpected error fetching FAQs:', err);
+                setFaqs(fallbackFaqs);
             }
         };
+
+        const fallbackFaqs: FAQ[] = [
+            {
+                id: '1',
+                question: 'How do I book a mentor?',
+                answer: 'You can browse our classes and click the "Book Now" button on any subject to start the booking process.',
+                order: 1
+            },
+            {
+                id: '2',
+                question: 'What are the tuition charges?',
+                answer: 'Charges vary based on the subject and the level of the student. Please contact us for a personalized quote.',
+                order: 2
+            },
+            {
+                id: '3',
+                question: 'Do you provide home tuition?',
+                answer: 'Yes, we provide qualified home tutors who come to your house for personalized learning.',
+                order: 3
+            }
+        ];
 
         fetchFaqs();
     }, []);

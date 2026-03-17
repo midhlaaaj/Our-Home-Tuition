@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { motion } from 'framer-motion';
 import { FaStar, FaCheckCircle, FaChevronLeft, FaPaperPlane } from 'react-icons/fa';
+import { useModal } from '../context/ModalContext';
 
 const WriteReview: React.FC = () => {
     const { bookingId } = useParams<{ bookingId: string }>();
     const navigate = useNavigate();
+    const { showAlert } = useModal();
     const [booking, setBooking] = useState<any>(null);
     const [mentor, setMentor] = useState<any>(null);
     const [rating, setRating] = useState(5);
@@ -31,7 +33,7 @@ const WriteReview: React.FC = () => {
                 setMentor(bookingData.mentors);
             } catch (err) {
                 console.error(err);
-                alert("Invalid or missing booking information.");
+                showAlert("Invalid or missing booking information.");
                 navigate('/');
             } finally {
                 setLoading(false);
@@ -60,7 +62,7 @@ const WriteReview: React.FC = () => {
             setSubmitted(true);
         } catch (err: any) {
             console.error(err);
-            alert("Error submitting review: " + err.message);
+            showAlert("Error submitting review: " + err.message);
         } finally {
             setIsSubmitting(false);
         }

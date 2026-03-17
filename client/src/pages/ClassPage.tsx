@@ -35,7 +35,6 @@ const ClassPage: React.FC = () => {
     const [topics, setTopics] = useState<Record<string, Topic[]>>({});
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
 
     // Booking Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -108,6 +107,9 @@ const ClassPage: React.FC = () => {
         return Object.values(groups).sort((a, b) => a.unit_no - b.unit_no);
     };
 
+    const [expandedUnits, setExpandedUnits] = useState<Record<string, number | null>>({});
+    const navigate = useNavigate();
+
     const toggleSubject = (subjectId: string) => {
         if (expandedSubject === subjectId) {
             setExpandedSubject(null);
@@ -117,6 +119,13 @@ const ClassPage: React.FC = () => {
                 fetchTopics(subjectId);
             }
         }
+    };
+
+    const toggleUnit = (subjectId: string, unitNo: number) => {
+        setExpandedUnits(prev => ({
+            ...prev,
+            [subjectId]: prev[subjectId] === unitNo ? null : unitNo
+        }));
     };
 
     // Pre-fetch all topics when modal opens to ensure smooth UX
@@ -138,6 +147,21 @@ const ClassPage: React.FC = () => {
                 return [...prev, { subject, topic }];
             }
         });
+    };
+
+    const toggleSubjectSelection = (subject: Subject) => {
+        const subjectTopics = topics[subject.id] || [];
+        if (subjectTopics.length === 0) return;
+
+        const allSelected = subjectTopics.every(t => selectedUnits.some(u => u.topic.id === t.id));
+
+        if (allSelected) {
+            setSelectedUnits(prev => prev.filter(u => u.subject.id !== subject.id));
+        } else {
+            const otherUnits = selectedUnits.filter(u => u.subject.id !== subject.id);
+            const newSelections = subjectTopics.map(t => ({ subject, topic: t }));
+            setSelectedUnits([...otherUnits, ...newSelections]);
+        }
     };
 
     const handleProceedToBooking = () => {
@@ -224,30 +248,43 @@ const ClassPage: React.FC = () => {
                                                 ) : topics[subject.id].length === 0 ? (
                                                     <p className="text-gray-400 text-sm py-2">No topics available yet.</p>
                                                 ) : (
-                                                    <div className="space-y-6">
+                                                    <div className="space-y-3">
                                                         {groupTopicsByUnit(topics[subject.id]).map((group) => (
-                                                            <div key={group.unit_no} className="space-y-2">
-                                                                <h3 className="text-[#a0522d] font-bold text-xs tracking-wide">
-                                                                    Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
-                                                                </h3>
-                                                                <ul className="space-y-2 pl-2">
-                                                                    {group.topics.map((topic) => (
-                                                                        <li key={topic.id} className="flex items-start gap-3 py-1">
-                                                                            <span className="text-[#e69b48] font-bold text-sm mt-0.5 flex-shrink-0">
-                                                                                •
-                                                                            </span>
-                                                                            <div>
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <p className="text-gray-800 font-medium text-sm">{topic.name}</p>
-                                                                                    <span className="text-[10px] font-bold text-green-500 bg-green-50 px-1.5 py-0.5 rounded">{topic.estimated_duration || 60}m</span>
-                                                                                </div>
-                                                                                {topic.description && (
-                                                                                    <p className="text-gray-500 text-xs mt-1">{topic.description}</p>
-                                                                                )}
-                                                                            </div>
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
+                                                            <div key={group.unit_no} className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
+                                                                <button
+                                                                    onClick={() => toggleUnit(subject.id, group.unit_no)}
+                                                                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                                                                >
+                                                                    <h3 className="text-[#a0522d] font-bold text-sm tracking-wide">
+                                                                        Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
+                                                                    </h3>
+                                                                    <span className="text-gray-400">
+                                                                        {expandedUnits[subject.id] === group.unit_no ? <FaMinus size={10} /> : <FaPlus size={10} />}
+                                                                    </span>
+                                                                </button>
+                                                                
+                                                                {expandedUnits[subject.id] === group.unit_no && (
+                                                                    <div className="px-4 py-3 bg-white border-t border-gray-50">
+                                                                        <ul className="space-y-3">
+                                                                            {group.topics.map((topic) => (
+                                                                                <li key={topic.id} className="flex items-start gap-3 py-1">
+                                                                                    <span className="text-[#e69b48] font-bold text-sm mt-0.5 flex-shrink-0">
+                                                                                        •
+                                                                                    </span>
+                                                                                    <div className="flex-grow">
+                                                                                        <div className="flex items-center justify-between gap-4">
+                                                                                            <p className="text-gray-800 font-medium text-sm">{topic.name}</p>
+                                                                                            <span className="text-[10px] font-bold text-green-500 bg-green-50 px-1.5 py-0.5 rounded shrink-0">{topic.estimated_duration || 60}m</span>
+                                                                                        </div>
+                                                                                        {topic.description && (
+                                                                                            <p className="text-gray-500 text-xs mt-1">{topic.description}</p>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         ))}
                                                     </div>
@@ -269,7 +306,7 @@ const ClassPage: React.FC = () => {
 
             {/* Booking Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 font-sans">
                     <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
                         {/* Modal Header */}
                         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
@@ -293,8 +330,22 @@ const ClassPage: React.FC = () => {
                                 <div className="space-y-4">
                                     {subjects.map(subject => (
                                         <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                            <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                                            <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
                                                 <h3 className="font-black text-gray-900 tracking-tight text-sm">{subject.name}</h3>
+                                                {topics[subject.id] && topics[subject.id].length > 0 && (
+                                                    <button
+                                                        onClick={() => toggleSubjectSelection(subject)}
+                                                        className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all border ${
+                                                            topics[subject.id].every(t => selectedUnits.some(u => u.topic.id === t.id))
+                                                                ? 'bg-[#a0522d] text-white border-[#a0522d]'
+                                                                : 'bg-white text-[#a0522d] border-[#a0522d]/20 hover:border-[#a0522d]/50'
+                                                        }`}
+                                                    >
+                                                        {topics[subject.id].every(t => selectedUnits.some(u => u.topic.id === t.id))
+                                                            ? 'Selected All'
+                                                            : 'Select Entire Subject'}
+                                                    </button>
+                                                )}
                                             </div>
                                             <div className="divide-y divide-gray-100">
                                                 {!topics[subject.id] ? (
@@ -329,13 +380,15 @@ const ClassPage: React.FC = () => {
                                                                                 />
                                                                             </div>
                                                                             <div className="flex-1">
-                                                                                <div className="flex items-center justify-between">
+                                                                                <div className="flex items-center justify-between gap-4">
                                                                                     <div className="flex items-center gap-2">
                                                                                         <span className="text-[#e69b48]">•</span>
                                                                                         <p className={`text-sm font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
-                                                                                        <span className="text-[10px] font-bold text-green-500">({topic.estimated_duration || 60}m)</span>
                                                                                     </div>
-                                                                                    <span className="text-[10px] font-black text-gray-400">₹{topic.unit_price || 100}</span>
+                                                                                    <div className="text-right shrink-0">
+                                                                                        <p className="text-[10px] font-black text-gray-400 leading-none">₹{topic.unit_price || 100}</p>
+                                                                                        <p className="text-[9px] font-bold text-green-500 leading-none mt-1">({topic.estimated_duration || 60}m)</p>
+                                                                                    </div>
                                                                                 </div>
                                                                                 {topic.description && (
                                                                                     <p className="text-xs text-gray-500 mt-1 ml-4 line-clamp-2">{topic.description}</p>

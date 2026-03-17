@@ -8,6 +8,7 @@ import {
     FaTimes, FaCalendarAlt, FaWifi, FaHome, FaLinkedin, FaGraduationCap, 
     FaBriefcase, FaStar, FaPen, FaSave, FaChevronDown, FaSignOutAlt, FaCalendarCheck, FaMapMarkerAlt
 } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 interface MentorProfile {
     id: string;
@@ -54,6 +55,7 @@ interface Task {
 const MentorDashboard: React.FC = () => {
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
+    const { showAlert, showConfirm, showSuccess } = useModal();
     const [profile, setProfile] = useState<MentorProfile | null>(null);
     const [availability, setAvailability] = useState<Availability[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -132,13 +134,13 @@ const MentorDashboard: React.FC = () => {
                 if (updateError) throw updateError;
                 
                 setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'completed' } : t));
-                alert("OTP Validated! Session marked as completed.");
+                showSuccess("OTP Validated! Session marked as completed.");
             } else {
-                alert("Invalid OTP. Please check with the parent.");
+                showAlert("Invalid OTP. Please check with the parent.");
             }
         } catch (err: any) {
             console.error("OTP validation error:", err);
-            alert("Error: " + err.message);
+            showAlert("Error: " + err.message);
         } finally {
             setProcessingTaskId(null);
         }
@@ -274,7 +276,7 @@ const MentorDashboard: React.FC = () => {
 
             if (error) throw error;
             
-            alert("Interest registered! Admin will review and confirm.");
+            showSuccess("Interest registered! Admin will review and confirm.");
             setNearbyOffers(nearbyOffers.filter(o => o.id !== bookingId));
             fetchMentorData(); // Refresh tasks
         } catch (err) {
@@ -287,7 +289,7 @@ const MentorDashboard: React.FC = () => {
 
         // 1. Stop if already confirmed (Prevents duplicate notifications)
         if (bookingData.status === 'confirmed') {
-            alert("This booking is already confirmed.");
+            showAlert("This booking is already confirmed.");
             setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed'} : t));
             return;
         }
@@ -320,9 +322,9 @@ const MentorDashboard: React.FC = () => {
 
         if (notifError) {
             console.error("Notification Error:", notifError);
-            alert("Task accepted, but failed to notify parent: " + notifError.message);
+            showAlert("Task accepted, but failed to notify parent: " + notifError.message);
         } else {
-            alert("Task accepted and parent notified!");
+            showSuccess("Task accepted and parent notified!");
         }
         setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed', selected_time: selectedTime } : t));
     };
@@ -364,14 +366,14 @@ const MentorDashboard: React.FC = () => {
             }
         } catch (err: any) {
             console.error('Error accepting task:', err);
-            alert("Error: " + err.message);
+            showAlert("Error: " + err.message);
         } finally {
             setProcessingTaskId(null);
         }
     };
 
     const handleDeclineTask = async (taskId: string, type: 'query' | 'booking') => {
-        if (!window.confirm("Are you sure you want to decline this assignment?")) return;
+        if (!await showConfirm("Confirm Decline", "Are you sure you want to decline this assignment?")) return;
         try {
             if (type === 'booking') {
                 const { error } = await supabase
@@ -387,7 +389,7 @@ const MentorDashboard: React.FC = () => {
                 if (error) throw error;
             }
             setTasks(tasks.filter(t => t.id !== taskId));
-            alert("Task declined and returned to pool.");
+            showSuccess("Task declined and returned to pool.");
         } catch (err) {
             console.error('Error declining task:', err);
         }
@@ -415,10 +417,10 @@ const MentorDashboard: React.FC = () => {
             if (error) throw error;
             setProfile({ ...profile, ...editForm });
             setIsEditModalOpen(false);
-            alert("Profile updated successfully!");
+            showSuccess("Profile updated successfully!");
         } catch (err: any) {
             console.error("Update error:", err);
-            alert("Failed to update profile: " + err.message);
+            showAlert("Failed to update profile: " + err.message);
         } finally {
             setIsSaving(false);
         }
@@ -455,13 +457,13 @@ const MentorDashboard: React.FC = () => {
             
             if (error) {
                 console.error('Error adding availability:', error);
-                alert(`Failed to add availability: ${error.message}`);
+                showAlert(`Failed to add availability: ${error.message}`);
                 return;
             }
             
             if (data && data.length > 0) {
                 setAvailability([...availability, data[0]]);
-                alert("Availability window added!");
+                showSuccess("Availability window added!");
             }
         } catch (err) {
             console.error('Error adding availability:', err);
@@ -1188,7 +1190,7 @@ const MentorDashboard: React.FC = () => {
                                             type="button"
                                             onClick={async () => {
                                                 if (!navigator.geolocation) {
-                                                    alert("Geolocation is not supported");
+                                                    showAlert("Geolocation is not supported");
                                                     return;
                                                 }
                                                 setEditForm(prev => ({ ...prev, location_address: 'Detecting...' }));
@@ -1207,7 +1209,7 @@ const MentorDashboard: React.FC = () => {
                                                         setEditForm(prev => ({ ...prev, latitude, longitude, location_address: `${latitude}, ${longitude}` }));
                                                     }
                                                 }, () => {
-                                                    alert("Location access denied");
+                                                    showAlert("Location access denied");
                                                     setEditForm(prev => ({ ...prev, location_address: profile?.location_address || '' }));
                                                 });
                                             }}
