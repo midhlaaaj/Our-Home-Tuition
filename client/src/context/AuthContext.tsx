@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.warn("Auth check timed out, forcing loading to false");
                 setLoading(false);
             }
-        }, 2000);
+        }, 1000);
 
         // Get initial session
         const getInitialSession = async () => {
@@ -70,13 +70,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 if (mounted) {
                     setSession(session);
-                    setUser(session?.user ?? null);
-                    console.log("Session fetched", session ? "User found" : "No user");
+                    const currentUser = session?.user ?? null;
+                    setUser(currentUser);
+                    console.log("Session fetched", currentUser ? "User found" : "No user");
 
-                    if (session?.user) {
-                        fetchRole(session.user.id).then(userRole => {
-                            if (mounted) setRole(userRole);
-                        });
+                    if (currentUser) {
+                        const userRole = await fetchRole(currentUser.id);
+                        if (mounted) setRole(userRole);
                     } else {
                         setRole(null);
                     }
@@ -96,12 +96,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!mounted) return;
 
             setSession(session);
-            setUser(session?.user ?? null);
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
 
-            if (session?.user) {
-                fetchRole(session.user.id).then(userRole => {
-                    if (mounted) setRole(userRole);
-                });
+            if (currentUser) {
+                const userRole = await fetchRole(currentUser.id);
+                if (mounted) setRole(userRole);
             } else {
                 if (mounted) setRole(null);
             }

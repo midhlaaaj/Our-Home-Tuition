@@ -155,7 +155,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                     success: 'Registration successful! Please check your email to verify your account.'
                 });
                 // Optional: Clear form or close after a delay
-                setTimeout(onClose, 5000);
+                setTimeout(onClose, 2000);
             } else {
                 onClose();
             }
