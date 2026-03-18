@@ -31,6 +31,8 @@ import ClassPage from './pages/ClassPage';
 import BookingPage from './pages/BookingPage';
 import NotificationsPage from './pages/NotificationsPage';
 import WriteReview from './pages/WriteReview';
+import AIChatButton from './components/AIChatButton';
+
 
 function App() {
   return (
@@ -77,6 +79,7 @@ function App() {
               <Route path="/mentor-dashboard" element={<MentorDashboard />} />
             </Route>
           </Routes>
+          <AIChatButton />
         </Router>
       </CurriculumProvider>
     </ModalProvider>
