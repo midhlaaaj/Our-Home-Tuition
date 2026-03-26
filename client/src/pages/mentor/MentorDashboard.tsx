@@ -506,7 +506,7 @@ const MentorDashboard: React.FC = () => {
             <header className="fixed w-full top-0 z-50 bg-white shadow-md border-b border-gray-100">
                 <div className="container mx-auto px-4 py-3 flex justify-between items-center">
                     <Link to="/" className="flex items-center space-x-0">
-                        <img src="/logo.png" alt="Our Home Tuition Logo" className="w-16 h-16 object-contain -my-3" />
+                        <img src="/newlogo.png" alt="Our Home Tuition Logo" className="w-16 h-16 object-contain -my-3" />
                         <div className="ml-2">
                             <h1 className="text-lg font-black text-gray-900 tracking-tight leading-none">Mentor<span className="text-[#a0522d]">Portal</span></h1>
                             <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest mt-0.5">Faculty System</p>

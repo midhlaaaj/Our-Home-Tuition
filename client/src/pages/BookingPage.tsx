@@ -79,7 +79,7 @@ const BookingPage: React.FC = () => {
                 currency: "INR",
                 name: "Our Home Tuition",
                 description: `Booking for ${state?.classInfo?.label}`,
-                image: "/logo.png",
+                image: "/newlogo.png",
                 handler: function (response: any) {
                     resolve(response);
                 },

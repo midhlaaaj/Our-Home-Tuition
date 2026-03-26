@@ -4,6 +4,7 @@ import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './context/AuthContext';
 import { ModalProvider } from './context/ModalContext';
 import Home from './pages/Home';
+import IntroWrapper from './pages/IntroPage';
 import About from './pages/About';
 import Auth from './pages/Auth';
 import Login from './pages/Login';
@@ -42,7 +43,7 @@ function App() {
         <Router>
           <ScrollToTop />
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<IntroWrapper><Home /></IntroWrapper>} />
             <Route path="/class/:id" element={<ClassPage />} />
             <Route path="/book-session" element={<BookingPage />} />
             <Route path="/about" element={<About />} />

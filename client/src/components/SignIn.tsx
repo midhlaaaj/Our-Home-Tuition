@@ -213,7 +213,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                     <>
                                         {/* Logo Box */}
                                         <div className="w-24 h-16 flex items-center justify-center mb-6">
-                                            <img src="/logo.png" alt="Our Home Tuition" className="w-full h-full object-contain scale-125" />
+                                            <img src="/newlogo.png" alt="Our Home Tuition" className="w-full h-full object-contain scale-125" />
                                         </div>
 
                                         {/* Social Logins */}
@@ -327,7 +327,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                         >
                                             {/* Logo Box */}
                                             <div className="w-24 h-16 flex items-center justify-center mb-6 mx-auto">
-                                                <img src="/logo.png" alt="Our Home Tuition" className="w-full h-full object-contain scale-125" />
+                                                <img src="/newlogo.png" alt="Our Home Tuition" className="w-full h-full object-contain scale-125" />
                                             </div>
 
                                             {/* Social Logins */}

@@ -72,7 +72,7 @@ const MentorLogin: React.FC = () => {
                         <div
                             className="w-24 h-16 flex items-center justify-center mb-4"
                         >
-                            <img src="/logo.png" alt="Our Home Tuition" className="w-full h-full object-contain scale-125" />
+                            <img src="/newlogo.png" alt="Our Home Tuition" className="w-full h-full object-contain scale-125" />
                         </div>
                         <h2 className="text-2xl font-bold text-[#1B2A5A] tracking-tight">Mentor Portal</h2>
                         <p className="text-gray-400 text-sm mt-1 uppercase tracking-widest font-black text-[10px]">Sign in to your dashboard</p>
