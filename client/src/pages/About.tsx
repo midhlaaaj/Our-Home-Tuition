@@ -124,14 +124,14 @@ const About: React.FC = () => {
                     <section className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden lg:min-h-[80vh] flex">
                         <div className="flex flex-col lg:flex-row w-full">
                             {/* Scrollable Image Carousel */}
-                            <div className="h-64 lg:h-auto lg:min-h-full lg:w-2/5 relative bg-gray-200 group overflow-hidden shrink-0">
+                            <div className="h-80 sm:h-[450px] lg:h-auto lg:min-h-full lg:w-2/5 relative bg-gray-200 group overflow-hidden shrink-0">
                                 <div className="flex absolute inset-0 transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${activeFounderIndex * 100}%)` }}>
                                     {founders.map((founder, index) => (
                                         <div key={index} className="w-full h-full flex-shrink-0 relative">
                                             <img
                                                 src={founder.image}
                                                 alt={founder.role}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-cover object-top"
                                             />
                                             <div className="absolute top-4 left-4 bg-[#c75e33] text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider shadow-md uppercase">
                                                 {founder.role}

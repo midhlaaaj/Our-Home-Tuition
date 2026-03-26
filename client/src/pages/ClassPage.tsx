@@ -33,6 +33,7 @@ const ClassPage: React.FC = () => {
     const { curriculum, stateRegion, toggleStateRegion } = useCurriculum();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [topics, setTopics] = useState<Record<string, Topic[]>>({});
+    const [expandedBoard, setExpandedBoard] = useState<string | null>(curriculum === 'CBSE' ? 'CBSE' : (stateRegion === 'ANDHRA' ? 'ANDHRA' : 'TELANGANA'));
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -109,6 +110,27 @@ const ClassPage: React.FC = () => {
 
     const [expandedUnits, setExpandedUnits] = useState<Record<string, number | null>>({});
     const navigate = useNavigate();
+    const { setCurriculum, setStateRegion } = useCurriculum();
+
+    const handleToggleBoard = (board: string) => {
+        if (expandedBoard === board) {
+            setExpandedBoard(null);
+            return;
+        }
+        
+        setExpandedBoard(board);
+        setExpandedSubject(null);
+        
+        if (board === 'CBSE') {
+            setCurriculum('CBSE');
+        } else if (board === 'ANDHRA') {
+            setCurriculum('STATE');
+            setStateRegion('ANDHRA');
+        } else if (board === 'TELANGANA') {
+            setCurriculum('STATE');
+            setStateRegion('TELANGANA');
+        }
+    };
 
     const toggleSubject = (subjectId: string) => {
         if (expandedSubject === subjectId) {
@@ -126,6 +148,59 @@ const ClassPage: React.FC = () => {
             ...prev,
             [subjectId]: prev[subjectId] === unitNo ? null : unitNo
         }));
+    };
+
+    const renderSubjectDetails = (subject: Subject) => {
+        return (
+            <div className="space-y-3">
+                {!topics[subject.id] ? (
+                    <div className="flex justify-center py-4">
+                        <div className="w-6 h-6 border-3 border-gray-200 border-t-[#a0522d] rounded-full animate-spin"></div>
+                    </div>
+                ) : topics[subject.id].length === 0 ? (
+                    <p className="text-gray-400 text-xs font-bold py-2">No units available yet.</p>
+                ) : (
+                    <div className="space-y-3">
+                        {groupTopicsByUnit(topics[subject.id]).map((group) => (
+                            <div key={group.unit_no} className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                                <button
+                                    onClick={() => toggleUnit(subject.id, group.unit_no)}
+                                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                                >
+                                    <h3 className="text-[#a0522d] font-bold text-[10px] uppercase tracking-wider">
+                                        Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
+                                    </h3>
+                                    <span className="text-gray-300">
+                                        {expandedUnits[subject.id] === group.unit_no ? <FaMinus size={8} /> : <FaPlus size={8} />}
+                                    </span>
+                                </button>
+                                
+                                {expandedUnits[subject.id] === group.unit_no && (
+                                    <div className="px-4 py-3 bg-white border-t border-gray-50 animate-in fade-in duration-200">
+                                        <ul className="space-y-3">
+                                            {group.topics.map((topic) => (
+                                                <li key={topic.id} className="flex items-start gap-3 py-1 group">
+                                                    <span className="text-[#e69b48] font-bold text-xs mt-1 flex-shrink-0">•</span>
+                                                    <div className="flex-grow">
+                                                        <div className="flex items-center justify-between gap-4">
+                                                            <p className="text-gray-800 font-semibold text-xs tracking-tight group-hover:text-[#a0522d] transition-colors">{topic.name}</p>
+                                                            <span className="text-[9px] font-bold text-green-500 bg-green-50 px-2 py-0.5 rounded-full shrink-0">{topic.estimated_duration || 60}m</span>
+                                                        </div>
+                                                        {topic.description && (
+                                                            <p className="text-gray-400 text-[10px] font-medium mt-1 leading-relaxed">{topic.description}</p>
+                                                        )}
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
     };
 
     // Pre-fetch all topics when modal opens to ensure smooth UX
@@ -178,111 +253,109 @@ const ClassPage: React.FC = () => {
 
             <main className="flex-grow container mx-auto px-4 py-8">
                 {classInfo ? (
-                    <div className="min-h-[50vh]">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-4">
-                                <h1 className="text-3xl font-bold text-gray-800">{classInfo.label}</h1>
-                                <span className={`text-xs px-3 py-1 rounded-full font-bold ${curriculum === 'CBSE' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
-                                    }`}>
-                                    {curriculum}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                {curriculum === 'STATE' && (
-                                    <button
-                                        onClick={toggleStateRegion}
-                                        className="relative w-40 h-10 bg-[#1B2A5A] rounded-full flex items-center p-1 cursor-pointer shadow-inner overflow-hidden border border-white/10"
-                                        aria-label="Toggle State Region"
-                                    >
-                                        <div className="absolute inset-0 grid grid-cols-2 items-center text-[10px] font-bold text-white/50 pointer-events-none select-none">
-                                            <span className="text-center">ANDHRA</span>
-                                            <span className="text-center">TELANGANA</span>
-                                        </div>
-                                        <div
-                                            className={`w-1/2 h-full bg-white rounded-full shadow-md text-[#1B2A5A] flex items-center justify-center text-[10px] font-bold transition-transform duration-300 ease-in-out ${stateRegion === 'TELANGANA' ? 'translate-x-full' : 'translate-x-0'
-                                                }`}
-                                        >
+                    <div className="min-h-[50vh]">                        <div className="flex items-center justify-between gap-4 mb-8">
+                            <div className="flex items-center gap-2 md:gap-4 flex-1">
+                                <h1 className="text-2xl md:text-4xl font-bold text-[#1B2A5A] tracking-tight">{classInfo.label}</h1>
+                                <div className="hidden md:flex items-center gap-2">
+                                    <span className={`text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest ${curriculum === 'CBSE' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                                        {curriculum}
+                                    </span>
+                                    {curriculum === 'STATE' && (
+                                        <span className="text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest bg-gray-100 text-gray-600">
                                             {stateRegion}
-                                        </div>
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                {/* Desktop Only Toggles */}
+                                <div className="hidden md:flex items-center gap-3">
+                                    {curriculum === 'STATE' && (
+                                        <button
+                                            onClick={toggleStateRegion}
+                                            className="relative w-40 h-10 bg-[#1B2A5A] rounded-full flex items-center p-1 cursor-pointer shadow-inner overflow-hidden border border-white/10"
+                                            aria-label="Toggle State Region"
+                                        >
+                                            <div className="absolute inset-0 grid grid-cols-2 items-center text-[10px] font-bold text-white/50 pointer-events-none select-none">
+                                                <span className="text-center">ANDHRA</span>
+                                                <span className="text-center">TELANGANA</span>
+                                            </div>
+                                            <div
+                                                className={`w-1/2 h-full bg-white rounded-full shadow-md text-[#1B2A5A] flex items-center justify-center text-[10px] font-bold transition-transform duration-300 ease-in-out ${stateRegion === 'TELANGANA' ? 'translate-x-full' : 'translate-x-0'}`}
+                                            >
+                                                {stateRegion}
+                                            </div>
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setCurriculum(curriculum === 'CBSE' ? 'STATE' : 'CBSE')}
+                                        className="h-10 px-4 bg-gray-100 hover:bg-gray-200 text-[#1B2A5A] rounded-full text-[10px] font-bold uppercase tracking-widest transition-all"
+                                    >
+                                        Switch to {curriculum === 'CBSE' ? 'State' : 'CBSE'}
                                     </button>
-                                )}
+                                </div>
+
                                 <button
                                     onClick={handleOpenModal}
-                                    className="bg-[#a0522d] hover:bg-[#804224] text-white px-6 py-2.5 rounded-lg font-bold transition-colors shadow-sm flex items-center gap-2"
+                                    className="bg-[#a0522d] hover:bg-[#804224] text-white px-6 md:px-8 py-2.5 md:py-3.5 rounded-xl font-bold text-xs md:text-sm uppercase tracking-widest transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 shrink-0"
                                 >
                                     Book Session
                                 </button>
                             </div>
                         </div>
 
-                        {loading ? (
-                            <div className="flex justify-center py-12">
-                                <div className="w-10 h-10 border-4 border-gray-200 border-t-[#e69b48] rounded-full animate-spin"></div>
-                            </div>
-                        ) : subjects.length === 0 ? (
-                            <div className="text-center py-16 text-gray-400">
-                                <p className="text-lg">No {curriculum} subjects available for this class yet.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {subjects.map((subject) => (
-                                    <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                        {/* Subject Accordion Header */}
+
+                        {/* Hierarchical Navigation */}
+                        <div className="space-y-4">
+                            {/* Board Selection - Mobile Hierarchical View */}
+                            <div className="md:hidden space-y-3 mb-8">
+                                {[
+                                    { id: 'CBSE', label: 'CBSE Curriculum', sub: 'National Pattern' },
+                                    { id: 'ANDHRA', label: 'Andhra State Board', sub: 'State Pattern' },
+                                    { id: 'TELANGANA', label: 'Telangana State Board', sub: 'State Pattern' }
+                                ].map((board) => (
+                                    <div key={board.id} className={`rounded-2xl overflow-hidden transition-all duration-300 ${expandedBoard === board.id ? 'ring-2 ring-[#1B2A5A] shadow-xl' : 'bg-white border border-gray-100 shadow-sm'}`}>
                                         <button
-                                            onClick={() => toggleSubject(subject.id)}
-                                            className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+                                            onClick={() => handleToggleBoard(board.id)}
+                                            className={`w-full px-5 py-5 text-left flex items-center justify-between ${expandedBoard === board.id ? 'bg-[#1B2A5A] text-white' : 'bg-white'}`}
                                         >
-                                            <span className="font-semibold text-gray-900 text-lg tracking-tight">{subject.name}</span>
-                                            <span className="text-gray-400 flex-shrink-0 ml-4">
-                                                {expandedSubject === subject.id ? <FaMinus size={14} /> : <FaPlus size={14} />}
-                                            </span>
+                                            <div className="flex-1">
+                                                <h2 className="font-bold text-sm tracking-tight">{board.label}</h2>
+                                                <p className={`text-[10px] font-medium opacity-60 ${expandedBoard === board.id ? 'text-white' : 'text-gray-400'}`}>{board.sub}</p>
+                                            </div>
+                                            <div className={`p-2 rounded-full transition-transform duration-300 ${expandedBoard === board.id ? 'bg-white/20 rotate-180' : 'bg-gray-50'}`}>
+                                                <svg className={`w-4 h-4 ${expandedBoard === board.id ? 'text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
                                         </button>
 
-                                        {/* Expanded Topics */}
-                                        {expandedSubject === subject.id && (
-                                            <div className="border-t border-gray-100 px-6 py-4 bg-gray-50">
-                                                {!topics[subject.id] ? (
-                                                    <div className="flex justify-center py-4">
-                                                        <div className="w-6 h-6 border-3 border-gray-200 border-t-[#e69b48] rounded-full animate-spin"></div>
+                                        {expandedBoard === board.id && (
+                                            <div className="bg-gray-50/50 p-4 animate-in slide-in-from-top-2 duration-300">
+                                                {loading ? (
+                                                    <div className="flex justify-center py-8">
+                                                        <div className="w-8 h-8 border-4 border-[#a0522d]/20 border-t-[#a0522d] rounded-full animate-spin"></div>
                                                     </div>
-                                                ) : topics[subject.id].length === 0 ? (
-                                                    <p className="text-gray-400 text-sm py-2">No topics available yet.</p>
+                                                ) : subjects.length === 0 ? (
+                                                    <p className="text-center py-4 text-xs font-bold text-gray-400">No subjects found for this board</p>
                                                 ) : (
                                                     <div className="space-y-3">
-                                                        {groupTopicsByUnit(topics[subject.id]).map((group) => (
-                                                            <div key={group.unit_no} className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
+                                                        {subjects.map((subject) => (
+                                                            <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                                                                 <button
-                                                                    onClick={() => toggleUnit(subject.id, group.unit_no)}
-                                                                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                                                                    onClick={() => toggleSubject(subject.id)}
+                                                                    className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
                                                                 >
-                                                                    <h3 className="text-[#a0522d] font-bold text-sm tracking-wide">
-                                                                        Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
-                                                                    </h3>
-                                                                    <span className="text-gray-400">
-                                                                        {expandedUnits[subject.id] === group.unit_no ? <FaMinus size={10} /> : <FaPlus size={10} />}
+                                                                    <span className="font-bold text-gray-800 text-xs tracking-tight uppercase">{subject.name}</span>
+                                                                    <span className="text-gray-300">
+                                                                        {expandedSubject === subject.id ? <FaMinus size={10} /> : <FaPlus size={10} />}
                                                                     </span>
                                                                 </button>
                                                                 
-                                                                {expandedUnits[subject.id] === group.unit_no && (
-                                                                    <div className="px-4 py-3 bg-white border-t border-gray-50">
-                                                                        <ul className="space-y-3">
-                                                                            {group.topics.map((topic) => (
-                                                                                <li key={topic.id} className="flex items-start gap-3 py-1">
-                                                                                    <span className="text-[#e69b48] font-bold text-sm mt-0.5 flex-shrink-0">
-                                                                                        •
-                                                                                    </span>
-                                                                                    <div className="flex-grow">
-                                                                                        <div className="flex items-center justify-between gap-4">
-                                                                                            <p className="text-gray-800 font-medium text-sm">{topic.name}</p>
-                                                                                            <span className="text-[10px] font-bold text-green-500 bg-green-50 px-1.5 py-0.5 rounded shrink-0">{topic.estimated_duration || 60}m</span>
-                                                                                        </div>
-                                                                                        {topic.description && (
-                                                                                            <p className="text-gray-500 text-xs mt-1">{topic.description}</p>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </li>
-                                                                            ))}
-                                                                        </ul>
+                                                                {expandedSubject === subject.id && (
+                                                                    <div className="px-4 pb-4 animate-in fade-in duration-200">
+                                                                        {renderSubjectDetails(subject)}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -294,7 +367,42 @@ const ClassPage: React.FC = () => {
                                     </div>
                                 ))}
                             </div>
-                        )}
+
+                            {/* Legacy Single List - Desktop View */}
+                            <div className="hidden md:block">
+                                {loading ? (
+                                    <div className="flex justify-center py-20">
+                                        <div className="w-12 h-12 border-4 border-gray-100 border-t-[#a0522d] rounded-full animate-spin"></div>
+                                    </div>
+                                ) : subjects.length === 0 ? (
+                                    <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+                                        <p className="text-gray-400 font-bold">No {curriculum} subjects available for this class yet.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {subjects.map((subject) => (
+                                            <div key={subject.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                                                <button
+                                                    onClick={() => toggleSubject(subject.id)}
+                                                    className="w-full flex items-center justify-between px-8 py-6 text-left active:bg-gray-50 transition-colors"
+                                                >
+                                                    <span className="font-bold text-[#1B2A5A] text-xl tracking-tight">{subject.name}</span>
+                                                    <div className={`p-2 rounded-full transition-colors ${expandedSubject === subject.id ? 'bg-[#a0522d] text-white' : 'bg-gray-50 text-gray-400'}`}>
+                                                        {expandedSubject === subject.id ? <FaMinus size={14} /> : <FaPlus size={14} />}
+                                                    </div>
+                                                </button>
+                                                
+                                                {expandedSubject === subject.id && (
+                                                    <div className="px-8 pb-8 pt-2 animate-in slide-in-from-top-4 duration-300">
+                                                        {renderSubjectDetails(subject)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <div className="text-center py-20">
