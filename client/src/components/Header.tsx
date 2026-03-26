@@ -200,7 +200,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
 
                             {/* Mobile Notification Dropdown */}
                             {isNotificationOpen && (
-                                <div className="absolute right-[-1rem] mt-4 w-[calc(100vw-2rem)] sm:w-80 bg-white rounded-[24px] shadow-2xl border border-gray-100 p-0 z-[110] animate-in fade-in zoom-in duration-200 origin-top-right overflow-hidden md:hidden">
+                                <div className="fixed top-20 right-4 w-[calc(100vw-2rem)] sm:w-80 bg-white rounded-[24px] shadow-2xl border border-gray-100 p-0 z-[110] animate-in fade-in zoom-in duration-200 origin-top-right overflow-hidden md:hidden">
                                     <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-[#1B2A5A]/5">
                                         <h3 className="text-sm font-black text-[#1B2A5A]">NOTIFICATIONS</h3>
                                         <span className="text-[9px] font-black bg-[#1B2A5A] text-white px-2 py-0.5 rounded-full">
