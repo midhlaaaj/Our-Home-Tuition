@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
+import { safeFetch } from '../utils/supabaseUtils';
 import { FaStar } from 'react-icons/fa';
 
 interface Review {
@@ -31,9 +32,9 @@ const Reviews: React.FC = () => {
         const fetchReviews = async () => {
             try {
                 const [siteRes, mentorRes] = await Promise.all([
-                    supabase.from('reviews').select('*').eq('is_active', true).order('created_at', { ascending: false }),
-                    supabase.from('mentor_reviews').select('*, mentors(image_url), bookings(primary_student)').eq('is_public', true).order('created_at', { ascending: false })
-                ]);
+                    safeFetch(async () => await supabase.from('reviews').select('*').eq('is_active', true).order('created_at', { ascending: false })),
+                    safeFetch(async () => await supabase.from('mentor_reviews').select('*, mentors(image_url), bookings(primary_student)').eq('is_public', true).order('created_at', { ascending: false }))
+                ]) as [any, any];
 
                 if (siteRes.error) throw siteRes.error;
                 if (mentorRes.error) throw mentorRes.error;

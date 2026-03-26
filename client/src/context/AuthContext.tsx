@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
+import { safeFetch } from '../utils/supabaseUtils';
 
 interface AuthContextType {
     session: Session | null;
@@ -25,22 +26,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (roleCache.has(userId)) return roleCache.get(userId)!;
         
         try {
-            console.log("Fetching role for user:", userId);
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', userId)
-                .single();
+            const result = await safeFetch(async () => {
+                return await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', userId)
+                    .single();
+            }, { silent: true });
 
-            if (error) {
-                console.error('Error fetching role:', error);
+            if (result.error) {
+                console.error('Error fetching role:', result.error);
                 return null;
             }
-            const userRole = data?.role?.toLowerCase() || 'user';
+            const userRole = result.data?.role?.toLowerCase() || 'user';
             roleCache.set(userId, userRole);
             return userRole;
-        } catch (error) {
-            console.error('Error fetching role:', error);
+        } catch (error: any) {
+            if (error?.name === 'AbortError') return null;
+            console.error('Unexpected error fetching role:', error);
             return null;
         }
     };
@@ -60,19 +63,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Get initial session
         const getInitialSession = async () => {
             try {
-                console.log("Fetching initial session...");
-                const { data: { session }, error } = await supabase.auth.getSession();
+                const result = await safeFetch(async () => {
+                    return await supabase.auth.getSession();
+                });
 
-                if (error) {
-                    console.error("Error getting session:", error);
-                    throw error;
-                }
+                if (result.error) throw result.error;
+                const session = result.data?.session ?? null;
 
                 if (mounted) {
                     setSession(session);
                     const currentUser = session?.user ?? null;
                     setUser(currentUser);
-                    console.log("Session fetched", currentUser ? "User found" : "No user");
 
                     if (currentUser) {
                         const userRole = await fetchRole(currentUser.id);
@@ -81,8 +82,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         setRole(null);
                     }
                 }
-            } catch (error) {
-                console.error('Error checking auth session:', error);
+            } catch (error: any) {
+                if (error?.name === 'AbortError') return;
+                console.error('Final error checking auth session:', error);
             } finally {
                 if (mounted) setLoading(false);
             }

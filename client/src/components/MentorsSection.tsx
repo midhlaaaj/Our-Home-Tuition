@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
+import { safeFetch } from '../utils/supabaseUtils';
 import { motion } from 'framer-motion';
 
 interface Mentor {
@@ -59,11 +60,15 @@ const MentorsSection: React.FC = () => {
             // We removed the aggressive 10s timeout to allow Supabase more time to respond.
 
             try {
-                const { data, error } = await supabase
-                    .from('mentors')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('created_at', { ascending: false });
+                const result = await safeFetch(async () => {
+                    return await supabase
+                        .from('mentors')
+                        .select('*')
+                        .eq('is_active', true)
+                        .order('created_at', { ascending: false });
+                });
+                
+                const { data, error } = result;
                 
                 if (error) throw error;
                 

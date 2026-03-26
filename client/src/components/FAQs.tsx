@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { safeFetch } from '../utils/supabaseUtils';
 import { FaPlus, FaMinus } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,10 +20,14 @@ const FAQs: React.FC = () => {
             // We removed the aggressive 10s timeout to allow Supabase more time to respond.
 
             try {
-                const { data, error } = await supabase
-                    .from('faqs')
-                    .select('*')
-                    .order('order', { ascending: true });
+                const result = await safeFetch(async () => {
+                    return await supabase
+                        .from('faqs')
+                        .select('*')
+                        .order('order', { ascending: true });
+                });
+
+                const { data, error } = result;
 
                 if (error) {
                     console.error('Error fetching FAQs:', error);

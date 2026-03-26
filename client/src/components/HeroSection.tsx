@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { safeFetch } from '../utils/supabaseUtils';
 
 const HeroSection: React.FC = () => {
     const [mediaUrl, setMediaUrl] = useState<string | null>(null);
@@ -16,18 +17,19 @@ const HeroSection: React.FC = () => {
             // We removed the aggressive 10s timeout to allow Supabase more time to respond, especially on first load or wake-up.
 
             try {
-                // Fetch the first active slider which acts as our Hero Media
-                const { data, error } = await supabase
-                    .from('sliders')
-                    .select('media_url, type, title, subtitle')
-                    .eq('is_active', true)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .single();
+                const result = await safeFetch(async () => {
+                    return await supabase
+                        .from('sliders')
+                        .select('media_url, type, title, subtitle')
+                        .eq('is_active', true)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .single();
+                });
 
+                const { data, error } = result;
 
                 if (error && error.code !== 'PGRST116') {
-                    // PGRST116 means no rows returned, which is fine
                     console.error("Error fetching hero media:", error);
                 }
 

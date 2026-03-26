@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { safeFetch } from '../utils/supabaseUtils';
 
 interface Brand {
     id: string; // Supabase uses string UUIDs usually, or numbers
@@ -16,10 +17,14 @@ const AffiliatedLogos: React.FC = () => {
     useEffect(() => {
         const fetchBrands = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('brands')
-                    .select('*')
-                    .eq('is_active', true);
+                const result = await safeFetch(async () => {
+                    return await supabase
+                        .from('brands')
+                        .select('*')
+                        .eq('is_active', true);
+                });
+
+                const { data, error } = result;
 
                 if (error) throw error;
 

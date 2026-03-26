@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
+import { safeFetch } from '../utils/supabaseUtils';
 import { useInView } from 'framer-motion';
 
 interface Counter {
@@ -100,11 +101,15 @@ const CounterSection: React.FC = () => {
             // We removed the aggressive 10s timeout to allow Supabase more time to respond.
 
             try {
-                const { data, error } = await supabase
-                    .from('counters')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('display_order', { ascending: true });
+                const result = await safeFetch(async () => {
+                    return await supabase
+                        .from('counters')
+                        .select('*')
+                        .eq('is_active', true)
+                        .order('display_order', { ascending: true });
+                });
+
+                const { data, error } = result;
 
                 if (error) throw error;
 

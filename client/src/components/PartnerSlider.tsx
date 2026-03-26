@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, Navigation } from 'swiper/modules';
 import { supabase } from '../supabaseClient';
+import { safeFetch } from '../utils/supabaseUtils';
 import type { Swiper as SwiperType } from 'swiper';
 // Swiper styles
 import 'swiper/swiper-bundle.css';
@@ -22,11 +23,15 @@ const PartnerSlider: React.FC = () => {
     useEffect(() => {
         const fetchPartners = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('partners')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('display_order', { ascending: true });
+                const result = await safeFetch(async () => {
+                    return await supabase
+                        .from('partners')
+                        .select('*')
+                        .eq('is_active', true)
+                        .order('display_order', { ascending: true });
+                });
+
+                const { data, error } = result;
 
                 if (error) throw error;
                 setPartners(data || []);
