@@ -96,7 +96,12 @@ const CounterSection: React.FC = () => {
         { id: '4', label: 'Universities', value: 500, suffix: '+', display_order: 4, is_active: true },
     ];
 
+    const initialized = React.useRef(false);
+
     useEffect(() => {
+        if (initialized.current) return;
+        initialized.current = true;
+
         const fetchCounters = async () => {
             // We removed the aggressive 10s timeout to allow Supabase more time to respond.
 
@@ -107,7 +112,7 @@ const CounterSection: React.FC = () => {
                         .select('*')
                         .eq('is_active', true)
                         .order('display_order', { ascending: true });
-                });
+                }, { requestId: 'Counters' });
 
                 const { data, error } = result;
 

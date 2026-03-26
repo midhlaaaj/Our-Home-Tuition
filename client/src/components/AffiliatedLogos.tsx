@@ -14,7 +14,12 @@ const AffiliatedLogos: React.FC = () => {
     const [lowerLogos, setLowerLogos] = useState<Brand[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const initialized = React.useRef(false);
+
     useEffect(() => {
+        if (initialized.current) return;
+        initialized.current = true;
+
         const fetchBrands = async () => {
             try {
                 const result = await safeFetch(async () => {
@@ -22,7 +27,7 @@ const AffiliatedLogos: React.FC = () => {
                         .from('brands')
                         .select('*')
                         .eq('is_active', true);
-                });
+                }, { requestId: 'Brands' });
 
                 const { data, error } = result;
 

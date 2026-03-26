@@ -12,7 +12,12 @@ const HeroSection: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
+    const initialized = React.useRef(false);
+
     useEffect(() => {
+        if (initialized.current) return;
+        initialized.current = true;
+        
         const fetchHeroMedia = async () => {
             // We removed the aggressive 10s timeout to allow Supabase more time to respond, especially on first load or wake-up.
 
@@ -25,7 +30,7 @@ const HeroSection: React.FC = () => {
                         .order('created_at', { ascending: false })
                         .limit(1)
                         .single();
-                });
+                }, { requestId: 'Hero' });
 
                 const { data, error } = result;
 

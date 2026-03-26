@@ -28,12 +28,17 @@ const Reviews: React.FC = () => {
     const currentSpeed = useRef(1); // Current playback rate
     const targetSpeed = useRef(1); // Target playback rate
 
+    const initialized = React.useRef(false);
+
     useEffect(() => {
+        if (initialized.current) return;
+        initialized.current = true;
+
         const fetchReviews = async () => {
             try {
                 const [siteRes, mentorRes] = await Promise.all([
-                    safeFetch(async () => await supabase.from('reviews').select('*').eq('is_active', true).order('created_at', { ascending: false })),
-                    safeFetch(async () => await supabase.from('mentor_reviews').select('*, mentors(image_url), bookings(primary_student)').eq('is_public', true).order('created_at', { ascending: false }))
+                    safeFetch(async () => await supabase.from('reviews').select('*').eq('is_active', true).order('created_at', { ascending: false }), { requestId: 'Reviews-Site' }),
+                    safeFetch(async () => await supabase.from('mentor_reviews').select('*, mentors(image_url), bookings(primary_student)').eq('is_public', true).order('created_at', { ascending: false }), { requestId: 'Reviews-Mentor' })
                 ]) as [any, any];
 
                 if (siteRes.error) throw siteRes.error;

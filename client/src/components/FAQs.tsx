@@ -15,7 +15,12 @@ const FAQs: React.FC = () => {
     const [faqs, setFaqs] = useState<FAQ[]>([]);
     const [openId, setOpenId] = useState<string | null>(null);
 
+    const initialized = React.useRef(false);
+
     useEffect(() => {
+        if (initialized.current) return;
+        initialized.current = true;
+
         const fetchFaqs = async () => {
             // We removed the aggressive 10s timeout to allow Supabase more time to respond.
 
@@ -25,7 +30,7 @@ const FAQs: React.FC = () => {
                         .from('faqs')
                         .select('*')
                         .order('order', { ascending: true });
-                });
+                }, { requestId: 'FAQs' });
 
                 const { data, error } = result;
 

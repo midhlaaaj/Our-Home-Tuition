@@ -10,43 +10,59 @@ interface SafeFetchOptions {
     retries?: number;
     delay?: number;
     silent?: boolean;
+    requestId?: string;
 }
 
 /**
  * Wraps a Supabase query promise with retry logic for AbortErrors and transient failures.
- * 
- * @param queryPromise A function that returns a Supabase query promise
- * @param options Retry options
- * @returns The result of the query
  */
 export async function safeFetch<T>(
     queryPromise: () => Promise<T>,
     options: SafeFetchOptions = {}
 ): Promise<T> {
-    const { retries = 2, delay = 500, silent = false } = options;
+    const { 
+        retries = 3, 
+        delay = 800, 
+        silent = false, 
+        requestId = Math.random().toString(36).substring(7) 
+    } = options;
+    
     let lastError: any;
 
     for (let i = 0; i <= retries; i++) {
         try {
-            return await queryPromise();
+            if (!silent && i > 0) console.log(`[${requestId}] Retry attempt ${i}/${retries}...`);
+            const result = await queryPromise();
+            
+            // Check if the result itself contains a Supabase-level AbortError
+            const supabaseError = (result as any)?.error;
+            if (supabaseError) {
+                const msg = supabaseError.message || "";
+                if (msg.includes('AbortError') || msg.includes('aborted')) {
+                    throw supabaseError; 
+                }
+            }
+            
+            return result;
         } catch (err: any) {
             lastError = err;
             
-            // Check if it's an AbortError (often stringified or hidden in an object)
+            const errorMessage = err?.message || (typeof err === 'string' ? err : "");
             const isAbortError = 
                 err?.name === 'AbortError' || 
-                err?.message?.includes('aborted') ||
-                (typeof err === 'object' && err !== null && Object.keys(err).length === 0); // common for aborted objects
+                errorMessage.includes('aborted') ||
+                errorMessage.includes('AbortError') ||
+                (typeof err === 'object' && err !== null && Object.keys(err).length === 0);
 
             if (isAbortError) {
-                if (!silent) console.warn(`Fetch aborted, retrying (${i + 1}/${retries})...`);
+                if (!silent) console.warn(`[${requestId}] Abort detected. Retrying...`);
                 if (i < retries) {
-                    await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+                    const nextDelay = delay * Math.pow(2, i); // Faster exponential backoff
+                    await new Promise(resolve => setTimeout(resolve, nextDelay));
                     continue;
                 }
             }
             
-            // For other errors, just throw immediately (or after one retry if desired)
             throw err;
         }
     }

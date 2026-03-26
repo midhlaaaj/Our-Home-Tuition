@@ -20,7 +20,12 @@ const PartnerSlider: React.FC = () => {
     const nextRef = useRef<HTMLButtonElement>(null);
     const swiperRef = useRef<SwiperType | null>(null);
 
+    const initialized = React.useRef(false);
+
     useEffect(() => {
+        if (initialized.current) return;
+        initialized.current = true;
+
         const fetchPartners = async () => {
             try {
                 const result = await safeFetch(async () => {
@@ -29,7 +34,7 @@ const PartnerSlider: React.FC = () => {
                         .select('*')
                         .eq('is_active', true)
                         .order('display_order', { ascending: true });
-                });
+                }, { requestId: 'Partners' });
 
                 const { data, error } = result;
 

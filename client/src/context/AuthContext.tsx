@@ -48,17 +48,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    useEffect(() => {
-        let mounted = true;
-        console.log("AuthProvider mounted");
+    const initialized = React.useRef(false);
 
-        // Safety timeout to prevent infinite loading
-        const safetyTimeout = setTimeout(() => {
-            if (mounted && loading) {
-                console.warn("Auth check taking longer than expected, please wait...");
-                // We'll give it more time rather than forcing loading to false immediately
-            }
-        }, 30000);
+    useEffect(() => {
+        if (initialized.current) return;
+        initialized.current = true;
+        
+        let mounted = true;
 
         // Get initial session
         const getInitialSession = async () => {
@@ -113,7 +109,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         return () => {
             mounted = false;
-            clearTimeout(safetyTimeout);
             subscription.unsubscribe();
         };
     }, []);

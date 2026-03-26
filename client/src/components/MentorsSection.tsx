@@ -20,7 +20,12 @@ const MentorsSection: React.FC = () => {
     const [isDragging, setIsDragging] = useState(false);
     const trackRef = useRef<HTMLDivElement>(null);
 
+    const initialized = React.useRef(false);
+
     useEffect(() => {
+        if (initialized.current) return;
+        initialized.current = true;
+
         const fallbackMentors: Mentor[] = [
             {
                 id: '1',
@@ -66,7 +71,7 @@ const MentorsSection: React.FC = () => {
                         .select('*')
                         .eq('is_active', true)
                         .order('created_at', { ascending: false });
-                });
+                }, { requestId: 'Mentors' });
                 
                 const { data, error } = result;
                 
