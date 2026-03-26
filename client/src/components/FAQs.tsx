@@ -16,20 +16,13 @@ const FAQs: React.FC = () => {
 
     useEffect(() => {
         const fetchFaqs = async () => {
-            const timeoutId = setTimeout(() => {
-                if (faqs.length === 0) {
-                    console.warn("FAQs fetch timed out, using fallbacks");
-                    setFaqs(fallbackFaqs);
-                }
-            }, 10000);
+            // We removed the aggressive 10s timeout to allow Supabase more time to respond.
 
             try {
                 const { data, error } = await supabase
                     .from('faqs')
                     .select('*')
                     .order('order', { ascending: true });
-
-                clearTimeout(timeoutId);
 
                 if (error) {
                     console.error('Error fetching FAQs:', error);

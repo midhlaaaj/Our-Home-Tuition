@@ -80,7 +80,7 @@ const About: React.FC = () => {
                 <Reveal>
                     <section className="text-center max-w-4xl mx-auto space-y-6">
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-[#17242e] tracking-tight">
-                            About Our Home Tuition
+                            About Hour Home
                         </h1>
                         <p className="text-lg md:text-xl text-gray-600 leading-relaxed font-medium">
                             We connect qualified mentors with students from Class 1 to Class 10, bringing personalized home tuition directly to you. Whether for individual attention or small group sessions, we ensure a comfortable, focused learning environment right at home. Beyond academics, our platform is dedicated to creating meaningful employment opportunities for qualified mentors, bridging the unemployment gap while delivering quality education.

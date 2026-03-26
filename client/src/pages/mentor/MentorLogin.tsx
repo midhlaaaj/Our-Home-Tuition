@@ -72,10 +72,10 @@ const MentorLogin: React.FC = () => {
                         <div
                             className="w-24 h-16 flex items-center justify-center mb-4"
                         >
-                            <img src="/newlogo.png" alt="Our Home Tuition" className="w-full h-full object-contain scale-125" />
+                            <img src="/newlogo.png" alt="Hour Home" className="w-full h-full object-contain scale-125" />
                         </div>
                         <h2 className="text-2xl font-bold text-[#1B2A5A] tracking-tight">Mentor Portal</h2>
-                        <p className="text-gray-400 text-sm mt-1 uppercase tracking-widest font-black text-[10px]">Sign in to your dashboard</p>
+                        <p className="text-[#1B2A5A] text-sm mt-1 font-bold">Sign in to your dashboard</p>
                     </div>
 
                     <AnimatePresence mode="wait">
@@ -98,7 +98,7 @@ const MentorLogin: React.FC = () => {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none transition-all font-medium text-gray-800 placeholder:text-gray-400 text-sm"
+                                    className="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none transition-all font-medium text-gray-800 placeholder:text-gray-500 text-sm"
                                     placeholder="name@email.com"
                                     required
                                 />
@@ -111,7 +111,7 @@ const MentorLogin: React.FC = () => {
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none transition-all font-medium text-gray-800 placeholder:text-gray-400 text-sm"
+                                    className="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#a0522d] focus:ring-1 focus:ring-[#a0522d] outline-none transition-all font-medium text-gray-800 placeholder:text-gray-500 text-sm"
                                     placeholder="Password"
                                     required
                                 />
@@ -141,8 +141,8 @@ const MentorLogin: React.FC = () => {
                     </form>
 
                     <div className="mt-8 text-center pt-6 border-t border-gray-100">
-                        <div className="flex items-center justify-center gap-2 text-[10px] text-gray-300 font-bold uppercase tracking-widest">
-                            <FaChalkboardTeacher size={12} className="opacity-50" />
+                        <div className="flex items-center justify-center gap-2 text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                            <FaChalkboardTeacher size={12} className="opacity-70" />
                             Secure Mentor Access
                         </div>
                     </div>

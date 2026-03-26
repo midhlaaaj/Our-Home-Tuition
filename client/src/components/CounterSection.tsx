@@ -97,13 +97,7 @@ const CounterSection: React.FC = () => {
 
     useEffect(() => {
         const fetchCounters = async () => {
-            const timeoutId = setTimeout(() => {
-                if (loading) {
-                    console.warn("Counters fetch timed out, using defaults");
-                    setCounters(defaultCounters);
-                    setLoading(false);
-                }
-            }, 10000);
+            // We removed the aggressive 10s timeout to allow Supabase more time to respond.
 
             try {
                 const { data, error } = await supabase
@@ -111,8 +105,6 @@ const CounterSection: React.FC = () => {
                     .select('*')
                     .eq('is_active', true)
                     .order('display_order', { ascending: true });
-
-                clearTimeout(timeoutId);
 
                 if (error) throw error;
 

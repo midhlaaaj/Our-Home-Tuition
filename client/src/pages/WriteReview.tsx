@@ -129,7 +129,7 @@ const WriteReview: React.FC = () => {
                                     <img src={mentor.image_url} alt={mentor.name} className="w-full h-full object-cover" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Your Mentor</p>
+                                    <p className="text-xs font-bold text-[#1B2A5A] mb-1">Your Mentor</p>
                                     <h2 className="text-xl font-black text-gray-900 leading-none">{mentor.name}</h2>
                                     <p className="text-xs font-bold text-[#a0522d] mt-2">{mentor.subject}</p>
                                 </div>
@@ -138,7 +138,7 @@ const WriteReview: React.FC = () => {
 
                         <form onSubmit={handleSubmit} className="space-y-12">
                             <div className="text-center">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 px-1">How would you rate the session?</p>
+                                <p className="text-sm font-bold text-[#1B2A5A] mb-6 px-1">How would you rate the session?</p>
                                 <div className="flex justify-center gap-4">
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <button
@@ -161,12 +161,12 @@ const WriteReview: React.FC = () => {
                             </div>
 
                             <div className="space-y-4">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Describe your experience</label>
+                                <label className="text-sm font-bold text-[#1B2A5A] px-1">Describe your experience</label>
                                 <textarea
                                     required
                                     rows={5}
                                     placeholder="Tell us what you liked or where we can improve..."
-                                    className="w-full p-8 bg-gray-50 border border-gray-100 rounded-[32px] text-sm font-bold text-gray-600 focus:border-[#a0522d] outline-none transition-all placeholder:text-gray-300 resize-none"
+                                    className="w-full p-8 bg-gray-50 border border-gray-100 rounded-[32px] text-sm font-bold text-gray-600 focus:border-[#a0522d] outline-none transition-all placeholder:text-gray-500 resize-none"
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                 ></textarea>

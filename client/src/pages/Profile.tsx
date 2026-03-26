@@ -134,7 +134,7 @@ const Profile: React.FC = () => {
                         <div className="w-10 h-10 bg-white shadow-md rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                             <FaHome size={18} />
                         </div>
-                        <span className="text-xs font-black uppercase tracking-widest">Back to Home</span>
+                        <span className="text-sm font-bold text-[#1B2A5A]">Back to Home</span>
                     </button>
 
                     <h1 className="text-4xl font-black text-gray-900 mb-12">My Account</h1>
@@ -214,7 +214,7 @@ const Profile: React.FC = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
+                                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Full Name</label>
                                             <input
                                                 type="text"
                                                 name="displayName"
@@ -226,7 +226,7 @@ const Profile: React.FC = () => {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Current Class</label>
+                                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Current Class</label>
                                             <input
                                                 type="text"
                                                 name="class"
@@ -238,10 +238,10 @@ const Profile: React.FC = () => {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Phone Number</label>
+                                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Phone Number</label>
                                             <div className="relative group flex items-center bg-gray-50 border-2 border-transparent focus-within:border-[#a0522d] focus-within:bg-white rounded-2xl transition-all overflow-hidden">
                                                 <div className="flex items-center pl-5 pr-3 text-gray-400 border-r border-gray-100 py-4 h-full">
-                                                    <span className="font-black text-xs">+91</span>
+                                                    <span className="font-black text-sm">+91</span>
                                                 </div>
                                                 <input
                                                     type="tel"
@@ -258,7 +258,7 @@ const Profile: React.FC = () => {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Email</label>
+                                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Email</label>
                                             <input
                                                 type="email"
                                                 id="profile-email"
@@ -274,7 +274,7 @@ const Profile: React.FC = () => {
                                         </div>
 
                                         <div className="md:col-span-2 space-y-2">
-                                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Primary Address</label>
+                                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Primary Address</label>
                                             <textarea
                                                 rows={3}
                                                 name="address"

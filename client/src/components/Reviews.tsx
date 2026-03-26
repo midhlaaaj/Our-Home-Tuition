@@ -146,7 +146,7 @@ const Reviews: React.FC = () => {
                     What People Are Saying
                 </h2>
                 <p className="text-white/90 max-w-2xl mx-auto text-base sm:text-lg">
-                    Hear from our satisfied parents and students about their experience with Our Home Tuition.
+                    Hear from our satisfied parents and students about their experience with Hour Home.
                 </p>
             </div>
 

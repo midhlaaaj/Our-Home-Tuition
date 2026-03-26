@@ -129,7 +129,7 @@ const Reviews: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">Reviews & Testimonials</h1>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Manage parent feedback and site testimonials</p>
+                    <p className="text-sm font-bold text-[#1B2A5A] mt-1">Manage parent feedback and site testimonials</p>
                 </div>
                 
                 <div className="flex gap-2 bg-white p-1.5 rounded-[20px] border border-gray-100 shadow-sm self-start">
@@ -234,17 +234,17 @@ const Reviews: React.FC = () => {
                         <form onSubmit={handleTestimonialSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Person's Name</label>
+                                    <label className="text-sm font-bold text-[#1B2A5A] px-2">Person's Name</label>
                                     <input type="text" value={testForm.name || ''} onChange={e => setTestForm({...testForm, name: e.target.value})} className="w-full px-6 py-4 bg-gray-50 border border-transparent focus:border-[#a0522d] rounded-2xl outline-none font-bold text-sm" placeholder="Enter your name" required />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Role / Title</label>
+                                    <label className="text-sm font-bold text-[#1B2A5A] px-2">Role / Title</label>
                                     <input type="text" value={testForm.role || ''} onChange={e => setTestForm({...testForm, role: e.target.value})} className="w-full px-6 py-4 bg-gray-50 border border-transparent focus:border-[#a0522d] rounded-2xl outline-none font-bold text-sm" placeholder="e.g. Parent of Grade 8 Student" required />
                                 </div>
                             </div>
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Testimonial Message</label>
+                                    <label className="text-sm font-bold text-[#1B2A5A] px-2">Testimonial Message</label>
                                     <textarea value={testForm.message || ''} onChange={e => setTestForm({...testForm, message: e.target.value})} className="w-full px-6 py-4 bg-gray-50 border border-transparent focus:border-[#a0522d] rounded-2xl outline-none font-bold text-sm min-h-[140px] resize-none" placeholder="What was their experience?" required />
                                 </div>
                                 <div className="flex gap-4">

@@ -56,13 +56,7 @@ const MentorsSection: React.FC = () => {
         ];
 
         const fetchMentors = async () => {
-            const timeoutId = setTimeout(() => {
-                if (loading) {
-                    console.warn("Mentors fetch timed out, using fallbacks");
-                    setMentors(fallbackMentors);
-                    setLoading(false);
-                }
-            }, 10000);
+            // We removed the aggressive 10s timeout to allow Supabase more time to respond.
 
             try {
                 const { data, error } = await supabase
@@ -70,8 +64,6 @@ const MentorsSection: React.FC = () => {
                     .select('*')
                     .eq('is_active', true)
                     .order('created_at', { ascending: false });
-
-                clearTimeout(timeoutId);
                 
                 if (error) throw error;
                 

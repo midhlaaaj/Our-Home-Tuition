@@ -161,7 +161,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                 <div className="space-y-6">
                     <div className="space-y-4">
                         <label className="block">
-                            <span className="text-sm font-bold text-gray-700 ml-1">Full Name</span>
+                            <span className="text-sm font-bold text-[#1B2A5A] ml-1">Full Name</span>
                             <div className="mt-1 relative">
                                 <input
                                     required
@@ -176,7 +176,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <label className="block">
-                                <span className="text-sm font-bold text-gray-700 ml-1">Email</span>
+                                <span className="text-sm font-bold text-[#1B2A5A] ml-1">Email</span>
                                 <div className="mt-1 relative">
                                     <input
                                         required
@@ -189,7 +189,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                                 </div>
                             </label>
                             <label className="block">
-                                <span className="text-sm font-bold text-gray-700 ml-1">Phone Number</span>
+                                <span className="text-sm font-bold text-[#1B2A5A] ml-1">Phone Number</span>
                                 <div className="mt-1 relative group flex items-center bg-gray-50 rounded-2xl border-2 border-transparent focus-within:border-[#a0522d] focus-within:bg-white transition-all overflow-hidden font-medium">
                                     <div className="flex items-center pl-5 pr-3 text-gray-400 group-focus-within:text-[#a0522d] border-r border-gray-200 py-4 h-full">
                                         <span className="font-black text-sm">+91</span>
@@ -212,7 +212,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                         {!job && (
                             <div className="space-y-4">
                                 <label className="block">
-                                    <span className="text-sm font-bold text-gray-700 ml-1">Preferred Classes</span>
+                                    <span className="text-sm font-bold text-[#1B2A5A] ml-1">Preferred Classes</span>
                                     <div className="mt-2 flex flex-wrap gap-2">
                                         {classesData.map(cls => (
                                             <button
@@ -231,7 +231,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                                 </label>
                                 {formData.classIds.length > 0 && (
                                     <label className="block animate-in fade-in slide-in-from-top-2">
-                                        <span className="text-sm font-bold text-gray-700 ml-1">Preferred Subjects</span>
+                                        <span className="text-sm font-bold text-[#1B2A5A] ml-1">Preferred Subjects</span>
                                         <div className="mt-2 flex flex-wrap gap-2">
                                             {filteredSubjects.map(sub => (
                                                 <button
@@ -253,7 +253,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                         )}
 
                         <label className="block">
-                            <span className="text-sm font-bold text-gray-400 ml-1 italic">Teaching Experience (Optional)</span>
+                            <span className="text-sm font-bold text-[#1B2A5A] ml-1 italic opacity-60">Teaching Experience (Optional)</span>
                             <div className="mt-1 relative">
                                 <textarea
                                     rows={4}

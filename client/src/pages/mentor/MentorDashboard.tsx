@@ -506,7 +506,7 @@ const MentorDashboard: React.FC = () => {
             <header className="fixed w-full top-0 z-50 bg-white shadow-md border-b border-gray-100">
                 <div className="container mx-auto px-4 py-3 flex justify-between items-center">
                     <Link to="/" className="flex items-center space-x-0">
-                        <img src="/newlogo.png" alt="Our Home Tuition Logo" className="w-16 h-16 object-contain -my-3" />
+                        <img src="/newlogo.png" alt="Hour Home Logo" className="w-16 h-16 object-contain -my-3" />
                         <div className="ml-2">
                             <h1 className="text-lg font-black text-gray-900 tracking-tight leading-none">Mentor<span className="text-[#a0522d]">Portal</span></h1>
                             <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest mt-0.5">Faculty System</p>
@@ -538,7 +538,7 @@ const MentorDashboard: React.FC = () => {
                                         className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-[100] origin-top-right"
                                     >
                                         <div className="px-5 py-3 border-b border-gray-50 mb-2">
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Signed in as</p>
+                                            <p className="text-sm font-bold text-[#1B2A5A] mb-1">Signed in as</p>
                                             <p className="text-sm font-black text-gray-800 truncate">{user?.email}</p>
                                         </div>
                                         <button
@@ -647,13 +647,13 @@ const MentorDashboard: React.FC = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
-                                            <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] mb-4">Professional Bio</h3>
+                                            <h3 className="text-sm font-bold text-[#1B2A5A] mb-4">Professional Bio</h3>
                                             <p className="text-sm text-gray-600 leading-relaxed font-medium whitespace-pre-line">
                                                 {profile?.description}
                                             </p>
                                         </div>
                                         <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
-                                            <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] mb-4">Work Experience</h3>
+                                            <h3 className="text-sm font-bold text-[#1B2A5A] mb-4">Work Experience</h3>
                                             <p className="text-sm text-gray-600 leading-relaxed font-medium whitespace-pre-line">
                                                 {profile?.work_history}
                                             </p>
@@ -673,7 +673,7 @@ const MentorDashboard: React.FC = () => {
                                     <div className="flex justify-between items-center mb-8">
                                         <div>
                                             <h2 className="text-2xl font-black text-gray-900 tracking-tight">Time Management</h2>
-                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Set your daily active windows</p>
+                                            <p className="text-sm font-bold text-[#1B2A5A] mt-1">Set your daily active windows</p>
                                         </div>
                                     </div>
 
@@ -681,7 +681,7 @@ const MentorDashboard: React.FC = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
                                             {/* Day Selection */}
                                             <div className="md:col-span-2 space-y-1.5">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] ml-1">Day of Week</label>
+                                                <label className="text-sm font-bold text-[#1B2A5A] ml-1">Day of Week</label>
                                                 <select
                                                     value={newSlot.day_of_week}
                                                     onChange={e => setNewSlot({ ...newSlot, day_of_week: e.target.value })}
@@ -693,7 +693,7 @@ const MentorDashboard: React.FC = () => {
 
                                             {/* Start Time */}
                                             <div className="md:col-span-2 space-y-1.5">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] ml-1">Start Time</label>
+                                                <label className="text-sm font-bold text-[#1B2A5A] ml-1">Start Time</label>
                                                 <div className="flex gap-1">
                                                     <select 
                                                         value={newSlot.start_hour}
@@ -726,7 +726,7 @@ const MentorDashboard: React.FC = () => {
 
                                             {/* End Time */}
                                             <div className="md:col-span-2 space-y-1.5">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] ml-1">End Time</label>
+                                                <label className="text-sm font-bold text-[#1B2A5A] ml-1">End Time</label>
                                                 <div className="flex gap-1">
                                                     <select 
                                                         value={newSlot.end_hour}
@@ -791,7 +791,7 @@ const MentorDashboard: React.FC = () => {
                                         <div className="flex justify-between items-center mb-8">
                                             <div>
                                                 <h2 className="text-2xl font-black text-gray-900 tracking-tight">Nearby Opportunities</h2>
-                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Bookings within 20km of your location</p>
+                                                <p className="text-sm font-bold text-[#1B2A5A] mt-1">Bookings within 20km of your location</p>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <button 
@@ -1114,7 +1114,7 @@ const MentorDashboard: React.FC = () => {
                             <div className="p-8 overflow-y-auto flex-1 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] ml-1">Full Name</label>
+                                        <label className="text-sm font-bold text-[#1B2A5A] ml-1">Full Name</label>
                                         <input
                                             type="text"
                                             value={editForm.name}
@@ -1123,7 +1123,7 @@ const MentorDashboard: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] ml-1">Subject Expertise</label>
+                                        <label className="text-sm font-bold text-[#1B2A5A] ml-1">Subject Expertise</label>
                                         <input
                                             type="text"
                                             value={editForm.subject}
@@ -1132,7 +1132,7 @@ const MentorDashboard: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] ml-1">LinkedIn Profile</label>
+                                        <label className="text-sm font-bold text-[#1B2A5A] ml-1">LinkedIn Profile</label>
                                         <input
                                             type="text"
                                             value={editForm.linkedin_url}
@@ -1141,7 +1141,7 @@ const MentorDashboard: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] ml-1">Qualification</label>
+                                        <label className="text-sm font-bold text-[#1B2A5A] ml-1">Qualification</label>
                                         <input
                                             type="text"
                                             value={editForm.qualification}
@@ -1152,7 +1152,7 @@ const MentorDashboard: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] ml-1">Professional Bio</label>
+                                    <label className="text-sm font-bold text-[#1B2A5A] ml-1">Professional Bio</label>
                                     <textarea
                                         rows={4}
                                         value={editForm.description}
@@ -1162,7 +1162,7 @@ const MentorDashboard: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] ml-1">Work Experience</label>
+                                    <label className="text-sm font-bold text-[#1B2A5A] ml-1">Work Experience</label>
                                     <textarea
                                         rows={4}
                                         value={editForm.work_history}

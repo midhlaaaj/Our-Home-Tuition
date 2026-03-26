@@ -365,7 +365,7 @@ const AdminClasses: React.FC = () => {
             <div className="bg-white p-5 rounded-[24px] shadow-xl border border-gray-50 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Class Level</label>
+                        <label className="text-sm font-bold text-[#1B2A5A] ml-1">Class Level</label>
                         <select
                             value={selectedClassId}
                             onChange={(e) => setSelectedClassId(Number(e.target.value))}
@@ -377,7 +377,7 @@ const AdminClasses: React.FC = () => {
                         </select>
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">System Curriculum</label>
+                        <label className="text-sm font-bold text-[#1B2A5A] ml-1">System Curriculum</label>
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setSelectedCurriculum('CBSE')}
@@ -401,7 +401,7 @@ const AdminClasses: React.FC = () => {
                     </div>
                     {selectedCurriculum === 'STATE' && (
                         <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">State Region</label>
+                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">State Region</label>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setSelectedStateRegion('ANDHRA')}

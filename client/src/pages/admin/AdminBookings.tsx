@@ -213,7 +213,7 @@ const AdminBookings: React.FC = () => {
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">
                         {viewMode === 'manage' ? 'Booking Management' : 'Booking History'}
                     </h1>
-                    <p className="text-xs text-gray-400 font-black uppercase tracking-widest mt-1">
+                    <p className="text-sm font-bold text-[#1B2A5A] mt-1">
                         {viewMode === 'manage' ? 'Review and assign mentors' : 'Access detailed session records and attendance'}
                     </p>
                 </div>
@@ -331,14 +331,14 @@ const AdminBookings: React.FC = () => {
 
                     <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex flex-wrap gap-4 items-end">
                         <div className="flex flex-col gap-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Mentor</label>
+                            <label className="text-sm font-bold text-[#1B2A5A] px-1">Mentor</label>
                             <select value={mentorFilter} onChange={(e) => setMentorFilter(e.target.value)} className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-600 outline-none">
                                 <option value="all">All Mentors</option>
                                 {mentors.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                             </select>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Period</label>
+                            <label className="text-sm font-bold text-[#1B2A5A] px-1">Period</label>
                             <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-600 outline-none">
                                 <option value="all">Anytime</option>
                                 <option value="daily">Today</option>

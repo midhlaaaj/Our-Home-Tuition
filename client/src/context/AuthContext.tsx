@@ -52,10 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Safety timeout to prevent infinite loading
         const safetyTimeout = setTimeout(() => {
             if (mounted && loading) {
-                console.warn("Auth check timed out, forcing loading to false");
-                setLoading(false);
+                console.warn("Auth check taking longer than expected, please wait...");
+                // We'll give it more time rather than forcing loading to false immediately
             }
-        }, 8000);
+        }, 30000);
 
         // Get initial session
         const getInitialSession = async () => {

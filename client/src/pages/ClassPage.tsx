@@ -167,7 +167,7 @@ const ClassPage: React.FC = () => {
                                     onClick={() => toggleUnit(subject.id, group.unit_no)}
                                     className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
                                 >
-                                    <h3 className="text-[#a0522d] font-bold text-[10px] uppercase tracking-wider">
+                                    <h3 className="text-[#a0522d] font-bold text-sm uppercase tracking-wider">
                                         Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
                                     </h3>
                                     <span className="text-gray-300">
@@ -183,11 +183,11 @@ const ClassPage: React.FC = () => {
                                                     <span className="text-[#e69b48] font-bold text-xs mt-1 flex-shrink-0">•</span>
                                                     <div className="flex-grow">
                                                         <div className="flex items-center justify-between gap-4">
-                                                            <p className="text-gray-800 font-semibold text-xs tracking-tight group-hover:text-[#a0522d] transition-colors">{topic.name}</p>
-                                                            <span className="text-[9px] font-bold text-green-500 bg-green-50 px-2 py-0.5 rounded-full shrink-0">{topic.estimated_duration || 60}m</span>
+                                                            <p className="text-gray-800 font-semibold text-sm tracking-tight group-hover:text-[#a0522d] transition-colors">{topic.name}</p>
+                                                            <span className="text-xs font-bold text-green-500 bg-green-50 px-2 py-0.5 rounded-full shrink-0">{topic.estimated_duration || 60}m</span>
                                                         </div>
                                                         {topic.description && (
-                                                            <p className="text-gray-400 text-[10px] font-medium mt-1 leading-relaxed">{topic.description}</p>
+                                                            <p className="text-gray-400 text-xs font-medium mt-1 leading-relaxed">{topic.description}</p>
                                                         )}
                                                     </div>
                                                 </li>
@@ -459,7 +459,7 @@ const ClassPage: React.FC = () => {
                                                         {groupTopicsByUnit(topics[subject.id]).map((group) => (
                                                             <div key={group.unit_no} className="bg-white">
                                                                 <div className="px-4 py-2 bg-gray-50/50">
-                                                                    <p className="text-[10px] font-bold text-[#a0522d] tracking-wide">
+                                                                    <p className="text-sm font-bold text-[#a0522d] tracking-wide">
                                                                         Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
                                                                     </p>
                                                                 </div>
@@ -485,15 +485,15 @@ const ClassPage: React.FC = () => {
                                                                                 <div className="flex items-center justify-between gap-4">
                                                                                     <div className="flex items-center gap-2">
                                                                                         <span className="text-[#e69b48]">•</span>
-                                                                                        <p className={`text-sm font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
+                                                                                        <p className={`text-base font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
                                                                                     </div>
                                                                                     <div className="text-right shrink-0">
-                                                                                        <p className="text-[10px] font-black text-gray-400 leading-none">₹{topic.unit_price || 100}</p>
-                                                                                        <p className="text-[9px] font-bold text-green-500 leading-none mt-1">({topic.estimated_duration || 60}m)</p>
+                                                                                        <p className="text-xs font-black text-gray-400 leading-none">₹{topic.unit_price || 100}</p>
+                                                                                        <p className="text-[10px] font-bold text-green-500 leading-none mt-1">({topic.estimated_duration || 60}m)</p>
                                                                                     </div>
                                                                                 </div>
                                                                                 {topic.description && (
-                                                                                    <p className="text-xs text-gray-500 mt-1 ml-4 line-clamp-2">{topic.description}</p>
+                                                                                    <p className="text-sm text-gray-500 mt-1 ml-4 line-clamp-2">{topic.description}</p>
                                                                                 )}
                                                                             </div>
                                                                         </label>

@@ -252,7 +252,7 @@ const Mentors: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
                         <div className="lg:col-span-4 space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Mentor Name</label>
+                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Mentor Name</label>
                             <input
                                 type="text"
                                 placeholder="Enter your name"
@@ -269,7 +269,7 @@ const Mentors: React.FC = () => {
                         </div>
 
                         <div className="lg:col-span-4 space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
+                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Email Address</label>
                             <input
                                 type="email"
                                 placeholder="name@email.com"
@@ -462,7 +462,7 @@ const Mentors: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d]">Service Location</h3>
+                                        <h3 className="text-sm font-bold text-[#1B2A5A]">Service Location</h3>
                                         <p className="text-sm text-gray-800 leading-relaxed font-bold flex items-center gap-2">
                                             <FaMapMarkerAlt className="text-orange-500" />
                                             {selectedMentor.location_address || 'No location pinned.'}
@@ -470,12 +470,12 @@ const Mentors: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d]">Professional Summary</h3>
+                                        <h3 className="text-sm font-bold text-[#1B2A5A]">Professional Summary</h3>
                                         <p className="text-sm text-gray-600 leading-relaxed font-medium">{selectedMentor.description}</p>
                                     </div>
 
                                     <div className="space-y-4">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d]">Recent Reviews</h3>
+                                        <h3 className="text-sm font-bold text-[#1B2A5A]">Recent Reviews</h3>
                                         <div className="space-y-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                                             {mentorReviews.filter(r => r.mentor_id === selectedMentor.id).length === 0 ? (
                                                 <p className="text-xs text-gray-400 font-medium italic">No reviews yet.</p>
@@ -500,7 +500,7 @@ const Mentors: React.FC = () => {
                                     </div>
                                     
                                     <div className="space-y-3 pt-4 border-t border-gray-50">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d]">Work History</h3>
+                                        <h3 className="text-sm font-bold text-[#1B2A5A]">Work History</h3>
                                         <p className="text-sm text-gray-600 leading-relaxed font-medium whitespace-pre-line">{selectedMentor.work_history || 'No work history provided.'}</p>
                                     </div>
                                 </div>

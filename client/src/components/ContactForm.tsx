@@ -88,23 +88,23 @@ const ContactForm: React.FC = () => {
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div className="space-y-1.5">
-                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Student Name</label>
+                                        <label className="text-sm font-bold text-[#1B2A5A] ml-1">Student Name</label>
                                         <input
                                             required
                                             type="text"
                                             value={formData.name}
                                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium text-gray-900 placeholder:text-gray-300 text-sm"
+                                            className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 text-sm"
                                             placeholder="Enter your name"
                                         />
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Guardian Contact</label>
+                                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Guardian Contact</label>
                                             <div className="relative group flex items-center bg-gray-50 rounded-2xl border border-transparent focus-within:border-[#a0522d]/30 focus-within:bg-white transition-all overflow-hidden font-medium">
-                                                <div className="flex items-center pl-5 pr-3 text-gray-400 group-focus-within:text-[#a0522d] border-r border-gray-200 py-4">
-                                                    <span className="font-black text-xs">+91</span>
+                                                <div className="flex items-center pl-5 pr-3 text-gray-500 group-focus-within:text-[#a0522d] border-r border-gray-200 py-4">
+                                                    <span className="font-black text-sm">+91</span>
                                                 </div>
                                                 <input
                                                     required
@@ -114,32 +114,32 @@ const ContactForm: React.FC = () => {
                                                         const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                                                         setFormData({ ...formData, phone: val });
                                                     }}
-                                                    className="w-full px-4 py-4 bg-transparent outline-none text-gray-900 placeholder:text-gray-300 text-sm"
+                                                    className="w-full px-4 py-4 bg-transparent outline-none text-gray-900 placeholder:text-gray-500 text-sm"
                                                     placeholder="10 digit mobile"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Email Address</label>
+                                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Email Address</label>
                                             <input
                                                 required
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                                className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium text-gray-900 placeholder:text-gray-300 text-sm"
+                                                className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 text-sm"
                                                 placeholder="name@email.com"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Grade & Requirements</label>
+                                        <label className="text-sm font-bold text-[#1B2A5A] ml-1">Grade & Requirements</label>
                                         <textarea
                                             required
                                             rows={3}
                                             value={formData.query}
                                             onChange={e => setFormData({ ...formData, query: e.target.value })}
-                                            className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium resize-none text-gray-900 placeholder:text-gray-300 text-sm leading-relaxed"
+                                            className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium resize-none text-gray-900 placeholder:text-gray-500 text-sm leading-relaxed"
                                             placeholder="Mention class and subjects needed..."
                                         />
                                     </div>

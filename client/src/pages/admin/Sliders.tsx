@@ -194,7 +194,7 @@ const Sliders: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-50">
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Hero Title</label>
+                                <label className="text-sm font-bold text-[#1B2A5A] ml-1">Hero Title</label>
                                 <textarea
                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all min-h-[100px] font-black text-gray-900 text-sm"
                                     placeholder="Enter hero title..."
@@ -207,7 +207,7 @@ const Sliders: React.FC = () => {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Accent Calibration</label>
+                                <label className="text-sm font-bold text-[#1B2A5A] ml-1">Accent Calibration</label>
                                 <div className="flex items-center gap-2">
                                     <div className="relative group">
                                         <input
@@ -228,7 +228,7 @@ const Sliders: React.FC = () => {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Meta Description (Subtitle)</label>
+                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Meta Description (Subtitle)</label>
                             <textarea
                                 className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all min-h-[185px] font-medium text-gray-600 text-sm leading-relaxed"
                                 placeholder="Enter hero subtitle..."

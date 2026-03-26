@@ -77,7 +77,7 @@ const BookingPage: React.FC = () => {
                 key: "rzp_live_9sUUrcW0TGM2K2",
                 amount: totalPrice * 100, // Amount in paise
                 currency: "INR",
-                name: "Our Home Tuition",
+                name: "Hour Home",
                 description: `Booking for ${state?.classInfo?.label}`,
                 image: "/newlogo.png",
                 handler: function (response: any) {
@@ -275,9 +275,9 @@ const BookingPage: React.FC = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Full Name</label>
+                                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Full Name</label>
                                             <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#a0522d] transition-colors">
+                                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-500 group-focus-within:text-[#a0522d] transition-colors">
                                                     <FaUser size={14} />
                                                 </div>
                                                 <input
@@ -285,15 +285,15 @@ const BookingPage: React.FC = () => {
                                                     required
                                                     value={name}
                                                     onChange={e => setName(e.target.value)}
-                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-300"
+                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-500"
                                                     placeholder="Enter your name"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Contact Email</label>
+                                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Contact Email</label>
                                             <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#a0522d] transition-colors">
+                                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-500 group-focus-within:text-[#a0522d] transition-colors">
                                                     <FaEnvelope size={14} />
                                                 </div>
                                                 <input
@@ -301,16 +301,16 @@ const BookingPage: React.FC = () => {
                                                     required
                                                     value={email}
                                                     onChange={e => setEmail(e.target.value)}
-                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-300"
+                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-500"
                                                     placeholder="name@email.com"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Phone Number</label>
+                                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Phone Number</label>
                                             <div className="relative group flex items-center bg-gray-50/50 rounded-[20px] border border-gray-100 focus-within:bg-white focus-within:border-[#a0522d] transition-all overflow-hidden">
-                                                <div className="flex items-center pl-5 pr-3 text-gray-400 group-focus-within:text-[#a0522d] border-r border-gray-100 py-4 h-full">
-                                                    <span className="font-black text-xs">+91</span>
+                                                <div className="flex items-center pl-5 pr-3 text-gray-500 group-focus-within:text-[#a0522d] border-r border-gray-100 py-4 h-full">
+                                                    <span className="font-black text-sm">+91</span>
                                                 </div>
                                                 <input
                                                     type="tel"
@@ -320,14 +320,14 @@ const BookingPage: React.FC = () => {
                                                         const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                                                         setPhone(val);
                                                     }}
-                                                    className="w-full px-4 py-4 bg-transparent outline-none text-sm font-bold placeholder:text-gray-300"
+                                                    className="w-full px-4 py-4 bg-transparent outline-none text-sm font-bold placeholder:text-gray-500"
                                                     placeholder="00000 00000"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center mb-1">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Full Service Address</label>
+                                                <label className="text-sm font-bold text-[#1B2A5A] ml-1">Full Service Address</label>
                                                 <button
                                                     type="button"
                                                     onClick={async () => {
@@ -367,7 +367,7 @@ const BookingPage: React.FC = () => {
                                                     value={address}
                                                     onChange={e => setAddress(e.target.value)}
                                                     rows={1}
-                                                    className="w-full px-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-300 resize-none"
+                                                    className="w-full px-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-500 resize-none"
                                                     placeholder="Door No, Street, Landmark, City..."
                                                 />
                                             </div>
@@ -649,18 +649,18 @@ const BookingPage: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-4">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[#a0522d] border-b border-orange-50 pb-3">Enrolled Units ({selectedUnits.length})</h3>
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-[#a0522d] border-b border-orange-50 pb-3">Enrolled Units ({selectedUnits.length})</h3>
                                     <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar space-y-3">
                                         {selectedUnits.map((item, index) => (
                                             <div key={index} className="bg-gray-50/50 p-5 rounded-[24px] border border-gray-50 group hover:bg-white hover:border-orange-100 transition-all">
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{item.subject.name}</p>
+                                                    <p className="text-xs font-black text-gray-300 uppercase tracking-widest">{item.subject.name}</p>
                                                     <div className="text-right">
-                                                        <p className="text-[10px] font-black text-[#a0522d]">₹{item.topic.unit_price || 100}</p>
-                                                        <p className="text-[8px] font-bold text-green-600">{item.topic.estimated_duration || 60}m</p>
+                                                        <p className="text-xs font-black text-[#a0522d]">₹{item.topic.unit_price || 100}</p>
+                                                        <p className="text-[10px] font-bold text-green-600">{item.topic.estimated_duration || 60}m</p>
                                                     </div>
                                                 </div>
-                                                <p className="text-xs font-black text-gray-800 leading-relaxed">{item.topic.name}</p>
+                                                <p className="text-sm font-black text-gray-800 leading-relaxed">{item.topic.name}</p>
                                             </div>
                                         ))}
                                     </div>

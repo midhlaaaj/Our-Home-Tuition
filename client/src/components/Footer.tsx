@@ -35,7 +35,7 @@ const Footer: React.FC = () => {
                         <div className="bg-white rounded-2xl p-4 shadow-md">
                             <img
                                 src="/newlogo.png"
-                                alt="Our Home Tuition"
+                                alt="Hour Home"
                                 className="h-16 w-auto object-contain"
                             />
                         </div>
@@ -85,7 +85,7 @@ const Footer: React.FC = () => {
             <div className="border-t border-white/10">
                 <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-24 py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
                     <p className="text-xs text-white/40 text-center sm:text-left">
-                        © {currentYear} Our Home Tuition. All Rights Reserved.
+                        © {currentYear} Hour Home. All Rights Reserved.
                     </p>
                     <p className="text-xs text-white/40">
                         Designed with ❤️ for better education

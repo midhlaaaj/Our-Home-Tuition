@@ -105,7 +105,7 @@ const AdminFAQs: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Knowledge Base</h1>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Configure and index frequently asked questions</p>
+                    <p className="text-sm font-bold text-[#1B2A5A] mt-1">Configure and index frequently asked questions</p>
                 </div>
                 {!isEditing && (
                     <button
@@ -132,7 +132,7 @@ const AdminFAQs: React.FC = () => {
                     </div>
                     <form onSubmit={handleSave} className="space-y-4">
                         <div className="space-y-1.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Question Vector</label>
+                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Question Vector</label>
                             <input
                                 type="text"
                                 value={editingFaq.question || ''}
@@ -143,7 +143,7 @@ const AdminFAQs: React.FC = () => {
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Resolution Content</label>
+                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Resolution Content</label>
                             <textarea
                                 value={editingFaq.answer || ''}
                                 onChange={(e) => setEditingFaq({ ...editingFaq, answer: e.target.value })}
@@ -153,7 +153,7 @@ const AdminFAQs: React.FC = () => {
                             />
                         </div>
                         <div className="space-y-1.5 w-1/3">
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Display Sequence</label>
+                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Display Sequence</label>
                             <input
                                 type="number"
                                 value={editingFaq.order || 0}
