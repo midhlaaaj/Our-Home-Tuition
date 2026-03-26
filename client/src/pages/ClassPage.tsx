@@ -33,7 +33,7 @@ const ClassPage: React.FC = () => {
     const { curriculum, stateRegion, toggleStateRegion } = useCurriculum();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [topics, setTopics] = useState<Record<string, Topic[]>>({});
-    const [expandedBoard, setExpandedBoard] = useState<string | null>(curriculum === 'CBSE' ? 'CBSE' : (stateRegion === 'ANDHRA' ? 'ANDHRA' : 'TELANGANA'));
+    const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -288,12 +288,6 @@ const ClassPage: React.FC = () => {
                                             </div>
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => setCurriculum(curriculum === 'CBSE' ? 'STATE' : 'CBSE')}
-                                        className="h-10 px-4 bg-gray-100 hover:bg-gray-200 text-[#1B2A5A] rounded-full text-[10px] font-bold uppercase tracking-widest transition-all"
-                                    >
-                                        Switch to {curriculum === 'CBSE' ? 'State' : 'CBSE'}
-                                    </button>
                                 </div>
 
                                 <button
