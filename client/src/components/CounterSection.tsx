@@ -103,7 +103,7 @@ const CounterSection: React.FC = () => {
                     setCounters(defaultCounters);
                     setLoading(false);
                 }
-            }, 3000);
+            }, 10000);
 
             try {
                 const { data, error } = await supabase

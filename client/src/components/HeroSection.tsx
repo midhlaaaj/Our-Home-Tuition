@@ -21,7 +21,7 @@ const HeroSection: React.FC = () => {
                     setSubtitle('Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.');
                     setMediaType('image');
                 }
-            }, 3000);
+            }, 10000);
 
             try {
                 // Fetch the first active slider which acts as our Hero Media

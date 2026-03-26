@@ -62,7 +62,7 @@ const MentorsSection: React.FC = () => {
                     setMentors(fallbackMentors);
                     setLoading(false);
                 }
-            }, 3000);
+            }, 10000);
 
             try {
                 const { data, error } = await supabase

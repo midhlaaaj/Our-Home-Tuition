@@ -21,7 +21,7 @@ const FAQs: React.FC = () => {
                     console.warn("FAQs fetch timed out, using fallbacks");
                     setFaqs(fallbackFaqs);
                 }
-            }, 3000);
+            }, 10000);
 
             try {
                 const { data, error } = await supabase
