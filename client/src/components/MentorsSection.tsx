@@ -201,6 +201,7 @@ const MentorsSection: React.FC = () => {
                                                 src={mentor.image_url}
                                                 alt={mentor.name}
                                                 className="w-full h-full object-cover"
+                                                loading="lazy"
                                             />
                                         </div>
                                         <div className="p-5 flex-grow flex flex-col">

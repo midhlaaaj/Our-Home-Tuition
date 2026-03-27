@@ -73,6 +73,7 @@ const AffiliatedLogos: React.FC = () => {
                                     src={logo.logo_url}
                                     alt={logo.name}
                                     className="h-4 md:h-5 mx-8 object-contain flex-shrink-0"
+                                    loading="lazy"
                                 />
                             ))}
                             {/* Set 2 */}
@@ -82,6 +83,7 @@ const AffiliatedLogos: React.FC = () => {
                                     src={logo.logo_url}
                                     alt={logo.name}
                                     className="h-4 md:h-5 mx-8 object-contain flex-shrink-0"
+                                    loading="lazy"
                                 />
                             ))}
                         </div>
@@ -102,6 +104,7 @@ const AffiliatedLogos: React.FC = () => {
                                     src={logo.logo_url}
                                     alt={logo.name}
                                     className="h-4 md:h-5 mx-8 object-contain flex-shrink-0"
+                                    loading="lazy"
                                 />
                             ))}
                             {/* Set 2 */}
@@ -111,6 +114,7 @@ const AffiliatedLogos: React.FC = () => {
                                     src={logo.logo_url}
                                     alt={logo.name}
                                     className="h-4 md:h-5 mx-8 object-contain flex-shrink-0"
+                                    loading="lazy"
                                 />
                             ))}
                         </div>

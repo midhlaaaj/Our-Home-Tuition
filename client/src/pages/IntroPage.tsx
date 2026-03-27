@@ -14,20 +14,20 @@ export default function IntroWrapper({ children }: { children: React.ReactNode }
   const isDone = phase === 'done';
   const isAnimating = phase === 'animating';
 
-  // Wait 1.6s then start animation
+  // Wait 0.8s then start animation (reduced from 1.6s)
   useEffect(() => {
     if (alreadySeen) return;
-    const t = setTimeout(() => setPhase('animating'), 1600);
+    const t = setTimeout(() => setPhase('animating'), 800);
     return () => clearTimeout(t);
   }, []);
 
-  // After logo finishes travelling (~900ms), mark done
+  // After logo finishes travelling (~600ms), mark done (reduced from 900ms)
   useEffect(() => {
     if (phase !== 'animating') return;
     const t = setTimeout(() => {
       setPhase('done');
       sessionStorage.setItem('intro_seen', '1');
-    }, 900);
+    }, 600);
     return () => clearTimeout(t);
   }, [phase]);
 
@@ -76,6 +76,7 @@ export default function IntroWrapper({ children }: { children: React.ReactNode }
               alt="Logo"
               draggable={false}
               className="select-none object-contain"
+              fetchPriority="high"
               initial={{ width: '200px', height: '200px' }}
               animate={{
                 width: isAnimating ? '80px' : '200px',
@@ -92,16 +93,12 @@ export default function IntroWrapper({ children }: { children: React.ReactNode }
         )}
       </AnimatePresence>
 
-      {/* ── Children (Home page) — only mount AFTER animation to prevent AbortError ── */}
-      {isDone ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-        >
-          {children}
-        </motion.div>
-      ) : null}
+      {/* ── Children (Home page) — mount early to start fetching, but hide visually ── */}
+      <div 
+        className={`transition-opacity duration-700 ${isDone ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      >
+        {children}
+      </div>
     </>
   );
 }

@@ -127,6 +127,7 @@ const HeroSection: React.FC = () => {
                                 src={mediaUrl}
                                 alt="Learning at home"
                                 className="w-full h-full object-cover"
+                                fetchPriority="high"
                             />
                         )}
                         {/* Consistent dark transparent overlay covering the entire image to match reference */}
