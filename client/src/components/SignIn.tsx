@@ -15,6 +15,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
     const [isLogin, setIsLogin] = useState(initialView === 'signin');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showVerifyPassword, setShowVerifyPassword] = useState(false);
 
     // Form States
     const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -40,6 +41,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
             setLoginData({ email: '', password: '' });
             setRegisterData({ name: '', email: '', phone: '', address: '', password: '', verifyPassword: '' });
             setShowPassword(false);
+            setShowVerifyPassword(false);
         }
     }
 
@@ -402,13 +404,20 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                 <input
                                                     id="verifyPassword"
                                                     name="verifyPassword"
-                                                    type={showPassword ? "text" : "password"}
+                                                    type={showVerifyPassword ? "text" : "password"}
                                                     placeholder="Verify Password"
                                                     value={registerData.verifyPassword}
                                                     onChange={handleRegisterChange}
                                                     className={`appearance-none block w-full px-4 py-3 border ${errors.verifyPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
                                                         } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
                                                 />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowVerifyPassword(!showVerifyPassword)}
+                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                                                >
+                                                    {showVerifyPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                                                </button>
                                                 {errors.verifyPassword && <p className="mt-1 text-xs text-red-500">{errors.verifyPassword}</p>}
                                             </div>
 
