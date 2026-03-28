@@ -168,7 +168,7 @@ const Auth: React.FC = () => {
                 <div className="p-8">
                     <div className="flex flex-col items-center mb-8">
                         <div className="w-48 h-24 mb-4">
-                            <img src="/brand-logo.png" alt="Hour Home" className="w-full h-full object-contain scale-125" />
+                            <img src="/newlogo.png" alt="Hour Home" className="w-full h-full object-contain scale-125" />
                         </div>
                         <h2 className="text-2xl font-black text-gray-900 tracking-tight">
                             {isLogin ? 'Welcome Back' : 'Create Account'}
