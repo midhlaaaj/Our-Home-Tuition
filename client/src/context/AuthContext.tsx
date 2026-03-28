@@ -28,6 +28,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode, supabaseClient?
     const [role, setRole] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const userRef = React.useRef<User | null>(null);
+    const sessionRef = React.useRef<Session | null>(null);
+    const roleRef = React.useRef<string | null>(null);
+    const profileRef = React.useRef<any | null>(null);
+
+    // Sync refs with state
+    useEffect(() => { userRef.current = user; }, [user]);
+    useEffect(() => { sessionRef.current = currentSession; }, [currentSession]);
+    useEffect(() => { roleRef.current = role; }, [role]);
+    useEffect(() => { profileRef.current = profile; }, [profile]);
+
     const fetchProfileData = async (userId: string) => {
         try {
             const result = await safeFetch(async () => {
@@ -128,12 +139,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode, supabaseClient?
                     const currentUser = session?.user ?? null;
 
                     // 1. Session & User Check: Only update if IDs change
-                    if (currentUser?.id !== user?.id) {
+                    const currentUserId = userRef.current?.id;
+                    if (currentUser?.id !== currentUserId) {
                         setCurrentSession(session);
                         setUser(currentUser);
                         // If user actually changed, we definitely need a loading state
                         setLoading(true);
-                    } else if (session?.access_token !== currentSession?.access_token) {
+                    } else if (session?.access_token !== sessionRef.current?.access_token) {
                         // Just a token refresh, but same user
                         setCurrentSession(session);
                         console.log("AuthContext: Silent token sync");
@@ -147,11 +159,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode, supabaseClient?
                         
                         if (mounted) {
                             // 2. Role & Profile Check: Only update if data is truly new
-                            if (userRole !== role) setRole(userRole);
+                            if (userRole !== roleRef.current) setRole(userRole);
                             
                             // Simple shallow check for profile (ID + Updated timestamp)
-                            const isProfileSame = profileData?.id === profile?.id && 
-                                                 profileData?.updated_at === profile?.updated_at;
+                            const isProfileSame = profileData?.id === profileRef.current?.id && 
+                                                 profileData?.updated_at === profileRef.current?.updated_at;
                             
                             if (!isProfileSame) {
                                 setProfile(profileData);
@@ -172,8 +184,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode, supabaseClient?
 
             handleStateChange();
         });
-
-
 
         return () => {
             mounted = false;

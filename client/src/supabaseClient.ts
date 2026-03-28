@@ -16,3 +16,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export const adminSupabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { storageKey: 'sb-admin-token' }
 });
+
+// Initialize dedicated Supabase client for mentors to provide instance isolation
+export const mentorSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { storageKey: 'sb-mentor-token' }
+});

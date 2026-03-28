@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { CurriculumProvider } from './context/CurriculumContext';
 import ScrollToTop from './components/ScrollToTop';
-import { supabase, adminSupabase } from './supabaseClient';
+import { supabase, adminSupabase, mentorSupabase } from './supabaseClient';
 import { AuthProvider } from './context/AuthContext';
 import { ModalProvider } from './context/ModalContext';
 import Home from './pages/Home';
@@ -78,9 +78,11 @@ function App() {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/blogs" element={<Blogs />} />
                 <Route path="/blogs/:slug" element={<BlogDetail />} />
+              </Route>
+
+              {/* Mentor Routes - Wrapped in mentor AuthProvider for session isolation */}
+              <Route element={<AuthProvider supabaseClient={mentorSupabase}><Outlet /></AuthProvider>}>
                 <Route path="/mentor/login" element={<MentorLogin />} />
-                
-                {/* Mentor Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['mentor']} redirectPath="/mentor/login" />}>
                   <Route path="/mentor-dashboard" element={<MentorDashboard />} />
                 </Route>

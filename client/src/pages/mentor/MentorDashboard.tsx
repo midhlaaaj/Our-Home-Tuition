@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../supabaseClient';
+
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     FaUser, FaCheckCircle, FaTrash, FaClock, FaHistory, FaPlus,
     FaTimes, FaCalendarAlt, FaWifi, FaHome, FaLinkedin, FaGraduationCap, 
-    FaBriefcase, FaStar, FaPen, FaSave, FaChevronDown, FaSignOutAlt, FaCalendarCheck, FaMapMarkerAlt, FaBars
+    FaBriefcase, FaStar, FaPen, FaSave, FaChevronDown, FaSignOutAlt, FaCalendarCheck, FaMapMarkerAlt, FaBars, FaInfoCircle, FaEye, FaEyeSlash
 } from 'react-icons/fa';
 import { useModal } from '../../context/ModalContext';
 
@@ -53,7 +53,7 @@ interface Task {
 }
 
 const MentorDashboard: React.FC = () => {
-    const { user, signOut } = useAuth();
+    const { user, signOut, supabaseClient: supabase } = useAuth();
     const navigate = useNavigate();
     const { showAlert, showConfirm, showSuccess } = useModal();
     const [profile, setProfile] = useState<MentorProfile | null>(null);
@@ -61,7 +61,7 @@ const MentorDashboard: React.FC = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history'>(() => {
+    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history' | 'security'>(() => {
         const saved = localStorage.getItem('mentor_dashboard_tab');
         return (saved as any) || 'profile';
     });
@@ -101,6 +101,16 @@ const MentorDashboard: React.FC = () => {
         end_min: '00',
         end_ampm: 'AM'
     });
+
+    const [passwordForm, setPasswordForm] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [showCurrentPass, setShowCurrentPass] = useState(false);
+    const [showNewPass, setShowNewPass] = useState(false);
+    const [showConfirmPass, setShowConfirmPass] = useState(false);
 
     useEffect(() => {
         if (activeTab) {
@@ -205,8 +215,8 @@ const MentorDashboard: React.FC = () => {
                     .select('*')
                     .eq('assigned_mentor_id', mentorData.id);
 
-                const formattedQueries = (queryData || []).map(q => ({ ...q, type: 'query' as const }));
-                const formattedBookings = (bookingData || []).map(b => ({
+                const formattedQueries = (queryData || []).map((q: any) => ({ ...q, type: 'query' as const }));
+                const formattedBookings = (bookingData || []).map((b: any) => ({
                     ...b,
                     name: b.primary_student?.name,
                     email: b.primary_student?.email,
@@ -219,7 +229,7 @@ const MentorDashboard: React.FC = () => {
                 }));
 
                 const combinedTasks = [...formattedQueries, ...formattedBookings];
-                combinedTasks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                combinedTasks.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                 setTasks(combinedTasks);
             }
         } catch (err) {
@@ -260,7 +270,7 @@ const MentorDashboard: React.FC = () => {
             };
 
             const nearby = (bookings || [])
-                .map(b => {
+                .map((b: any) => {
                     const dist = b.latitude && b.longitude ? calculateDistance(mentorProfile.latitude!, mentorProfile.longitude!, b.latitude, b.longitude) : null;
                     if (dist !== null) {
                         console.log(`Booking ${b.id.slice(0, 5)}... is ${dist.toFixed(2)}km away (Coords: ${b.latitude}, ${b.longitude})`);
@@ -269,8 +279,8 @@ const MentorDashboard: React.FC = () => {
                     }
                     return { ...b, distance: dist };
                 })
-                .filter(b => b.distance !== null && b.distance <= 20) // 20km radius
-                .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+                .filter((b: any) => b.distance !== null && b.distance <= 20) // 20km radius
+                .sort((a: any, b: any) => (a.distance || 0) - (b.distance || 0));
 
             console.log(`Discovery Result: ${nearby.length} bookings within 20km.`);
             setNearbyOffers(nearby);
@@ -439,6 +449,47 @@ const MentorDashboard: React.FC = () => {
             showAlert("Failed to update profile: " + err.message);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            showAlert("Passwords do not match");
+            return;
+        }
+        if (passwordForm.newPassword.length < 6) {
+            showAlert("Password must be at least 6 characters");
+            return;
+        }
+
+        setPasswordLoading(true);
+        try {
+            // Re-authenticate to verify current password
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: user?.email || '',
+                password: passwordForm.currentPassword
+            });
+
+            if (signInError) {
+                showAlert("Current password is incorrect");
+                return;
+            }
+
+            // Update with new password
+            const { error: updateError } = await supabase.auth.updateUser({
+                password: passwordForm.newPassword
+            });
+
+            if (updateError) throw updateError;
+
+            showSuccess("Password changed successfully!");
+            setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (err: any) {
+            console.error("Password change error:", err);
+            showAlert("Failed to change password: " + err.message);
+        } finally {
+            setPasswordLoading(false);
         }
     };
 
@@ -666,7 +717,8 @@ const MentorDashboard: React.FC = () => {
                                             { id: 'availability', icon: <FaCalendarCheck />, label: 'Availability' },
                                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
-                                            { id: 'history', icon: <FaHistory />, label: 'Booking History' }
+                                            { id: 'history', icon: <FaHistory />, label: 'Booking History' },
+                                            { id: 'security', icon: <FaSignOutAlt />, label: 'Password' }
                                         ].map(tab => (
                                             <button
                                                 key={tab.id}
@@ -707,7 +759,8 @@ const MentorDashboard: React.FC = () => {
                             { id: 'availability', icon: <FaCalendarCheck />, label: 'Availability' },
                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
-                            { id: 'history', icon: <FaHistory />, label: 'Booking History' }
+                            { id: 'history', icon: <FaHistory />, label: 'Booking History' },
+                            { id: 'security', icon: <FaSignOutAlt />, label: 'Password Settings' }
                         ].map(tab => (
                             <button
                                 key={tab.id}
@@ -1219,6 +1272,119 @@ const MentorDashboard: React.FC = () => {
                                             ))}
                                         </div>
                                     )}
+                                </motion.div>
+                            )}
+
+                            {activeTab === 'security' && (
+                                <motion.div
+                                    key="security"
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.98 }}
+                                    className="max-w-xl mx-auto"
+                                >
+                                    <div className="bg-white p-10 rounded-[40px] shadow-sm border border-gray-100">
+                                        <div className="flex items-center gap-4 mb-8">
+                                            <div className="w-12 h-12 bg-orange-50 text-[#a0522d] rounded-2xl flex items-center justify-center">
+                                                <FaSignOutAlt />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Password Settings</h2>
+                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Update your portal access credentials</p>
+                                            </div>
+                                        </div>
+
+                                        <form onSubmit={handleChangePassword} className="space-y-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-black uppercase tracking-widest text-[#1B2A5A] ml-1">Current Password</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type={showCurrentPass ? "text" : "password"}
+                                                        required
+                                                        value={passwordForm.currentPassword}
+                                                        onChange={e => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                                                        className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white rounded-2xl outline-none font-bold text-gray-800 transition-all text-sm pr-12"
+                                                        placeholder="••••••••"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowCurrentPass(!showCurrentPass)}
+                                                        className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                                    >
+                                                        {showCurrentPass ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="h-[1px] bg-gray-50" />
+
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-black uppercase tracking-widest text-[#1B2A5A] ml-1">New Password</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type={showNewPass ? "text" : "password"}
+                                                        required
+                                                        value={passwordForm.newPassword}
+                                                        onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                                                        className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white rounded-2xl outline-none font-bold text-gray-800 transition-all text-sm pr-12"
+                                                        placeholder="Min. 6 characters"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowNewPass(!showNewPass)}
+                                                        className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                                    >
+                                                        {showNewPass ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-black uppercase tracking-widest text-[#1B2A5A] ml-1">Confirm New Password</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type={showConfirmPass ? "text" : "password"}
+                                                        required
+                                                        value={passwordForm.confirmPassword}
+                                                        onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                                                        className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white rounded-2xl outline-none font-bold text-gray-800 transition-all text-sm pr-12"
+                                                        placeholder="Re-type new password"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowConfirmPass(!showConfirmPass)}
+                                                        className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                                    >
+                                                        {showConfirmPass ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                type="submit"
+                                                disabled={passwordLoading}
+                                                className="w-full py-5 bg-[#1B2A5A] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#142044] transition-all shadow-xl shadow-[#1B2A5A]/20 disabled:opacity-50 mt-4"
+                                            >
+                                                {passwordLoading ? (
+                                                    <span className="flex items-center justify-center gap-3">
+                                                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                                        Updating Security...
+                                                    </span>
+                                                ) : (
+                                                    "Update Password"
+                                                )}
+                                            </button>
+                                        </form>
+
+                                        <div className="mt-8 p-6 bg-blue-50/50 rounded-3xl border border-blue-100/50">
+                                            <div className="flex gap-4">
+                                                <FaInfoCircle className="text-blue-500 mt-0.5" size={16} />
+                                                <p className="text-[10px] text-blue-600 font-bold leading-relaxed uppercase tracking-tight">
+                                                    After updating your password, your current session will remain active on this device. Future logins will require the new credentials.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>

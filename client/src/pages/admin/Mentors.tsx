@@ -120,7 +120,7 @@ const Mentors: React.FC = () => {
                 // AUTOMATION: Create portal access immediately for new mentors
                 if (newMentor && mentorData.email) {
                     try {
-                        const password = `123@ourhometuition`;
+                        const password = `123@hourhome`;
                         const { data: accData, error: accError } = await supabase.rpc('create_mentor_account', {
                             mentor_email: mentorData.email,
                             mentor_password: password,
@@ -169,7 +169,7 @@ const Mentors: React.FC = () => {
             return;
         }
 
-        const password = `123@ourhometuition`;
+        const password = `123@hourhome`;
 
         if (!window.confirm(`Create account for ${mentor.email} with password: ${password}?`)) return;
 
@@ -221,7 +221,7 @@ const Mentors: React.FC = () => {
                             <FaInfoCircle className="text-blue-400 cursor-help" size={14} />
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-[#1B2A5A] text-white text-[10px] font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-50">
                                 <p className="uppercase tracking-widest mb-1 opacity-60">Portal Access</p>
-                                Default Password: <span className="text-blue-200">123@ourhometuition</span>
+                                Default Password: <span className="text-blue-200">123@hourhome</span>
                             </div>
                         </div>
                     </div>
@@ -262,7 +262,7 @@ const Mentors: React.FC = () => {
                                 onChange={e => {
                                     const name = e.target.value;
                                     const firstName = name.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
-                                    const generatedEmail = name ? `${firstName}@ourhometuition.com` : '';
+                                    const generatedEmail = name ? `${firstName}@hourhome.com` : '';
                                     setForm({ ...form, name, email: form.email || generatedEmail });
                                 }}
                                 required

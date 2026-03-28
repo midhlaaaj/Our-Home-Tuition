@@ -86,10 +86,10 @@ END $$;
 -- 3. Force Create Robert's account (With Type Casting)
 --------------------------------------------------------------------------------
 SELECT public.create_mentor_account(
-    'robert@ourhometuition.com'::TEXT, 
-    '123@ourhometuition'::TEXT, 
+    'robert@hourhome.com'::TEXT, 
+    '123@hourhome'::TEXT, 
     (SELECT id FROM public.mentors WHERE name ilike '%Robert Wilson%' LIMIT 1)::UUID
 );
 
 -- Final Check
-SELECT * FROM public.profiles WHERE email IN ('ourhometuition.web@gmail.com', 'robert@ourhometuition.com');
+SELECT * FROM public.profiles WHERE email IN ('ourhometuition.web@gmail.com', 'robert@hourhome.com');

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaEnvelope, FaLock, FaUser, FaArrowRight } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaUser, FaArrowRight, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useFormPersistence, STORAGE_KEY } from '../hooks/useFormPersistence';
 
@@ -23,6 +23,10 @@ const Auth: React.FC = () => {
         email: '',
         password: '',
     });
+    
+    const [showLoginPass, setShowLoginPass] = useState(false);
+    const [showRegPass, setShowRegPass] = useState(false);
+    const [showVerifyPass, setShowVerifyPass] = useState(false);
     
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -222,12 +226,19 @@ const Auth: React.FC = () => {
                                         <input
                                             id="password"
                                             name="password"
-                                            type="password"
+                                            type={showLoginPass ? "text" : "password"}
                                             placeholder="••••••••"
                                             value={loginData.password}
                                             onChange={handleLoginChange}
-                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
+                                            className="w-full pl-11 pr-12 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLoginPass(!showLoginPass)}
+                                            className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                        >
+                                            {showLoginPass ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -301,29 +312,47 @@ const Auth: React.FC = () => {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
+                                    <div className="relative">
                                         <label htmlFor="reg-password" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Password</label>
-                                        <input
-                                            id="reg-password"
-                                            name="password"
-                                            type="password"
-                                            placeholder="••••••••"
-                                            value={registerData.password}
-                                            onChange={(e) => updateRegisterField('password', e.target.value)}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                id="reg-password"
+                                                name="password"
+                                                type={showRegPass ? "text" : "password"}
+                                                placeholder="••••••••"
+                                                value={registerData.password}
+                                                onChange={(e) => updateRegisterField('password', e.target.value)}
+                                                className="w-full px-4 pr-12 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowRegPass(!showRegPass)}
+                                                className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                            >
+                                                {showRegPass ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div>
+                                    <div className="relative">
                                         <label htmlFor="verifyPassword" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Verify</label>
-                                        <input
-                                            id="verifyPassword"
-                                            name="verifyPassword"
-                                            type="password"
-                                            placeholder="••••••••"
-                                            value={registerData.verifyPassword}
-                                            onChange={(e) => updateRegisterField('verifyPassword', e.target.value)}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                id="verifyPassword"
+                                                name="verifyPassword"
+                                                type={showVerifyPass ? "text" : "password"}
+                                                placeholder="••••••••"
+                                                value={registerData.verifyPassword}
+                                                onChange={(e) => updateRegisterField('verifyPassword', e.target.value)}
+                                                className="w-full px-4 pr-12 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowVerifyPass(!showVerifyPass)}
+                                                className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                            >
+                                                {showVerifyPass ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
