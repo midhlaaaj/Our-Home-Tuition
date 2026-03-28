@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 import { FaTrash, FaEdit, FaPlus, FaUserCircle, FaInfoCircle, FaMapMarkerAlt, FaStar } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -24,6 +24,7 @@ interface Mentor {
 }
 
 const Mentors: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [mentors, setMentors] = useState<Mentor[]>([]);
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState<Partial<Mentor>>({
@@ -60,7 +61,7 @@ const Mentors: React.FC = () => {
             const reviewsData = reviewsRes.data || [];
             
             // Calculate ratings
-            const updatedMentors = mentorsData.map(m => {
+            const updatedMentors = mentorsData.map((m: any) => {
                 const mReviews = reviewsData.filter((r: any) => r.mentor_id === m.id);
                 const avgRating = mReviews.length > 0 
                     ? (mReviews.reduce((acc: number, curr: any) => acc + curr.rating, 0) / mReviews.length).toFixed(1)
@@ -210,7 +211,7 @@ const Mentors: React.FC = () => {
 
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 font-['Urbanist']">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Manage Mentors</h1>

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
+import { safeFetch } from '../utils/supabaseUtils';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaFingerprint, FaArrowRight, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const Login: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -18,34 +20,62 @@ const Login: React.FC = () => {
         setLoading(true);
 
         try {
+            // Standard sign in - avoid safeFetch here as it can interfere with 
+            // the internal auth state changes that happen during login.
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
+
             if (error) {
                 setError(error.message);
-            } else if (data.user) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', data.user.id)
-                    .single();
+                return;
+            }
+
+                if (data.user) {
+                    console.log('Login successful, checking permissions for user:', data.user.email);
+                    
+                    // Use safeFetch for the profile role check
+                    const { data: profile, error: profileError } = await safeFetch(async () => {
+                        return await supabase
+                            .from('profiles')
+                            .select('role')
+                            .eq('id', data.user.id)
+                            .single();
+                    }, { silent: true, requestId: 'admin-role-check' });
+
+                if (profileError) {
+                    console.error('Error fetching admin profile:', profileError);
+                    // Fallback to role check via auth metadata if profile table fails
+                    const metaRole = data.user.user_metadata?.role?.toLowerCase();
+                    if (metaRole === 'admin') {
+                        navigate('/admin');
+                        return;
+                    }
+                    setError('Could not verify admin permissions. Please contact support.');
+                    return;
+                }
 
                 const userRole = (profile?.role || '').toLowerCase();
+                console.log('Detected user role:', userRole);
 
                 if (userRole === 'admin') {
+                    // Force a double check on session to sync any lazy AuthContext updates
+                    await supabase.auth.getSession();
                     navigate('/admin');
                 } else if (userRole === 'mentor') {
                     setError('This login is for staff only. Please use the Mentor Portal.');
                     await supabase.auth.signOut();
                 } else {
-                    navigate('/');
+                    console.warn('Unauthorized access attempt: No admin role found for ', data.user.email);
+                    setError('You do not have administrative permissions.');
+                    await supabase.auth.signOut();
                 }
             }
-        } catch (err) {
-            setError('An unexpected system error occurred.');
-            console.error(err);
+        } catch (err: any) {
+            setError(err?.message || 'An unexpected system error occurred.');
+            console.error('Login submission error:', err);
         } finally {
             setLoading(false);
         }

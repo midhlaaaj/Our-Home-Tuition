@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 import { FaTrash, FaEdit, FaPlus } from 'react-icons/fa';
 
 interface Counter {
@@ -12,6 +12,7 @@ interface Counter {
 }
 
 const AdminCounters: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [counters, setCounters] = useState<Counter[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -110,7 +111,7 @@ const AdminCounters: React.FC = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-10">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Vitals & Metrics</h1>

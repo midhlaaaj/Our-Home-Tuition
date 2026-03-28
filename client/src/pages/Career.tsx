@@ -55,7 +55,7 @@ const Career: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-gray-50 flex flex-col font-['Urbanist']">
             <Header />
 
             <main className="flex-grow pt-32 pb-20">
@@ -76,7 +76,7 @@ const Career: React.FC = () => {
                             {/* Hero Section */}
                             <Reveal>
                                 <div className="text-center mb-16">
-                                    <h1 className="text-5xl font-extrabold text-gray-900 mb-6">
+                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#17242e] tracking-tight mb-6">
                                         Join Our <span className="text-[#a0522d]">Teaching</span> Excellence
                                     </h1>
                                     <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">

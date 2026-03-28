@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
 import { FaSave, FaUpload } from 'react-icons/fa';
 import { uploadFile } from '../../utils/uploadHelper';
+import { useAuth } from '../../context/AuthContext';
 
 interface HeroMedia {
     id: string;
@@ -11,6 +11,7 @@ interface HeroMedia {
 }
 
 const Sliders: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [heroData, setHeroData] = useState<HeroMedia | null>(null);
@@ -73,7 +74,7 @@ const Sliders: React.FC = () => {
         setUploading(true);
 
         try {
-            const publicUrl = await uploadFile(file, 'uploads', 'sliders');
+            const publicUrl = await uploadFile(file, 'uploads', 'sliders', supabase);
 
             // Auto-detect type
             let type: 'image' | 'video' | 'text' = 'text';
@@ -127,7 +128,7 @@ const Sliders: React.FC = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
             <div>
                 <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Hero Section Master</h1>
                 <p className="text-sm text-gray-500 font-medium">Control the first impression of your platform.</p>

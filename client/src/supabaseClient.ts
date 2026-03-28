@@ -7,5 +7,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Supabase URL and Anon Key must be defined in environment variables');
 }
 
-// Initialize Supabase client with default configuration
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Initialize Supabase client for standard users
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { storageKey: 'sb-user-token' }
+});
+
+// Initialize dedicated Supabase client for admins to provide instance isolation
+export const adminSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { storageKey: 'sb-admin-token' }
+});

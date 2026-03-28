@@ -28,6 +28,8 @@ const AdminLayout: React.FC = () => {
         { path: '/admin/partners', icon: <FaThLarge />, label: 'Partner Slides' },
         { path: '/admin/achievements', icon: <FaTrophy />, label: 'Achievements' },
         { path: '/admin/avatars', icon: <FaUserCircle />, label: 'Avatars' },
+        { path: '/admin/blogs', icon: <FaBook />, label: 'Blogs' },
+        { path: '/admin/leads', icon: <FaChalkboardTeacher />, label: 'Leads' },
         { path: '/admin/counters', icon: <FaListOl />, label: 'Counters' },
     ];
 
@@ -48,7 +50,7 @@ const AdminLayout: React.FC = () => {
                 <div className="p-8 border-b border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                            <img src="/newlogo.png" alt="Logo" className="w-8 h-8 object-contain" />
+                            <img src="/brand-logo.png" alt="Logo" className="w-8 h-8 object-contain" />
                         </div>
                         <div>
                             <h2 className="text-xl font-black tracking-tight text-white">Admin<span className="text-[#ffb76c]">Hub</span></h2>

@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import { FaInbox, FaUsers, FaBriefcase, FaArrowRight, FaCalendarCheck } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
+import { FaInbox, FaUsers, FaBriefcase, FaArrowRight, FaCalendarCheck, FaBook } from 'react-icons/fa';
 
 const Dashboard: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const navigate = useNavigate();
     const [stats, setStats] = useState({
         queries: 0,
         bookings: 0,
         applicants: 0,
-        jobs: 0
+        jobs: 0,
+        blogs: 0
     });
     const [hasSyncError, setHasSyncError] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -19,26 +21,24 @@ const Dashboard: React.FC = () => {
             setLoading(true);
             setHasSyncError(false);
             try {
-                // Using a more robust count method without 'head: true' if it's causing issues, 
-                // but select('id') is enough for a count.
-                const [queriesRes, bookingsRes, applicantsRes, jobsRes] = await Promise.all([
+                const [queriesRes, bookingsRes, applicantsRes, jobsRes, blogsRes] = await Promise.all([
                     supabase.from('contact_queries').select('id', { count: 'exact' }).eq('is_resolved', false),
                     supabase.from('bookings').select('id', { count: 'exact' }).eq('status', 'pending'),
                     supabase.from('job_applications').select('id', { count: 'exact' }),
-                    supabase.from('jobs').select('id', { count: 'exact' }).eq('is_active', true)
+                    supabase.from('jobs').select('id', { count: 'exact' }).eq('is_active', true),
+                    supabase.from('blogs').select('id', { count: 'exact' })
                 ]);
 
-                if (queriesRes.error || bookingsRes.error || applicantsRes.error || jobsRes.error) {
+                if (queriesRes.error || bookingsRes.error || applicantsRes.error || jobsRes.error || blogsRes.error) {
                     setHasSyncError(true);
-                    if (queriesRes.error) console.error('Queries count error:', queriesRes.error);
-                    if (bookingsRes.error) console.error('Bookings count error:', bookingsRes.error);
                 }
 
                 setStats({
                     queries: queriesRes.count || 0,
                     bookings: bookingsRes.count || 0,
                     applicants: applicantsRes.count || 0,
-                    jobs: jobsRes.count || 0
+                    jobs: jobsRes.count || 0,
+                    blogs: blogsRes.count || 0
                 });
             } catch (err) {
                 console.error('Error fetching dashboard stats:', err);
@@ -87,20 +87,22 @@ const Dashboard: React.FC = () => {
             color: 'from-green-500 to-green-600',
             shadow: 'shadow-green-200',
             label: 'Live Postings'
+        },
+        {
+            title: 'Total Blogs',
+            count: stats.blogs,
+            icon: <FaBook />,
+            path: '/admin/blogs',
+            color: 'from-purple-500 to-purple-600',
+            shadow: 'shadow-purple-100',
+            label: 'Insights'
         }
     ];
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="w-12 h-12 border-4 border-[#ffb76c]/20 border-t-[#ffb76c] rounded-full animate-spin"></div>
-            </div>
-        );
-    }
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-6xl mx-auto">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Command Center</h1>
                     <p className="text-xs text-gray-400 font-black uppercase tracking-widest mt-1">Platform Orchestration & Oversight</p>
@@ -118,7 +120,7 @@ const Dashboard: React.FC = () => {
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {cards.map((card, idx) => (
                     <button
                         key={idx}
@@ -134,7 +136,13 @@ const Dashboard: React.FC = () => {
                             </div>
 
                             <h3 className="text-xs font-black tracking-widest text-gray-400 uppercase mb-1">{card.title}</h3>
-                            <div className="text-3xl font-black text-gray-900 tracking-tighter mb-4">{card.count}</div>
+                            <div className="text-3xl font-black text-gray-900 tracking-tighter mb-4">
+                                {loading ? (
+                                    <div className="h-9 w-16 bg-gray-100 rounded-lg animate-pulse mb-1"></div>
+                                ) : (
+                                    card.count
+                                )}
+                            </div>
 
                             <div className="mt-auto flex items-center justify-between pt-3 border-t border-gray-50">
                                 <div className="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest text-[#a0522d] group-hover:gap-3 transition-all">

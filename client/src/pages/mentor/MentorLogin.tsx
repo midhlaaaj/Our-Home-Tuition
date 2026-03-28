@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { supabase } from '../../supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaArrowRight, FaEye, FaEyeSlash, FaChalkboardTeacher } from 'react-icons/fa';
 
 const MentorLogin: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);

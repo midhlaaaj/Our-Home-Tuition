@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { CurriculumProvider } from './context/CurriculumContext';
 import ScrollToTop from './components/ScrollToTop';
+import { supabase, adminSupabase } from './supabaseClient';
 import { AuthProvider } from './context/AuthContext';
 import { ModalProvider } from './context/ModalContext';
 import Home from './pages/Home';
@@ -29,66 +30,86 @@ const AdminClasses = lazy(() => import('./pages/admin/AdminClasses'));
 const AdminAchievements = lazy(() => import('./pages/admin/AdminAchievements'));
 const AdminJobs = lazy(() => import('./pages/admin/AdminJobs'));
 const AdminApplications = lazy(() => import('./pages/admin/AdminApplications'));
+const AdminBlogs = lazy(() => import('./pages/admin/AdminBlogs'));
+const AdminLeads = lazy(() => import('./pages/admin/AdminLeads'));
 const Career = lazy(() => import('./pages/Career'));
 const Profile = lazy(() => import('./pages/Profile'));
 const ClassPage = lazy(() => import('./pages/ClassPage'));
 const BookingPage = lazy(() => import('./pages/BookingPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const WriteReview = lazy(() => import('./pages/WriteReview'));
+const Blogs = lazy(() => import('./pages/Blogs'));
+const BlogDetail = lazy(() => import('./pages/BlogDetail'));
 const AIChatButton = lazy(() => import('./components/AIChatButton'));
 
 // Loading fallback
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
-  </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="relative">
+            <div className="w-16 h-16 border-4 border-[#1B2A5A]/10 border-t-[#1B2A5A] rounded-full animate-spin"></div>
+            <img
+                src="/brand-logo.png"
+                alt="Loading..."
+                className="absolute inset-0 w-10 h-10 m-auto object-contain animate-pulse"
+            />
+        </div>
+    </div>
 );
 
 
 function App() {
   return (
-    <AuthProvider>
-      <ModalProvider>
-        <CurriculumProvider>
+    <ModalProvider>
+      <CurriculumProvider>
         <Router>
           <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route path="/" element={<IntroWrapper><Home /></IntroWrapper>} />
-              <Route path="/class/:id" element={<ClassPage />} />
-              <Route path="/book-session" element={<BookingPage />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/career" element={<Career />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/write-review/:bookingId" element={<WriteReview />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/admin/login" element={<Login />} />
-              <Route path="/mentor/login" element={<MentorLogin />} />
-
-              {/* Admin Routes */}
-              <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="queries" element={<AdminQueries />} />
-                  <Route path="bookings" element={<AdminBookings />} />
-                  <Route path="sliders" element={<Sliders />} />
-                  <Route path="reviews" element={<Reviews />} />
-                  <Route path="brands" element={<Brands />} />
-                  <Route path="mentors" element={<Mentors />} />
-                  <Route path="counters" element={<AdminCounters />} />
-                  <Route path="avatars" element={<AdminAvatars />} />
-                  <Route path="partners" element={<AdminPartners />} />
-                  <Route path="classes" element={<AdminClasses />} />
-                  <Route path="jobs" element={<AdminJobs />} />
-                  <Route path="applications" element={<AdminApplications />} />
-                  <Route path="achievements" element={<AdminAchievements />} />
+              {/* User Routes - Wrapped in user AuthProvider */}
+              <Route element={<AuthProvider supabaseClient={supabase}><Outlet /></AuthProvider>}>
+                <Route path="/" element={<IntroWrapper><Home /></IntroWrapper>} />
+                <Route path="/class/:id" element={<ClassPage />} />
+                <Route path="/book-session" element={<BookingPage />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/career" element={<Career />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/write-review/:bookingId" element={<WriteReview />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/blogs" element={<Blogs />} />
+                <Route path="/blogs/:slug" element={<BlogDetail />} />
+                <Route path="/mentor/login" element={<MentorLogin />} />
+                
+                {/* Mentor Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['mentor']} redirectPath="/mentor/login" />}>
+                  <Route path="/mentor-dashboard" element={<MentorDashboard />} />
                 </Route>
               </Route>
 
-              {/* Mentor Routes */}
-              <Route element={<ProtectedRoute allowedRoles={['mentor']} redirectPath="/mentor/login" />}>
-                <Route path="/mentor-dashboard" element={<MentorDashboard />} />
+              {/* Admin Routes - Wrapped in admin AuthProvider */}
+              <Route element={<AuthProvider supabaseClient={adminSupabase}><Outlet /></AuthProvider>}>
+                <Route path="/admin/login" element={<Login />} />
+                
+                <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<Dashboard />} />
+                    <Route path="queries" element={<AdminQueries />} />
+                    <Route path="bookings" element={<AdminBookings />} />
+                    <Route path="sliders" element={<Sliders />} />
+                    <Route path="reviews" element={<Reviews />} />
+                    <Route path="brands" element={<Brands />} />
+                    <Route path="mentors" element={<Mentors />} />
+                    <Route path="counters" element={<AdminCounters />} />
+                    <Route path="avatars" element={<AdminAvatars />} />
+                    <Route path="partners" element={<AdminPartners />} />
+                    <Route path="classes" element={<AdminClasses />} />
+                    <Route path="jobs" element={<AdminJobs />} />
+                    <Route path="applications" element={<AdminApplications />} />
+                    <Route path="blogs" element={<AdminBlogs />} />
+                    <Route path="leads" element={<AdminLeads />} />
+                    <Route path="achievements" element={<AdminAchievements />} />
+                  </Route>
+                </Route>
               </Route>
             </Routes>
           </Suspense>
@@ -98,7 +119,6 @@ function App() {
         </Router>
       </CurriculumProvider>
     </ModalProvider>
-  </AuthProvider>
   );
 }
 

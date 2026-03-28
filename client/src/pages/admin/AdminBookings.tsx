@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import {
     FaEnvelope, FaPhone,
@@ -35,6 +35,7 @@ interface Mentor {
 }
 
 const AdminBookings: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [mentors, setMentors] = useState<Mentor[]>([]);
     const [loading, setLoading] = useState(true);
@@ -198,16 +199,9 @@ const AdminBookings: React.FC = () => {
         return d.toDateString() === now.toDateString() && (b.status === 'confirmed' || b.status === 'completed');
     }).reduce((acc, b) => acc + (b.paid_amount || 0), 0);
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="w-12 h-12 border-4 border-[#ffb76c]/20 border-t-[#ffb76c] rounded-full animate-spin"></div>
-            </div>
-        );
-    }
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">
@@ -249,7 +243,28 @@ const AdminBookings: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 gap-6">
-                        {filteredBookings.map((booking) => (
+                        {loading && bookings.length === 0 ? (
+                            Array(3).fill(0).map((_, i) => (
+                                <div key={i} className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-xl animate-pulse">
+                                    <div className="flex flex-col lg:flex-row gap-8">
+                                        <div className="flex-1 space-y-6">
+                                            <div className="h-4 bg-gray-100 rounded w-1/4"></div>
+                                            <div className="h-8 bg-gray-100 rounded w-1/2"></div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="h-10 bg-gray-50 rounded-2xl"></div>
+                                                <div className="h-10 bg-gray-50 rounded-2xl"></div>
+                                            </div>
+                                        </div>
+                                        <div className="lg:w-80 h-32 bg-gray-900 rounded-[24px]"></div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : filteredBookings.length === 0 ? (
+                            <div className="py-20 text-center bg-white rounded-[32px] border-2 border-dashed border-gray-100">
+                                <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">No bookings found for this filter</p>
+                            </div>
+                        ) : (
+                            filteredBookings.map((booking) => (
                             <motion.div layout key={booking.id} className="bg-white rounded-[32px] border border-gray-100 shadow-xl overflow-hidden group hover:border-[#ffb76c]/30 transition-all duration-500">
                                 <div className="p-8">
                                     <div className="flex flex-col lg:flex-row gap-8">
@@ -306,7 +321,8 @@ const AdminBookings: React.FC = () => {
                                     </div>
                                 </div>
                             </motion.div>
-                        ))}
+                        ))
+                    )}
                     </div>
                 </>
             ) : (
@@ -377,28 +393,45 @@ const AdminBookings: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
-                                    {historyBookings.map(b => (
-                                        <tr key={b.id} className="group hover:bg-gray-50/50 transition-colors text-xs">
-                                            <td className="px-8 py-6">
-                                                <p className="font-black text-gray-900">{b.primary_student?.name}</p>
-                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Level {b.class_id}</p>
-                                            </td>
-                                            <td className="px-6 py-6">
-                                                <p className="font-bold text-gray-600">{b.curriculum}</p>
-                                                <p className="text-[10px] text-[#a0522d] font-black uppercase tracking-widest">{b.selected_time || b.preferred_time || 'TBD'}</p>
-                                            </td>
-                                            <td className="px-6 py-6">
-                                                <p className="font-black text-gray-900">₹{b.paid_amount || 0}</p>
-                                                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">{b.razorpay_payment_id || 'Cash/Other'}</p>
-                                            </td>
-                                            <td className="px-6 py-6 font-bold text-gray-600">{mentors.find(m => m.id === b.assigned_mentor_id)?.name || 'N/A'}</td>
-                                            <td className="px-6 py-6 text-right">
-                                                <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${b.status === 'completed' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}`}>
-                                                    <FaCheckCircle size={10} /> {b.status === 'completed' ? 'Validated' : 'Pending'}
-                                                </span>
+                                    {loading && bookings.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="px-8 py-20 text-center">
+                                                <div className="flex flex-col items-center gap-3 animate-pulse">
+                                                    <div className="w-10 h-10 border-2 border-[#ffb76c]/20 border-t-[#ffb76c] rounded-full animate-spin"></div>
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fetching history...</span>
+                                                </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                    ) : historyBookings.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="px-8 py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                                                No history found
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        historyBookings.map(b => (
+                                            <tr key={b.id} className="group hover:bg-gray-50/50 transition-colors text-xs">
+                                                <td className="px-8 py-6">
+                                                    <p className="font-black text-gray-900">{b.primary_student?.name}</p>
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Level {b.class_id}</p>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <p className="font-bold text-gray-600">{b.curriculum}</p>
+                                                    <p className="text-[10px] text-[#a0522d] font-black uppercase tracking-widest">{b.selected_time || b.preferred_time || 'TBD'}</p>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <p className="font-black text-gray-900">₹{b.paid_amount || 0}</p>
+                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">{b.razorpay_payment_id || 'Cash/Other'}</p>
+                                                </td>
+                                                <td className="px-6 py-6 font-bold text-gray-600">{mentors.find(m => m.id === b.assigned_mentor_id)?.name || 'N/A'}</td>
+                                                <td className="px-6 py-6 text-right">
+                                                    <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${b.status === 'completed' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}`}>
+                                                        <FaCheckCircle size={10} /> {b.status === 'completed' ? 'Validated' : 'Pending'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>

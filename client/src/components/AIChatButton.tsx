@@ -1,8 +1,23 @@
 import React from 'react';
 import { IoChatbubbleEllipsesOutline } from 'react-icons/io5';
 import { motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 
 const AIChatButton: React.FC = () => {
+    const location = useLocation();
+    
+    // Hide chat button on specific administrative and login pages
+    const hideOnRoutes = [
+        '/admin',
+        '/mentor',
+        '/auth',
+        '/login'
+    ];
+
+    const shouldHide = hideOnRoutes.some(route => location.pathname.startsWith(route));
+
+    if (shouldHide) return null;
+
     return (
         <motion.div 
             className="fixed bottom-6 left-6 z-[9999] flex flex-col items-start"

@@ -149,13 +149,13 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
 
     return (
         <header
-            className={`fixed w-full top-0 z-50 transition-all duration-300 ease-in-out transform ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+            className={`fixed w-full top-0 z-50 transition-all duration-300 ease-in-out transform font-['Urbanist'] ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
                 } ${bgClass ? bgClass : 'bg-white shadow-md border-b border-gray-100'
                 }`}
         >
             <div className="container mx-auto px-4 py-3 flex justify-between items-center">
                 <Link to="/" className="flex items-center space-x-0">
-                    <img src="/newlogo.png" alt="Hour Home Logo" className="w-20 h-20 object-contain -my-5 ml-1 mr-1" fetchPriority="high" />
+                    <img src="/brand-logo.png" alt="Hour Home Logo" className="w-40 h-40 object-contain -my-15 ml-1 mr-1 scale-110" fetchPriority="high" />
                 </Link>
 
                 {/* Navigation Links - Desktop */}
@@ -164,6 +164,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                         { name: 'Home', path: '/' },
                         { name: 'Classes', path: '/class/1' },
                         { name: 'Career', path: '/career' },
+                        { name: 'Blogs', path: '/blogs' },
                         { name: 'About Us', path: '/about' }
                     ].map((link) => {
                         const isActive = location.pathname === link.path;
@@ -453,7 +454,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                     />
                     
                     {/* Drawer Content - Compact solid panel, Urbanist fonts */}
-                    <div className="fixed top-0 right-0 h-screen w-[65%] max-w-[280px] bg-white z-[105] shadow-[-15px_0_35px_rgba(0,0,0,0.08)] animate-in slide-in-from-right duration-500 md:hidden flex flex-col pt-24">
+                    <div className="fixed top-0 right-0 h-screen w-[65%] max-w-[280px] bg-white z-[105] shadow-[-15px_0_35px_rgba(0,0,0,0.08)] animate-in slide-in-from-right duration-500 md:hidden flex flex-col pt-24 font-['Urbanist']">
                         
                         {/* Navigation List - Clean Urbanist Style */}
                         <div className="flex-1 px-8">
@@ -461,6 +462,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                 { name: 'Home', path: '/' },
                                 { name: 'Classes', path: '/class/1' },
                                 { name: 'About Us', path: '/about' },
+                                { name: 'Blogs', path: '/blogs' },
                                 { name: 'Career', path: '/career' }
                             ].map((link) => {
                                 const isActive = location.pathname === link.path;

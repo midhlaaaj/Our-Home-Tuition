@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 import { FaTrash, FaStar, FaUserGraduate, FaChalkboardTeacher, FaCheckCircle, FaTimesCircle, FaEdit } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
@@ -27,6 +27,7 @@ interface MentorReview {
 }
 
 const Reviews: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [view, setView] = useState<'testimonials' | 'mentor'>('mentor');
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
     const [mentorReviews, setMentorReviews] = useState<MentorReview[]>([]);
@@ -124,7 +125,7 @@ const Reviews: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 pt-4 animate-in fade-in duration-700">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
             {/* Header & Tabs */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>

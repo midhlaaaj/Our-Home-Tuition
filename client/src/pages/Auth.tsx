@@ -1,43 +1,36 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaEnvelope, FaLock, FaUser, FaArrowRight } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { useFormPersistence, STORAGE_KEY } from '../hooks/useFormPersistence';
 
-const Auth = () => {
+const Auth: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [isLogin, setIsLogin] = useState(true);
-
-    // Form States
-    const [loginData, setLoginData] = useState({ email: '', password: '' });
-    const [registerData, setRegisterData] = useState({
+    const [loading, setLoading] = useState(false);
+    
+    // Register form with persistence
+    const { formData: registerData, updateField: updateRegisterField } = useFormPersistence({
         name: '',
         email: '',
         phone: '',
-        address: '',
         password: '',
         verifyPassword: '',
     });
 
-    // Error States
+    // Login form (no persistence for security reasons, usually)
+    const [loginData, setLoginData] = useState({
+        email: '',
+        password: '',
+    });
+    
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setLoginData({ ...loginData, [e.target.name]: e.target.value });
-        // Clear error when user types
         if (errors[e.target.name]) {
             setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
         }
-    };
-
-    const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setRegisterData({ ...registerData, [e.target.name]: e.target.value });
-        if (errors[e.target.name]) {
-            setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
-        }
-    };
-
-    const validateLogin = () => {
-        const newErrors: Record<string, string> = {};
-        if (!loginData.email) newErrors.email = 'Email is required';
-        if (!loginData.password) newErrors.password = 'Password is required';
-        return newErrors;
     };
 
     const validateRegister = () => {
@@ -53,7 +46,6 @@ const Auth = () => {
         } else if (!/^\d+$/.test(registerData.phone)) {
             newErrors.phone = 'Phone number must be numeric';
         }
-        if (!registerData.address) newErrors.address = 'Address is required';
         if (!registerData.password) newErrors.password = 'Password is required';
         if (!registerData.verifyPassword) newErrors.verifyPassword = 'Please verify your password';
 
@@ -63,69 +55,134 @@ const Auth = () => {
         return newErrors;
     };
 
-    const handleLoginSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const validationErrors = validateLogin();
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-            return;
-        }
-        console.log('Login Data:', loginData);
-        // TODO: Integrate backend login
-    };
-
-    const handleRegisterSubmit = (e: React.FormEvent) => {
+    const handleRegisterSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const validationErrors = validateRegister();
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
         }
-        console.log('Register Data:', registerData);
-        // TODO: Integrate backend registration
+
+        setLoading(true);
+        try {
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: registerData.email,
+                password: registerData.password,
+                options: {
+                    data: {
+                        full_name: registerData.name,
+                        phone: registerData.phone,
+                    }
+                }
+            });
+
+            if (authError) throw authError;
+
+            if (authData.user) {
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert([{
+                        id: authData.user.id,
+                        name: registerData.name,
+                        email: registerData.email,
+                        phone: registerData.phone,
+                        role: 'user'
+                    }]);
+
+                if (profileError) console.error('Profile creation error:', profileError);
+
+                // Seed persistence
+                const toPersist = {
+                    name: registerData.name,
+                    fullName: registerData.name,
+                    email: registerData.email,
+                    phone: registerData.phone
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersist));
+            }
+
+            setErrors({ success: 'Registration successful! Please check your email to verify your account.' });
+        } catch (error: any) {
+            setErrors({ auth: error.message });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLoginSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: loginData.email,
+                password: loginData.password,
+            });
+            if (error) throw error;
+
+            if (data.user) {
+                // Fetch profile to seed persistence
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single();
+
+                if (profile) {
+                    const toPersist = {
+                        name: profile.name,
+                        fullName: profile.name,
+                        email: profile.email,
+                        phone: profile.phone,
+                        address: profile.address
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersist));
+                }
+            }
+        } catch (error: any) {
+            setErrors({ auth: error.message });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-lg border border-gray-100"
-            >
-                {/* Toggle Switch */}
-                <div className="flex bg-gray-100 p-1 rounded-xl mb-8 relative">
-                    <motion.div
-                        className="absolute top-1 bottom-1 w-1/2 bg-white rounded-lg shadow-sm"
-                        initial={false}
-                        animate={{
-                            x: isLogin ? 0 : '100%',
-                        }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden">
+                <div className="flex border-b border-gray-100">
                     <button
-                        onClick={() => { setIsLogin(true); setErrors({}); }}
-                        className={`flex-1 relative z-10 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${isLogin ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                        onClick={() => setIsLogin(true)}
+                        className={`flex-1 py-4 text-sm font-bold uppercase tracking-widest transition-all ${isLogin ? 'text-[#1B2A5A] bg-white border-b-2 border-[#1B2A5A]' : 'text-gray-400 bg-gray-50 hover:bg-gray-100'
                             }`}
                     >
                         Sign In
                     </button>
                     <button
-                        onClick={() => { setIsLogin(false); setErrors({}); }}
-                        className={`flex-1 relative z-10 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${!isLogin ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                        onClick={() => setIsLogin(false)}
+                        className={`flex-1 py-4 text-sm font-bold uppercase tracking-widest transition-all ${!isLogin ? 'text-[#1B2A5A] bg-white border-b-2 border-[#1B2A5A]' : 'text-gray-400 bg-gray-50 hover:bg-gray-100'
                             }`}
                     >
-                        Register
+                        Sign Up
                     </button>
                 </div>
 
-                <div className="mt-6">
-                    <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
-                        {isLogin ? 'Welcome Back' : 'Create Account'}
-                    </h2>
-                    <p className="text-gray-500 text-center mb-6 text-sm">
-                        {isLogin ? 'Please sign in to continue' : 'Fill in your details to get started'}
-                    </p>
+                <div className="p-8">
+                    <div className="flex flex-col items-center mb-8">
+                        <div className="w-48 h-24 mb-4">
+                            <img src="/brand-logo.png" alt="Hour Home" className="w-full h-full object-contain scale-125" />
+                        </div>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                            {isLogin ? 'Welcome Back' : 'Create Account'}
+                        </h2>
+                        <p className="text-sm font-bold text-[#1B2A5A] mt-1 uppercase tracking-widest text-[10px]">
+                            {isLogin ? 'Sign in to access your dashboard' : 'Join our learning community'}
+                        </p>
+                    </div>
+
+                    {(errors.auth || errors.success) && (
+                        <div className={`mb-6 p-4 rounded-xl border text-sm font-bold text-center ${errors.success ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-500 border-red-100'}`}>
+                            {errors.auth || errors.success}
+                        </div>
+                    )}
 
                     <AnimatePresence mode="wait">
                         {isLogin ? (
@@ -136,55 +193,52 @@ const Auth = () => {
                                 exit={{ opacity: 0, x: 20 }}
                                 transition={{ duration: 0.3 }}
                                 onSubmit={handleLoginSubmit}
-                                className="space-y-5"
+                                className="space-y-4"
                             >
                                 <div>
-                                    <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Email Address
-                                    </label>
-                                    <input
-                                        id="login-email"
-                                        name="email"
-                                        type="email"
-                                        autoComplete="email"
-                                        placeholder="name@email.com"
-                                        value={loginData.email}
-                                        onChange={handleLoginChange}
-                                        className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
-                                            } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-200`}
-                                    />
-                                    {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                                    <label htmlFor="email" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Email</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-300">
+                                            <FaEnvelope size={14} />
+                                        </div>
+                                        <input
+                                            id="email"
+                                            name="email"
+                                            type="email"
+                                            placeholder="name@email.com"
+                                            value={loginData.email}
+                                            onChange={handleLoginChange}
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <label htmlFor="login-password"
-                                        className="block text-sm font-medium text-gray-700 mb-1"
-                                    >
-                                        Password
-                                    </label>
-                                    <input
-                                        id="login-password"
-                                        name="password"
-                                        type="password"
-                                        autoComplete="current-password"
-                                        placeholder="Enter your password"
-                                        value={loginData.password}
-                                        onChange={handleLoginChange}
-                                        className={`appearance-none block w-full px-4 py-3 border ${errors.password ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
-                                            } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-200`}
-                                    />
-                                    {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+                                    <label htmlFor="password" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Password</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-300">
+                                            <FaLock size={14} />
+                                        </div>
+                                        <input
+                                            id="password"
+                                            name="password"
+                                            type="password"
+                                            placeholder="••••••••"
+                                            value={loginData.password}
+                                            onChange={handleLoginChange}
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
+                                        />
+                                    </div>
                                 </div>
 
-                                <div className="pt-2">
-                                    <button
-                                        type="submit"
-                                        disabled={!loginData.email || !loginData.password}
-                                        className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-md hover:shadow-lg"
-                                    >
-                                        Sign In
-                                    </button>
-                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={loading || !loginData.email || !loginData.password}
+                                    className="w-full bg-[#1B2A5A] text-white py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-[#142044] transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-xl shadow-blue-900/10"
+                                >
+                                    {loading ? 'Processing...' : 'Sign In'}
+                                    <FaArrowRight size={14} />
+                                </button>
                             </motion.form>
                         ) : (
                             <motion.form
@@ -197,44 +251,39 @@ const Auth = () => {
                                 className="space-y-4"
                             >
                                 <div>
-                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Full Name
-                                    </label>
-                                    <input
-                                        id="name"
-                                        name="name"
-                                        type="text"
-                                        placeholder="Enter your name"
-                                        value={registerData.name}
-                                        onChange={handleRegisterChange}
-                                        className={`appearance-none block w-full px-4 py-3 border ${errors.name ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
-                                            } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-200`}
-                                    />
-                                    {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                                    <label htmlFor="name" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Full Name</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-300">
+                                            <FaUser size={14} />
+                                        </div>
+                                        <input
+                                            id="name"
+                                            name="name"
+                                            type="text"
+                                            placeholder="Your Name"
+                                            value={registerData.name}
+                                            onChange={(e) => updateRegisterField('name', e.target.value)}
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Email
-                                        </label>
+                                        <label htmlFor="reg-email" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Email</label>
                                         <input
                                             id="reg-email"
                                             name="email"
                                             type="email"
                                             placeholder="name@email.com"
                                             value={registerData.email}
-                                            onChange={handleRegisterChange}
-                                            className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
-                                                } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-200`}
+                                            onChange={(e) => updateRegisterField('email', e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
                                         />
-                                        {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                                     </div>
                                     <div>
-                                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Phone Number
-                                        </label>
-                                        <div className={`relative group flex items-center bg-white rounded-xl border ${errors.phone ? 'border-red-500 focus-within:ring-red-500' : 'border-gray-200 focus-within:ring-blue-500'} focus-within:ring-2 transition-all overflow-hidden`}>
+                                        <label htmlFor="phone" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Phone</label>
+                                        <div className="relative group flex items-center bg-gray-50 rounded-xl border border-gray-100 focus-within:border-[#1B2A5A] focus-within:bg-white transition-all overflow-hidden h-[46px]">
                                             <div className="flex items-center pl-4 pr-2 text-gray-400 border-r border-gray-100 py-3 h-full">
                                                 <span className="font-black text-xs">+91</span>
                                             </div>
@@ -242,85 +291,55 @@ const Auth = () => {
                                                 id="phone"
                                                 name="phone"
                                                 type="tel"
-                                                placeholder="00000 00000"
+                                                placeholder="Mobile Number"
                                                 value={registerData.phone}
-                                                onChange={(e) => {
-                                                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                                                    setRegisterData({ ...registerData, phone: val });
-                                                    if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
-                                                }}
-                                                className="w-full px-3 py-3 bg-transparent outline-none text-sm"
+                                                onChange={(e) => updateRegisterField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                                className="w-full px-3 py-3 bg-transparent outline-none text-sm font-bold"
                                             />
                                         </div>
-                                        {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
                                     </div>
-                                </div>
-
-                                <div>
-                                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Address
-                                    </label>
-                                    <input
-                                        id="address"
-                                        name="address"
-                                        type="text"
-                                        placeholder="Enter your address"
-                                        value={registerData.address}
-                                        onChange={handleRegisterChange}
-                                        className={`appearance-none block w-full px-4 py-3 border ${errors.address ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
-                                            } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-200`}
-                                    />
-                                    {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address}</p>}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Password
-                                        </label>
+                                        <label htmlFor="reg-password" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Password</label>
                                         <input
                                             id="reg-password"
                                             name="password"
                                             type="password"
-                                            placeholder="Create password"
+                                            placeholder="••••••••"
                                             value={registerData.password}
-                                            onChange={handleRegisterChange}
-                                            className={`appearance-none block w-full px-4 py-3 border ${errors.password ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
-                                                } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-200`}
+                                            onChange={(e) => updateRegisterField('password', e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
                                         />
-                                        {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                                     </div>
                                     <div>
-                                        <label htmlFor="verify-password" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Verify Password
-                                        </label>
+                                        <label htmlFor="verifyPassword" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Verify</label>
                                         <input
-                                            id="verify-password"
+                                            id="verifyPassword"
                                             name="verifyPassword"
                                             type="password"
-                                            placeholder="Confirm password"
+                                            placeholder="••••••••"
                                             value={registerData.verifyPassword}
-                                            onChange={handleRegisterChange}
-                                            className={`appearance-none block w-full px-4 py-3 border ${errors.verifyPassword ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 focus:ring-blue-500 focus:border-blue-500'
-                                                } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-200`}
+                                            onChange={(e) => updateRegisterField('verifyPassword', e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
                                         />
-                                        {errors.verifyPassword && <p className="mt-1 text-xs text-red-500">{errors.verifyPassword}</p>}
                                     </div>
                                 </div>
 
-                                <div className="pt-2">
-                                    <button
-                                        type="submit"
-                                        className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-md hover:shadow-lg"
-                                    >
-                                        Create Account
-                                    </button>
-                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={loading || !(registerData.name && registerData.email && registerData.phone && registerData.password)}
+                                    className="w-full bg-[#1B2A5A] text-white py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-[#142044] transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-xl shadow-blue-900/10"
+                                >
+                                    {loading ? 'Processing...' : 'Create Account'}
+                                    <FaArrowRight size={14} />
+                                </button>
                             </motion.form>
                         )}
                     </AnimatePresence>
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 };

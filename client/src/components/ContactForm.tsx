@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { FaPaperPlane, FaCheck } from 'react-icons/fa';
+import { useFormPersistence } from '../hooks/useFormPersistence';
 
 const ContactForm: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
-    const [formData, setFormData] = useState({
+    const { formData, updateField, clearPersistence } = useFormPersistence({
         name: '',
         email: '',
         phone: '',
+        address: '',
         query: ''
     });
 
@@ -29,13 +31,18 @@ const ContactForm: React.FC = () => {
                     name: formData.name,
                     email: formData.email,
                     phone: `+91 ${formData.phone}`,
+                    address: formData.address,
                     query: formData.query
                 }]);
 
             if (error) throw error;
 
             setSubmitted(true);
-            setFormData({ name: '', email: '', phone: '', query: '' });
+            clearPersistence(); // Clear persistence after successful submission
+            // We don't manually clear formData here because persistence hook handles state, 
+            // but for a smooth UX we can just reset if we want. 
+            // Actually, clearPersistence and a local reset is good.
+            updateField('query', ''); 
             setTimeout(() => setSubmitted(false), 5000);
 
         } catch (err: any) {
@@ -93,7 +100,7 @@ const ContactForm: React.FC = () => {
                                             required
                                             type="text"
                                             value={formData.name}
-                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            onChange={e => updateField('name', e.target.value)}
                                             className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 text-sm"
                                             placeholder="Enter your name"
                                         />
@@ -112,7 +119,7 @@ const ContactForm: React.FC = () => {
                                                     value={formData.phone}
                                                     onChange={e => {
                                                         const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                                                        setFormData({ ...formData, phone: val });
+                                                        updateField('phone', val);
                                                     }}
                                                     className="w-full px-4 py-4 bg-transparent outline-none text-gray-900 placeholder:text-gray-500 text-sm"
                                                     placeholder="10 digit mobile"
@@ -125,11 +132,22 @@ const ContactForm: React.FC = () => {
                                                 required
                                                 type="email"
                                                 value={formData.email}
-                                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                                onChange={e => updateField('email', e.target.value)}
                                                 className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 text-sm"
                                                 placeholder="name@email.com"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-bold text-[#1B2A5A] ml-1">Location / Address (Optional)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.address || ''}
+                                            onChange={e => updateField('address', e.target.value)}
+                                            className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 text-sm"
+                                            placeholder="Enter your city or area"
+                                        />
                                     </div>
 
                                     <div className="space-y-1.5">
@@ -138,7 +156,7 @@ const ContactForm: React.FC = () => {
                                             required
                                             rows={3}
                                             value={formData.query}
-                                            onChange={e => setFormData({ ...formData, query: e.target.value })}
+                                            onChange={e => updateField('query', e.target.value)}
                                             className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium resize-none text-gray-900 placeholder:text-gray-500 text-sm leading-relaxed"
                                             placeholder="Mention class and subjects needed..."
                                         />

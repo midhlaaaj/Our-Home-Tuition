@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 import { FaTrash, FaEdit, FaUpload, FaPlus, FaTimes } from 'react-icons/fa';
 import { uploadFile } from '../../utils/uploadHelper';
 
@@ -12,6 +12,7 @@ interface Brand {
 }
 
 const Brands: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [brands, setBrands] = useState<Brand[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -52,7 +53,7 @@ const Brands: React.FC = () => {
         setUploading(true);
 
         try {
-            const publicUrl = await uploadFile(file, 'uploads', 'brands');
+            const publicUrl = await uploadFile(file, 'uploads', 'brands', supabase);
             setForm(prev => ({ ...prev, logo_url: publicUrl }));
         } catch (error) {
             console.error('Upload failed:', error);
@@ -130,7 +131,7 @@ const Brands: React.FC = () => {
 
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Affiliated Brands</h1>

@@ -175,7 +175,7 @@ const BookingPage: React.FC = () => {
 
     if (!state || !state.selectedUnits || state.selectedUnits.length === 0) {
         return (
-            <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-['Urbanist'] pt-[64px]">
+            <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans pt-[64px]">
                 <Header />
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
                     <motion.div
@@ -205,7 +205,7 @@ const BookingPage: React.FC = () => {
 
     if (isSuccess) {
         return (
-            <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-['Urbanist'] pt-[64px]">
+            <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans pt-[64px]">
                 <Header />
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
                     <motion.div
@@ -235,7 +235,7 @@ const BookingPage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-['Urbanist'] pt-[64px]">
+        <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans pt-[64px]">
             <Header />
 
             <main className="flex-grow container mx-auto px-6 py-12 max-w-7xl">
@@ -254,7 +254,7 @@ const BookingPage: React.FC = () => {
                         <motion.div
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            className="bg-white rounded-[40px] shadow-sm border border-gray-100 p-10"
+                            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10"
                         >
                             <div className="flex items-center gap-4 mb-10">
                                 <div className="w-12 h-12 bg-orange-50 text-[#a0522d] rounded-2xl flex items-center justify-center">
@@ -285,7 +285,7 @@ const BookingPage: React.FC = () => {
                                                     required
                                                     value={name}
                                                     onChange={e => setName(e.target.value)}
-                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-500"
+                                                    className="w-full pl-12 pr-6 py-3 border border-gray-200 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#1B2A5A] focus:border-[#1B2A5A] transition duration-200 text-sm font-bold"
                                                     placeholder="Enter your name"
                                                 />
                                             </div>
@@ -301,15 +301,15 @@ const BookingPage: React.FC = () => {
                                                     required
                                                     value={email}
                                                     onChange={e => setEmail(e.target.value)}
-                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-500"
+                                                    className="w-full pl-12 pr-6 py-3 border border-gray-200 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#1B2A5A] focus:border-[#1B2A5A] transition duration-200 text-sm font-bold"
                                                     placeholder="name@email.com"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-[#1B2A5A] ml-1">Phone Number</label>
-                                            <div className="relative group flex items-center bg-gray-50/50 rounded-[20px] border border-gray-100 focus-within:bg-white focus-within:border-[#a0522d] transition-all overflow-hidden">
-                                                <div className="flex items-center pl-5 pr-3 text-gray-500 group-focus-within:text-[#a0522d] border-r border-gray-100 py-4 h-full">
+                                            <div className="relative group flex items-center bg-white rounded-lg border border-gray-200 focus-within:ring-[#1B2A5A] focus-within:ring-1 transition-all overflow-hidden h-[44px]">
+                                                <div className="flex items-center pl-5 pr-3 text-gray-500 group-focus-within:text-[#1B2A5A] border-r border-gray-100 py-2 h-full">
                                                     <span className="font-black text-sm">+91</span>
                                                 </div>
                                                 <input
@@ -320,7 +320,7 @@ const BookingPage: React.FC = () => {
                                                         const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                                                         setPhone(val);
                                                     }}
-                                                    className="w-full px-4 py-4 bg-transparent outline-none text-sm font-bold placeholder:text-gray-500"
+                                                    className="w-full px-4 py-2 bg-transparent outline-none text-sm font-bold placeholder:text-gray-500"
                                                     placeholder="00000 00000"
                                                 />
                                             </div>
@@ -367,7 +367,7 @@ const BookingPage: React.FC = () => {
                                                     value={address}
                                                     onChange={e => setAddress(e.target.value)}
                                                     rows={1}
-                                                    className="w-full px-6 py-4 bg-gray-50/50 border border-gray-100 rounded-[20px] outline-none focus:bg-white focus:border-[#a0522d] transition-all text-sm font-bold placeholder:text-gray-500 resize-none"
+                                                    className="w-full px-6 py-3 border border-gray-200 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#1B2A5A] focus:border-[#1B2A5A] transition duration-200 text-sm font-bold resize-none"
                                                     placeholder="Door No, Street, Landmark, City..."
                                                 />
                                             </div>
@@ -615,7 +615,7 @@ const BookingPage: React.FC = () => {
                         <motion.div
                             initial={{ x: 20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            className="bg-white rounded-[40px] shadow-sm border border-gray-100 p-8 sticky top-[100px]"
+                            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 sticky top-[100px]"
                         >
                             <h2 className="text-xl font-black text-gray-900 tracking-tight mb-8">Summary</h2>
 

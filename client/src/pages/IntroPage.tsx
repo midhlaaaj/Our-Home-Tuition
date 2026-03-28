@@ -21,13 +21,14 @@ export default function IntroWrapper({ children }: { children: React.ReactNode }
     return () => clearTimeout(t);
   }, []);
 
-  // After logo finishes travelling (~600ms), mark done (reduced from 900ms)
+  // Mark done when animation finishes — we set a safety timeout slightly longer 
+  // than the physics duration to ensure the handover is perfectly smooth.
   useEffect(() => {
     if (phase !== 'animating') return;
     const t = setTimeout(() => {
       setPhase('done');
       sessionStorage.setItem('intro_seen', '1');
-    }, 600);
+    }, 1200); // Increased to 1.2s to match the luxurious, slower spring
     return () => clearTimeout(t);
   }, [phase]);
 
@@ -61,32 +62,33 @@ export default function IntroWrapper({ children }: { children: React.ReactNode }
             // top: header py-3 (12px) with -my-5 (-20px) = image bleeds to top ~0px
             animate={
               isAnimating
-                ? { top: '0px', left: '16px', x: '0%', y: '0%' }
+                ? { top: '-48px', left: '20px', x: '0%', y: '0%' }
                 : { top: '50%', left: '50%', x: '-50%', y: '-50%' }
             }
             transition={{
               type: 'spring',
-              stiffness: 120,
-              damping: 20,
-              mass: 0.8,
+              stiffness: 70, // Slightly slower for more elegance
+              damping: 24,   // Higher damping to prevent oscillation
+              mass: 1.2,     // More mass for a 'heavier', premium feel
             }}
           >
             <motion.img
-              src="/newlogo.png"
+              src="/brand-logo.png"
               alt="Logo"
               draggable={false}
               className="select-none object-contain"
               fetchPriority="high"
-              initial={{ width: '200px', height: '200px' }}
+              initial={{ width: '350px', height: '350px', filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.1))' }}
               animate={{
-                width: isAnimating ? '80px' : '200px',
-                height: isAnimating ? '80px' : '200px',
+                width: isAnimating ? '160px' : '350px',
+                height: isAnimating ? '160px' : '350px',
+                filter: isAnimating ? 'drop-shadow(0 0px 0px rgba(0,0,0,0))' : 'drop-shadow(0 20px 40px rgba(0,0,0,0.1))'
               }}
               transition={{
                 type: 'spring',
-                stiffness: 120,
-                damping: 20,
-                mass: 0.8,
+                stiffness: 70,
+                damping: 24,
+                mass: 1.2,
               }}
             />
           </motion.div>

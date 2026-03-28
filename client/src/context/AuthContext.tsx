@@ -6,9 +6,11 @@ import { safeFetch } from '../utils/supabaseUtils';
 interface AuthContextType {
     session: Session | null;
     user: User | null;
+    profile: any | null;
     role: string | null;
     signOut: () => Promise<void>;
     loading: boolean;
+    supabaseClient: any;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,18 +18,43 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Use a simple cache to avoid redundant network calls within the same session
 const roleCache = new Map<string, string>();
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode, supabaseClient?: any }> = ({ 
+    children, 
+    supabaseClient = supabase // fallback to default
+}) => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
+    const [profile, setProfile] = useState<any | null>(null);
     const [role, setRole] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const fetchProfileData = async (userId: string) => {
+        try {
+            const result = await safeFetch(async () => {
+                return await supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+            }, { silent: true });
+
+            if (result.error) {
+                console.error('Error fetching profile:', result.error);
+                return null;
+            }
+            return result.data;
+        } catch (error: any) {
+            console.error('Unexpected error fetching profile:', error);
+            return null;
+        }
+    };
 
     const fetchRole = async (userId: string) => {
         if (roleCache.has(userId)) return roleCache.get(userId)!;
         
         try {
             const result = await safeFetch(async () => {
-                return await supabase
+                return await supabaseClient
                     .from('profiles')
                     .select('role')
                     .eq('id', userId)
@@ -48,19 +75,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const initialized = React.useRef(false);
-
     useEffect(() => {
-        if (initialized.current) return;
-        initialized.current = true;
-        
         let mounted = true;
 
         // Get initial session
         const getInitialSession = async () => {
             try {
                 const result = await safeFetch(async () => {
-                    return await supabase.auth.getSession();
+                    return await supabaseClient.auth.getSession();
                 });
 
                 if (result.error) throw result.error;
@@ -72,10 +94,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     setUser(currentUser);
 
                     if (currentUser) {
-                        const userRole = await fetchRole(currentUser.id);
-                        if (mounted) setRole(userRole);
+                        const [userRole, profileData] = await Promise.all([
+                            fetchRole(currentUser.id),
+                            fetchProfileData(currentUser.id)
+                        ]);
+                        if (mounted) {
+                            setRole(userRole);
+                            setProfile(profileData);
+                        }
                     } else {
                         setRole(null);
+                        setProfile(null);
                     }
                 }
             } catch (error: any) {
@@ -89,41 +118,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getInitialSession();
 
         // Listen for changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            console.log("Auth state changed:", _event, session?.user?.id);
+        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event: string, session: Session | null) => {
+            console.log("AuthContext: Auth state changed event:", _event, "User:", session?.user?.email);
             if (!mounted) return;
 
-            setSession(session);
-            const currentUser = session?.user ?? null;
-            setUser(currentUser);
+            // Handle the state change in a non-blocking background process
+            const handleStateChange = async () => {
+                try {
+                    setLoading(true);
+                    setSession(session);
+                    const currentUser = session?.user ?? null;
+                    setUser(currentUser);
 
-            if (currentUser) {
-                const userRole = await fetchRole(currentUser.id);
-                if (mounted) setRole(userRole);
-            } else {
-                if (mounted) setRole(null);
-            }
+                    if (currentUser) {
+                        const [userRole, profileData] = await Promise.all([
+                            fetchRole(currentUser.id),
+                            fetchProfileData(currentUser.id)
+                        ]);
+                        if (mounted) {
+                            setRole(userRole);
+                            setProfile(profileData);
+                        }
+                    } else {
+                        if (mounted) {
+                            setRole(null);
+                            setProfile(null);
+                        }
+                    }
+                } catch (error) {
+                    console.error("AuthContext: Error in handleStateChange:", error);
+                } finally {
+                    if (mounted) setLoading(false);
+                }
+            };
 
-            if (mounted) setLoading(false);
+            handleStateChange();
         });
+
+
 
         return () => {
             mounted = false;
             subscription.unsubscribe();
         };
-    }, []);
+    }, [supabaseClient]);
+
 
     const signOut = async () => {
-        await supabase.auth.signOut();
+        await supabaseClient.auth.signOut();
         // State updates handled by onAuthStateChange
     };
 
     const value = {
         session,
         user,
+        profile,
         role,
         signOut,
         loading,
+        supabaseClient
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

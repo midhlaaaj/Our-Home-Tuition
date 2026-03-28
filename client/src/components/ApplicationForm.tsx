@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { classesData } from '../constants/classesData';
-import { FaFileUpload, FaVideo, FaCheck, FaChevronRight, FaLink, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaFileUpload, FaVideo, FaCheck, FaChevronRight, FaLink, FaCloudUploadAlt, FaMapMarkerAlt } from 'react-icons/fa';
+import { useFormPersistence } from '../hooks/useFormPersistence';
 
 interface Job {
     id: string;
@@ -18,11 +19,12 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
 
-    // Form data
-    const [formData, setFormData] = useState({
+    // Persistable form data
+    const { formData, updateField, clearPersistence, setFormData } = useFormPersistence({
         fullName: '',
         email: '',
         phone: '',
+        address: '',
         experience: '',
         classIds: job ? [job.class_id] : [] as number[],
         subjectIds: [] as string[],
@@ -56,7 +58,6 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validation for mandatory fields
         if (!formData.fullName || !formData.email || formData.phone.length !== 10) {
             alert("Please fill in all contact details correctly.");
             return;
@@ -88,7 +89,6 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
             let cvUrl = '';
             let finalVideoUrl = formData.videoLink;
 
-            // 1. Upload CV if exists
             if (cvFile) {
                 const fileExt = cvFile.name.split('.').pop();
                 const fileName = `${Date.now()}_cv_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -98,7 +98,6 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                 cvUrl = publicUrl;
             }
 
-            // 2. Upload Video if exists and source is upload
             if (videoSource === 'upload' && videoFile) {
                 const fileExt = videoFile.name.split('.').pop();
                 const fileName = `${Date.now()}_video_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -108,7 +107,6 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                 finalVideoUrl = publicUrl;
             }
 
-            // 3. Save Application
             const { error } = await supabase
                 .from('job_applications')
                 .insert([{
@@ -116,6 +114,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                     full_name: formData.fullName,
                     email: formData.email,
                     phone: `+91 ${formData.phone}`,
+                    address: formData.address,
                     experience: formData.experience,
                     class_ids: formData.classIds,
                     subject_ids: formData.subjectIds,
@@ -125,6 +124,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
 
             if (error) throw error;
             setSubmitted(true);
+            clearPersistence();
             setTimeout(() => {
                 if (onSuccess) onSuccess();
             }, 3000);
@@ -157,36 +157,31 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
             <p className="text-gray-500 mb-10 font-medium">Please fill in your details and provide a 3-minute teaching demonstration.</p>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                {/* Left Column: Details */}
                 <div className="space-y-6">
                     <div className="space-y-4">
                         <label className="block">
                             <span className="text-sm font-bold text-[#1B2A5A] ml-1">Full Name</span>
-                            <div className="mt-1 relative">
-                                <input
-                                    required
-                                    type="text"
-                                    value={formData.fullName}
-                                    onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none transition-all font-medium"
-                                    placeholder="Enter your name"
-                                />
-                            </div>
+                            <input
+                                required
+                                type="text"
+                                value={formData.fullName}
+                                onChange={e => updateField('fullName', e.target.value)}
+                                className="mt-1 w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none transition-all font-medium"
+                                placeholder="Enter your name"
+                            />
                         </label>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <label className="block">
                                 <span className="text-sm font-bold text-[#1B2A5A] ml-1">Email</span>
-                                <div className="mt-1 relative">
-                                    <input
-                                        required
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none transition-all font-medium"
-                                        placeholder="name@email.com"
-                                    />
-                                </div>
+                                <input
+                                    required
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={e => updateField('email', e.target.value)}
+                                    className="mt-1 w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none transition-all font-medium"
+                                    placeholder="name@email.com"
+                                />
                             </label>
                             <label className="block">
                                 <span className="text-sm font-bold text-[#1B2A5A] ml-1">Phone Number</span>
@@ -198,16 +193,28 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                                         required
                                         type="tel"
                                         value={formData.phone}
-                                        onChange={e => {
-                                            const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                                            setFormData({ ...formData, phone: val });
-                                        }}
-                                        className="w-full px-4 py-4 bg-transparent outline-none"
+                                        onChange={e => updateField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                        className="w-full px-3 py-4 bg-transparent outline-none"
                                         placeholder="00000 00000"
                                     />
                                 </div>
                             </label>
                         </div>
+
+                        <label className="block">
+                            <span className="text-sm font-bold text-[#1B2A5A] ml-1">Work Address / Location</span>
+                            <div className="mt-1 relative group">
+                                <FaMapMarkerAlt className="absolute left-5 top-5 text-gray-400 group-focus-within:text-[#a0522d]" />
+                                <input
+                                    required
+                                    type="text"
+                                    value={formData.address}
+                                    onChange={e => updateField('address', e.target.value)}
+                                    className="w-full pl-12 pr-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none transition-all font-medium"
+                                    placeholder="Enter your city or area"
+                                />
+                            </div>
+                        </label>
 
                         {!job && (
                             <div className="space-y-4">
@@ -220,7 +227,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                                                 type="button"
                                                 onClick={() => {
                                                     const cur = formData.classIds;
-                                                    setFormData({ ...formData, classIds: cur.includes(cls.id) ? cur.filter(id => id !== cls.id) : [...cur, cls.id] });
+                                                    updateField('classIds', cur.includes(cls.id) ? cur.filter(id => id !== cls.id) : [...cur, cls.id]);
                                                 }}
                                                 className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${formData.classIds.includes(cls.id) ? 'bg-[#a0522d] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                                             >
@@ -239,7 +246,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                                                     type="button"
                                                     onClick={() => {
                                                         const cur = formData.subjectIds;
-                                                        setFormData({ ...formData, subjectIds: cur.includes(sub.id) ? cur.filter(id => id !== sub.id) : [...cur, sub.id] });
+                                                        updateField('subjectIds', cur.includes(sub.id) ? cur.filter(id => id !== sub.id) : [...cur, sub.id]);
                                                     }}
                                                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${formData.subjectIds.includes(sub.id) ? 'bg-orange-100 text-[#a0522d] border border-[#a0522d]' : 'bg-gray-50 text-gray-400 border border-transparent'}`}
                                                 >
@@ -254,15 +261,13 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
 
                         <label className="block">
                             <span className="text-sm font-bold text-[#1B2A5A] ml-1 italic opacity-60">Teaching Experience (Optional)</span>
-                            <div className="mt-1 relative">
-                                <textarea
-                                    rows={4}
-                                    value={formData.experience}
-                                    onChange={e => setFormData({ ...formData, experience: e.target.value })}
-                                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none transition-all font-medium resize-none"
-                                    placeholder="Briefly describe your teaching background and style..."
-                                />
-                            </div>
+                            <textarea
+                                rows={4}
+                                value={formData.experience}
+                                onChange={e => updateField('experience', e.target.value)}
+                                className="mt-1 w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none transition-all font-medium resize-none"
+                                placeholder="Briefly describe your teaching background..."
+                            />
                         </label>
                     </div>
 
@@ -291,7 +296,6 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                     </div>
                 </div>
 
-                {/* Right Column: Video Selection */}
                 <div className="space-y-6">
                     <div className="bg-gray-50 p-8 rounded-[40px] border border-gray-100 shadow-sm h-full flex flex-col">
                         <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3">
@@ -351,30 +355,23 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
                                             <input
                                                 type="url"
                                                 value={formData.videoLink}
-                                                onChange={e => setFormData({ ...formData, videoLink: e.target.value })}
+                                                onChange={e => updateField('videoLink', e.target.value)}
                                                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white border-2 border-gray-100 focus:border-[#a0522d] outline-none transition-all font-medium"
                                                 placeholder="YouTube, Google Drive, or Loom link"
                                             />
                                         </div>
                                     </label>
-                                    <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100">
-                                        <p className="text-xs text-orange-800 leading-relaxed italic">
-                                            Tip: Upload your video to YouTube (as unlisted) or Google Drive and paste the link here.
-                                        </p>
-                                    </div>
                                 </div>
                             )}
                         </div>
 
                         <div className="mt-8 p-6 bg-white rounded-3xl border border-gray-100">
                             <h4 className="font-bold text-gray-700 mb-3 text-sm flex items-center gap-2 uppercase tracking-widest">
-                                Demonstration Tips
+                                Tips
                             </h4>
                             <ul className="space-y-2 text-xs text-gray-500 font-medium">
-                                <li className="flex items-start gap-2">• Keep it under 3 minutes</li>
-                                <li className="flex items-start gap-2">• Clear audio and good lighting</li>
-                                <li className="flex items-start gap-2">• Explain a concept from your subject</li>
-                                <li className="flex items-start gap-2">• Show your teaching style clearly</li>
+                                <li className="flex items-start gap-2">• Demonstrate your best topic</li>
+                                <li className="flex items-start gap-2">• Clear audio is essential</li>
                             </ul>
                         </div>
                     </div>
@@ -383,18 +380,15 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
 
             <div className="mt-16 pt-10 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-6">
                 <p className="text-gray-400 text-sm max-w-sm text-center sm:text-left">
-                    By submitting, you agree to our terms of processing. Information will be stored securely and used only for recruitment purposes.
+                    Your details will be remembered for future applications.
                 </p>
                 <button
                     disabled={loading}
                     type="submit"
                     className="w-full sm:w-auto bg-[#a0522d] text-white px-12 py-5 rounded-[24px] font-black text-xl hover:bg-[#b0623d] disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-4"
                 >
-                    {loading ? (
-                        <>Submitting... <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div></>
-                    ) : (
-                        <>Submit Application <FaChevronRight size={16} /></>
-                    )}
+                    {loading ? 'Submitting...' : 'Submit Application'}
+                    <FaChevronRight size={16} />
                 </button>
             </div>
         </form>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
 
 interface FAQ {
@@ -11,6 +11,7 @@ interface FAQ {
 }
 
 const AdminFAQs: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [faqs, setFaqs] = useState<FAQ[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -96,12 +97,9 @@ const AdminFAQs: React.FC = () => {
         setIsEditing(true);
     };
 
-    if (loading && faqs.length === 0) {
-        return <div className="p-8 text-center text-gray-500">Loading FAQs...</div>;
-    }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-10">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Knowledge Base</h1>
@@ -180,43 +178,14 @@ const AdminFAQs: React.FC = () => {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {faqs.map((faq) => (
-                        <div key={faq.id} className="bg-white p-5 rounded-[24px] shadow-xl border border-gray-50 group hover:border-orange-100/50 transition-all duration-300">
-                            <div className="flex justify-between items-start gap-4 mb-3">
-                                <div className="flex items-center gap-2.5">
-                                    <span className="text-[9px] font-black text-gray-300 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
-                                        ID: {faq.order}
-                                    </span>
-                                    <h3 className="text-sm font-black text-gray-900 tracking-tight leading-tight group-hover:text-[#a0522d] transition-colors">
-                                        {faq.question}
-                                    </h3>
-                                </div>
-                                <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() => handleEdit(faq)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
-                                        title="Recalibrate"
-                                    >
-                                        <FaEdit size={12} />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(faq.id)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                                        title="Purge"
-                                    >
-                                        <FaTrash size={12} />
-                                    </button>
-                                </div>
+                    {loading && faqs.length === 0 ? (
+                        Array(5).fill(0).map((_, i) => (
+                            <div key={i} className="bg-white p-6 rounded-[24px] shadow-xl border border-gray-50 space-y-4 animate-pulse">
+                                <div className="h-4 bg-gray-100 rounded-lg w-3/4"></div>
+                                <div className="h-10 bg-gray-50 rounded-lg w-full mt-2"></div>
                             </div>
-                            <div className="relative pl-4 space-y-2">
-                                <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-orange-100 rounded-full"></div>
-                                <p className="text-[11px] text-gray-500 leading-relaxed font-semibold italic">
-                                    {faq.answer}
-                                </p>
-                            </div>
-                        </div>
-                    ))}
-                    {faqs.length === 0 && (
+                        ))
+                    ) : faqs.length === 0 ? (
                         <div className="bg-white rounded-[32px] p-16 text-center border border-gray-50 shadow-2xl">
                             <div className="w-16 h-16 bg-gray-50 text-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <FaPlus size={24} />
@@ -224,6 +193,43 @@ const AdminFAQs: React.FC = () => {
                             <h3 className="text-lg font-black text-gray-900 mb-1">Vault Empty</h3>
                             <p className="text-xs text-gray-400 font-bold uppercase tracking-widest text-center">No knowledge matrices found.</p>
                         </div>
+                    ) : (
+                        faqs.map((faq) => (
+                            <div key={faq.id} className="bg-white p-5 rounded-[24px] shadow-xl border border-gray-50 group hover:border-orange-100/50 transition-all duration-300">
+                                <div className="flex justify-between items-start gap-4 mb-3">
+                                    <div className="flex items-center gap-2.5">
+                                        <span className="text-[9px] font-black text-gray-300 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
+                                            ID: {faq.order}
+                                        </span>
+                                        <h3 className="text-sm font-black text-gray-900 tracking-tight leading-tight group-hover:text-[#a0522d] transition-colors">
+                                            {faq.question}
+                                        </h3>
+                                    </div>
+                                    <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => handleEdit(faq)}
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
+                                            title="Recalibrate"
+                                        >
+                                            <FaEdit size={12} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(faq.id)}
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                            title="Purge"
+                                        >
+                                            <FaTrash size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="relative pl-4 space-y-2">
+                                    <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-orange-100 rounded-full"></div>
+                                    <p className="text-[11px] text-gray-500 leading-relaxed font-semibold italic">
+                                        {faq.answer}
+                                    </p>
+                                </div>
+                            </div>
+                        ))
                     )}
                 </div>
             )}

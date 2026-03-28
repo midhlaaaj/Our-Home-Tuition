@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
-import { FaUser, FaEnvelope, FaPhone, FaHistory, FaFileAlt, FaVideo, FaTrash, FaExternalLinkAlt, FaDownload, FaFolderOpen } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
+import { FaUser, FaEnvelope, FaPhone, FaHistory, FaFileAlt, FaVideo, FaTrash, FaExternalLinkAlt, FaDownload, FaFolderOpen, FaMapMarkerAlt } from 'react-icons/fa';
 
 interface JobApplication {
     id: string;
@@ -8,6 +8,7 @@ interface JobApplication {
     full_name: string;
     email: string;
     phone: string;
+    address?: string;
     experience: string;
     cv_url: string;
     video_url: string;
@@ -19,6 +20,7 @@ interface JobApplication {
 
 // Compact Refined UI for Job Applications
 const AdminApplications: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [applications, setApplications] = useState<JobApplication[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedApp, setSelectedApp] = useState<JobApplication | null>(null);
@@ -60,7 +62,7 @@ const AdminApplications: React.FC = () => {
     };
 
     return (
-        <div className="max-w-[1200px] mx-auto space-y-6 animate-in fade-in duration-500">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
             <div>
                 <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Human Resources</h1>
                 <p className="text-sm text-gray-500 font-medium italic">Review candidate submissions and portfolios.</p>
@@ -134,6 +136,12 @@ const AdminApplications: React.FC = () => {
                                             <FaPhone size={12} />
                                         </div>
                                         <span className="text-[13px] font-black text-gray-900">{selectedApp.phone}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 md:col-span-2">
+                                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-gray-400 shadow-sm">
+                                            <FaMapMarkerAlt size={12} />
+                                        </div>
+                                        <span className="text-[13px] font-black text-gray-900">{selectedApp.address || 'Address Not Provided'}</span>
                                     </div>
                                 </div>
 

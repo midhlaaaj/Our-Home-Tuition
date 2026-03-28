@@ -34,7 +34,7 @@ const Footer: React.FC = () => {
                     <div className="flex flex-col items-start gap-4">
                         <div className="bg-white rounded-2xl p-4 shadow-md">
                             <img
-                                src="/newlogo.png"
+                                src="/brand-logo.png"
                                 alt="Hour Home"
                                 className="h-16 w-auto object-contain"
                             />

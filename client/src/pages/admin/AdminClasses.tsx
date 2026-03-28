@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 import { classesData } from '../../constants/classesData';
 import { FaPlus, FaTrash, FaChevronDown, FaChevronRight, FaBook, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 import { useModal } from '../../context/ModalContext';
@@ -27,6 +27,7 @@ interface Topic {
 }
 
 const AdminClasses: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const { showAlert, showConfirm } = useModal();
     const [selectedClassId, setSelectedClassId] = useState<number>(1);
     const [selectedCurriculum, setSelectedCurriculum] = useState<'CBSE' | 'STATE'>('CBSE');
@@ -355,7 +356,7 @@ const AdminClasses: React.FC = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
             <div>
                 <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Curriculum Manager</h1>
                 <p className="text-sm text-gray-500 font-medium">Configure subjects and topics per class level.</p>

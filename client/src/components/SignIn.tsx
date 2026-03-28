@@ -3,7 +3,8 @@ import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaFacebook, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
-import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
+import { useFormPersistence, STORAGE_KEY } from '../hooks/useFormPersistence';
 
 interface SignInProps {
     isOpen: boolean;
@@ -12,18 +13,20 @@ interface SignInProps {
 }
 
 const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin' }) => {
+    const { supabaseClient: supabase } = useAuth();
     const [isLogin, setIsLogin] = useState(initialView === 'signin');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showVerifyPassword, setShowVerifyPassword] = useState(false);
 
-    // Form States
+    // Form States - Login (No persistence for security)
     const [loginData, setLoginData] = useState({ email: '', password: '' });
-    const [registerData, setRegisterData] = useState({
+    
+    // Registration Form with Persistence
+    const { formData: registerData, updateField: updateRegisterField } = useFormPersistence({
         name: '',
         email: '',
         phone: '',
-        address: '',
         password: '',
         verifyPassword: '',
     });
@@ -39,7 +42,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
             setIsLogin(initialView === 'signin');
             setErrors({});
             setLoginData({ email: '', password: '' });
-            setRegisterData({ name: '', email: '', phone: '', address: '', password: '', verifyPassword: '' });
+            // Note: registerData is handled by persistence hook
             setShowPassword(false);
             setShowVerifyPassword(false);
         }
@@ -65,13 +68,6 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
         }
     };
 
-    const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setRegisterData({ ...registerData, [e.target.name]: e.target.value });
-        if (errors[e.target.name]) {
-            setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
-        }
-    };
-
     const validateLogin = () => {
         const newErrors: Record<string, string> = {};
         if (!loginData.email) newErrors.email = 'Email is required';
@@ -87,7 +83,9 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
         } else if (!/\S+@\S+\.\S+/.test(registerData.email)) {
             newErrors.email = 'Email is invalid';
         }
-        if (registerData.phone && !/^\d+$/.test(registerData.phone)) {
+        if (!registerData.phone) {
+            newErrors.phone = 'Phone number is required';
+        } else if (!/^\d+$/.test(registerData.phone)) {
             newErrors.phone = 'Phone number must be numeric';
         }
         if (!registerData.password) newErrors.password = 'Password is required';
@@ -109,14 +107,31 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
 
         setLoading(true);
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email: loginData.email,
                 password: loginData.password,
             });
 
             if (error) {
                 setErrors({ auth: error.message });
-            } else {
+            } else if (data.user) {
+                // Fetch profile to get details for persistence
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single();
+
+                if (profile) {
+                    const toPersist = {
+                        name: profile.name,
+                        fullName: profile.name,
+                        email: profile.email,
+                        phone: profile.phone,
+                        address: profile.address
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersist));
+                }
                 onClose();
             }
         } catch (error: any) {
@@ -143,23 +158,46 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                 options: {
                     data: {
                         full_name: registerData.name,
-                        phone: '',
-                        address: '',
+                        phone: registerData.phone,
                     },
                 },
             });
 
             if (error) {
                 setErrors({ auth: error.message });
-            } else if (data && !data.session) {
-                // User created but session is null => Email confirmation required
-                setErrors({
-                    success: 'Registration successful! Please check your email to verify your account.'
-                });
-                // Optional: Clear form or close after a delay
-                setTimeout(onClose, 2000);
-            } else {
-                onClose();
+            } else if (data && data.user) {
+                // Insert into profiles table
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert([{
+                        id: data.user.id,
+                        name: registerData.name,
+                        email: registerData.email,
+                        phone: registerData.phone,
+                        role: 'user'
+                    }]);
+
+                if (profileError) {
+                    console.error('Profile creation error:', profileError);
+                }
+
+                // Seed persistence
+                const toPersist = {
+                    name: registerData.name,
+                    fullName: registerData.name,
+                    email: registerData.email,
+                    phone: registerData.phone
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersist));
+
+                if (!data.session) {
+                    setErrors({
+                        success: 'Registration successful! Please check your email to verify your account.'
+                    });
+                    setTimeout(onClose, 2000);
+                } else {
+                    onClose();
+                }
             }
         } catch (error: any) {
             setErrors({ auth: error?.message || 'An unexpected error occurred.' });
@@ -168,17 +206,43 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
             setLoading(false);
         }
     };
+    
+    // ... OAuth handlers stay the same ...
+    const handleGoogleSignIn = async () => {
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin }
+            });
+            if (error) setErrors({ auth: error.message });
+        } catch (error: any) {
+            setErrors({ auth: error?.message || 'An unexpected error occurred.' });
+        } finally {
+            setLoading(false);
+        }
+    };
 
-
+    const handleFacebookSignIn = async () => {
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'facebook',
+                options: { redirectTo: window.location.origin }
+            });
+            if (error) setErrors({ auth: error.message });
+        } catch (error: any) {
+            setErrors({ auth: error?.message || 'An unexpected error occurred.' });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Full Screen Overlay Container - Controls Positioning & Z-Index */}
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto overflow-x-hidden p-4 sm:p-6">
-
-                        {/* Backdrop with Blur & Dim Effect */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -186,10 +250,8 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                             transition={{ duration: 0.15 }}
                             onClick={onClose}
                             className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"
-                            aria-hidden="true"
                         />
 
-                        {/* Modal Card */}
                         <motion.div
                             initial={{ scale: 0.98, opacity: 0, y: 5 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -198,7 +260,6 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                             className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl ring-1 ring-gray-900/5 flex flex-col my-auto"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            {/* Close Button */}
                             <div className="absolute top-3 right-3 z-10">
                                 <button
                                     onClick={onClose}
@@ -208,29 +269,22 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                 </button>
                             </div>
 
-                            {/* Content */}
                             <div className="p-5 sm:p-6 flex flex-col items-center">
-
                                 {isLogin ? (
                                     <>
-                                        {/* Logo Box */}
                                         <div className="w-24 h-16 flex items-center justify-center mb-6">
-                                            <img src="/newlogo.png" alt="Hour Home" className="w-full h-full object-contain scale-125" />
+                                            <img src="/brand-logo.png" alt="Hour Home" className="w-full h-full object-contain scale-150" />
                                         </div>
-
-                                        {/* Social Logins */}
                                         <div className="w-full flex gap-3 mb-5">
-                                            <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                            <button onClick={handleGoogleSignIn} disabled={loading} className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
                                                 <span className="text-sm font-medium text-gray-800">Sign In</span>
                                                 <FcGoogle size={18} />
                                             </button>
-                                            <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                            <button onClick={handleFacebookSignIn} disabled={loading} className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
                                                 <span className="text-sm font-medium text-gray-800">Sign In</span>
                                                 <FaFacebook size={18} className="text-[#1877F2]" />
                                             </button>
                                         </div>
-
-                                        {/* OR Divider */}
                                         <div className="w-full flex items-center mb-5">
                                             <div className="flex-1 h-px bg-gray-200"></div>
                                             <span className="px-4 text-sm text-gray-800 font-medium">OR</span>
@@ -239,100 +293,43 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                     </>
                                 ) : null}
 
-                                {/* Global Error/Success Message */}
                                 {(errors.auth || errors.success) && (
-                                    <div className={`w-full mb-4 p-3 text-sm rounded-lg border text-center ${errors.success
-                                        ? 'bg-green-50 text-green-600 border-green-100'
-                                        : 'bg-red-50 text-red-500 border-red-100'
-                                        }`}>
+                                    <div className={`w-full mb-4 p-3 text-sm rounded-lg border text-center ${errors.success ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-500 border-red-100'}`}>
                                         {errors.auth || errors.success}
                                     </div>
                                 )}
 
                                 <AnimatePresence mode="wait" initial={false}>
                                     {isLogin ? (
-                                        <motion.form
-                                            key="login"
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: 10 }}
-                                            transition={{ duration: 0.15 }}
-                                            onSubmit={handleLoginSubmit}
-                                            className="w-full space-y-4"
-                                        >
+                                        <motion.form key="login" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }} onSubmit={handleLoginSubmit} className="w-full space-y-4">
                                             <div>
-                                                <input
-                                                    id="login-email"
-                                                    name="email"
-                                                    type="email"
-                                                    autoComplete="email"
-                                                    placeholder="Email"
-                                                    value={loginData.email}
-                                                    onChange={handleLoginChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
-                                                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
-                                                />
+                                                <input id="login-email" name="email" type="email" autoComplete="email" placeholder="Email" value={loginData.email} onChange={handleLoginChange} className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`} />
                                                 {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                                             </div>
-
                                             <div className="relative">
-                                                <input
-                                                    id="login-password"
-                                                    name="password"
-                                                    type={showPassword ? "text" : "password"}
-                                                    autoComplete="current-password"
-                                                    placeholder="Password"
-                                                    value={loginData.password}
-                                                    onChange={handleLoginChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
-                                                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
-                                                >
+                                                <input id="login-password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="Password" value={loginData.password} onChange={handleLoginChange} className={`appearance-none block w-full px-4 py-3 border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`} />
+                                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
                                                     {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                                                 </button>
                                                 {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                                             </div>
-
                                             <div className="pt-2">
-                                                <button
-                                                    type="submit"
-                                                    disabled={!loginData.email || !loginData.password || loading}
-                                                    className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#1B2A5A] hover:bg-[#142044] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1B2A5A] disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-sm"
-                                                >
+                                                <button type="submit" disabled={!loginData.email || !loginData.password || loading} className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#1B2A5A] hover:bg-[#142044] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1B2A5A] disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-sm">
                                                     {loading ? 'Signing In...' : 'Sign In'}
                                                 </button>
                                             </div>
-
                                             <div className="text-center pt-2 space-y-3">
-                                                <div>
-                                                    <a href="#" className="text-sm font-medium text-[#1B2A5A] hover:text-[#142044]">Forgot Password?</a>
-                                                </div>
+                                                <a href="#" className="text-sm font-medium text-[#1B2A5A] hover:text-[#142044]">Forgot Password?</a>
                                                 <div className="text-sm text-gray-900">
                                                     Not a member yet? <button type="button" onClick={() => { setIsLogin(false); setErrors({}); }} className="font-medium text-[#1B2A5A] hover:text-[#142044]">Sign Up</button>
                                                 </div>
                                             </div>
                                         </motion.form>
                                     ) : (
-                                        <motion.form
-                                            key="register"
-                                            initial={{ opacity: 0, x: 10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -10 }}
-                                            transition={{ duration: 0.1 }}
-                                            onSubmit={handleRegisterSubmit}
-                                            className="w-full space-y-4"
-                                            noValidate
-                                        >
-                                            {/* Logo Box */}
+                                        <motion.form key="register" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.1 }} onSubmit={handleRegisterSubmit} className="w-full space-y-4" noValidate>
                                             <div className="w-24 h-16 flex items-center justify-center mb-6 mx-auto">
-                                                <img src="/newlogo.png" alt="Hour Home" className="w-full h-full object-contain scale-125" />
+                                                <img src="/brand-logo.png" alt="Hour Home" className="w-full h-full object-contain scale-150" />
                                             </div>
-
-                                            {/* Social Logins */}
                                             <div className="w-full flex gap-3 mb-5">
                                                 <button type="button" className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                                     <span className="text-sm font-medium text-gray-800">Sign Up</span>
@@ -343,102 +340,46 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                     <FaFacebook size={18} className="text-[#1877F2]" />
                                                 </button>
                                             </div>
-
-                                            {/* OR Divider */}
                                             <div className="w-full flex items-center mb-5">
                                                 <div className="flex-1 h-px bg-gray-200"></div>
                                                 <span className="px-4 text-sm text-gray-800 font-medium">OR</span>
                                                 <div className="flex-1 h-px bg-gray-200"></div>
                                             </div>
-
                                             <div>
-                                                <input
-                                                    id="name"
-                                                    name="name"
-                                                    type="text"
-                                                    placeholder="Name"
-                                                    value={registerData.name}
-                                                    onChange={handleRegisterChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
-                                                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
-                                                />
+                                                <input id="name" name="name" type="text" placeholder="Name" value={registerData.name} onChange={(e) => updateRegisterField('name', e.target.value)} className={`appearance-none block w-full px-4 py-3 border ${errors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`} />
                                                 {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
                                             </div>
-
                                             <div>
-                                                <input
-                                                    id="reg-email"
-                                                    name="email"
-                                                    type="email"
-                                                    placeholder="Email"
-                                                    value={registerData.email}
-                                                    onChange={handleRegisterChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
-                                                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
-                                                />
+                                                <input id="reg-email" name="email" type="email" placeholder="Email" value={registerData.email} onChange={(e) => updateRegisterField('email', e.target.value)} className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`} />
                                                 {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                                             </div>
-
+                                            <div className="relative group flex items-center bg-white rounded-lg border border-gray-200 focus-within:ring-[#1B2A5A] focus-within:ring-1 transition-all overflow-hidden h-[44px]">
+                                                <div className="flex items-center pl-3 pr-2 text-gray-400 border-r border-gray-100 py-2 h-full">
+                                                    <span className="font-black text-[10px]">+91</span>
+                                                </div>
+                                                <input id="phone" name="phone" type="tel" placeholder="Mobile Number" value={registerData.phone} onChange={(e) => updateRegisterField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))} className="w-full px-3 py-2 bg-transparent outline-none text-sm" />
+                                            </div>
                                             <div className="relative">
-                                                <input
-                                                    id="reg-password"
-                                                    name="password"
-                                                    type={showPassword ? "text" : "password"}
-                                                    placeholder="Password"
-                                                    value={registerData.password}
-                                                    onChange={handleRegisterChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
-                                                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
-                                                >
+                                                <input id="reg-password" name="password" type={showPassword ? "text" : "password"} placeholder="Password" value={registerData.password} onChange={(e) => updateRegisterField('password', e.target.value)} className={`appearance-none block w-full px-4 py-3 border ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`} />
+                                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
                                                     {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                                                 </button>
                                                 {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                                             </div>
-
                                             <div className="relative">
-                                                <input
-                                                    id="verifyPassword"
-                                                    name="verifyPassword"
-                                                    type={showVerifyPassword ? "text" : "password"}
-                                                    placeholder="Verify Password"
-                                                    value={registerData.verifyPassword}
-                                                    onChange={handleRegisterChange}
-                                                    className={`appearance-none block w-full px-4 py-3 border ${errors.verifyPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'
-                                                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowVerifyPassword(!showVerifyPassword)}
-                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
-                                                >
+                                                <input id="verifyPassword" name="verifyPassword" type={showVerifyPassword ? "text" : "password"} placeholder="Verify Password" value={registerData.verifyPassword} onChange={(e) => updateRegisterField('verifyPassword', e.target.value)} className={`appearance-none block w-full px-4 py-3 border ${errors.verifyPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`} />
+                                                <button type="button" onClick={() => setShowVerifyPassword(!showVerifyPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
                                                     {showVerifyPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                                                 </button>
                                                 {errors.verifyPassword && <p className="mt-1 text-xs text-red-500">{errors.verifyPassword}</p>}
                                             </div>
-
                                             <div className="pt-2">
-                                                <button
-                                                    type="submit"
-                                                    disabled={loading || !(registerData.name && registerData.email && registerData.password && registerData.verifyPassword)}
-                                                    className={`group relative w-full flex justify-center py-3 px-4 text-sm font-medium rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-sm ${registerData.name && registerData.email && registerData.password && registerData.verifyPassword
-                                                        ? 'bg-[#1B2A5A] hover:bg-[#142044]'
-                                                        : 'bg-[#1B2A5A]/60'
-                                                        }`}
-                                                >
+                                                <button type="submit" disabled={loading || !(registerData.name && registerData.email && registerData.phone && registerData.password && registerData.verifyPassword)} className={`group relative w-full flex justify-center py-3 px-4 text-sm font-medium rounded-lg text-white disabled:opacity-50 transition duration-200 shadow-sm ${registerData.name && registerData.email && registerData.phone && registerData.password && registerData.verifyPassword ? 'bg-[#1B2A5A] hover:bg-[#142044]' : 'bg-[#1B2A5A]/60'}`}>
                                                     {loading ? 'Signing Up...' : 'Sign Up'}
                                                 </button>
                                             </div>
-
                                             <div className="text-center pt-3 space-y-4">
-
-                                                <div className="text-sm text-gray-900 font-medium">
-                                                    Already have an account? <button type="button" onClick={() => { setIsLogin(true); setErrors({}); }} className="text-[#1B2A5A] hover:text-[#142044]">Sign In</button>
-                                                </div>
+                                                <div className="text-sm text-gray-900 font-medium">Already have an account? <button type="button" onClick={() => { setIsLogin(true); setErrors({}); }} className="text-[#1B2A5A] hover:text-[#142044]">Sign In</button></div>
                                             </div>
                                         </motion.form>
                                     )}

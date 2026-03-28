@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../supabaseClient';
 import { FaTrash, FaUpload, FaGripVertical } from 'react-icons/fa';
 import { uploadFile } from '../../utils/uploadHelper';
+import { useAuth } from '../../context/AuthContext';
 
 interface Partner {
     id: string;
@@ -11,6 +11,7 @@ interface Partner {
 }
 
 const AdminPartners: React.FC = () => {
+    const { supabaseClient: supabase } = useAuth();
     const [partners, setPartners] = useState<Partner[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -31,7 +32,7 @@ const AdminPartners: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [supabase]);
 
     useEffect(() => {
         fetchPartners();
@@ -49,7 +50,7 @@ const AdminPartners: React.FC = () => {
 
             const uploads = await Promise.all(
                 files.map(async (file, idx) => {
-                    const publicUrl = await uploadFile(file, 'uploads', 'partners');
+                    const publicUrl = await uploadFile(file, 'uploads', 'partners', supabase);
                     return {
                         media_url: publicUrl,
                         display_order: maxOrder + 1 + idx,
@@ -133,7 +134,7 @@ const AdminPartners: React.FC = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Alliance Grid</h1>
