@@ -20,7 +20,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job, onSuccess }) => 
     const [submitted, setSubmitted] = useState(false);
 
     // Persistable form data
-    const { formData, updateField, clearPersistence, setFormData } = useFormPersistence({
+    const { formData, updateField, clearPersistence } = useFormPersistence({
         fullName: '',
         email: '',
         phone: '',
