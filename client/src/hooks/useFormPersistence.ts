@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+// Normalize phone: strip non-digits, take last 10 digits
+const normalizePhone = (phone?: string): string => {
+    if (!phone) return '';
+    const digits = phone.replace(/\D/g, '');
+    return digits.length >= 10 ? digits.slice(-10) : digits;
+};
+
 interface PersistableData {
     name?: string;
     fullName?: string;
@@ -13,25 +20,46 @@ interface PersistableData {
 export const STORAGE_KEY = 'wh_form_persistence';
 
 export const useFormPersistence = <T extends PersistableData>(initialState: T) => {
-    const { profile } = useAuth();
+    const { profile, user } = useAuth();
     const [formData, setFormData] = useState<T>(initialState);
     const isInitialMount = useRef(true);
 
-    // 1. Initial Load: Merge Initial -> LocalStorage -> Profile
+    // 1. Initial Load: Merge Initial -> LocalStorage -> Profile -> OAuth metadata
     useEffect(() => {
         const savedData = localStorage.getItem(STORAGE_KEY);
         const parsedSavedData = savedData ? JSON.parse(savedData) : {};
 
+        // Resolve best available values across all sources
+        const resolvedName =
+            profile?.name ||
+            user?.user_metadata?.full_name ||
+            user?.user_metadata?.name ||
+            '';
+
+        const resolvedEmail =
+            profile?.email ||
+            user?.email ||
+            user?.user_metadata?.email ||
+            '';
+
+        const resolvedPhone = normalizePhone(
+            profile?.phone ||
+            user?.user_metadata?.phone ||
+            ''
+        );
+
+        const resolvedAddress = profile?.address || '';
+
         setFormData(prev => ({
             ...prev,
             ...parsedSavedData,
-            // Profile data takes priority if user is logged in
-            ...(profile?.name && { name: profile.name, fullName: profile.name }),
-            ...(profile?.email && { email: profile.email }),
-            ...(profile?.phone && { phone: profile.phone }),
-            ...(profile?.address && { address: profile.address }),
+            // Authenticated data always wins over localStorage
+            ...(resolvedName && { name: resolvedName, fullName: resolvedName }),
+            ...(resolvedEmail && { email: resolvedEmail }),
+            ...(resolvedPhone && { phone: resolvedPhone }),
+            ...(resolvedAddress && { address: resolvedAddress }),
         }));
-    }, [profile]);
+    }, [profile, user]);
 
     // 2. Auto-Persistence: Watch formData and Save core fields
     useEffect(() => {
