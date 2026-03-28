@@ -50,47 +50,30 @@ BEGIN
     END IF;
 
     -- 2. Create user in auth.users
-    -- Note: This requires the function to be owned by a superuser or have bypassrls/service_role
-    -- In Supabase, SECURITY DEFINER runs as the owner (often postgres/service_role)
     INSERT INTO auth.users (
-        instance_id,
-        id,
-        aud,
-        role,
-        email,
-        encrypted_password,
-        email_confirmed_at,
-        recovery_sent_at,
-        last_sign_in_at,
-        raw_app_meta_data,
-        raw_user_meta_data,
-        created_at,
-        updated_at,
-        confirmation_token,
-        email_change,
-        email_change_token_new,
-        recovery_token
+        instance_id, id, aud, role, email, encrypted_password, 
+        email_confirmed_at, raw_app_meta_data, raw_user_meta_data, 
+        created_at, updated_at, confirmation_token, email_change, 
+        email_change_token_new, recovery_token
     )
     VALUES (
-        '00000000-0000-0000-0000-000000000000',
-        gen_random_uuid(),
-        'authenticated',
-        'authenticated',
-        mentor_email,
-        crypt(mentor_password, gen_salt('bf')),
-        now(),
-        NULL,
-        NULL,
-        '{"provider":"email","providers":["email"]}',
-        jsonb_build_object('role', 'mentor'),
-        now(),
-        now(),
-        '',
-        '',
-        '',
-        ''
+        '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 
+        'authenticated', 'authenticated', mentor_email, 
+        crypt(mentor_password, gen_salt('bf')), now(),
+        '{"provider":"email","providers":["email"]}', 
+        jsonb_build_object('role', 'mentor'), now(), now(), '', '', '', ''
     )
     RETURNING id INTO new_user_id;
+
+    -- 2.1 INSERT into auth.identities (Required for password sign-in)
+    INSERT INTO auth.identities (
+        id, user_id, identity_data, provider, 
+        last_sign_in_at, created_at, updated_at, provider_id
+    ) VALUES (
+        new_user_id, new_user_id, 
+        jsonb_build_object('sub', new_user_id, 'email', mentor_email), 
+        'email', now(), now(), now(), mentor_email
+    );
 
     -- 3. Create profile with 'mentor' role (lowercase for consistency)
     INSERT INTO public.profiles (id, email, role, created_at)
@@ -103,7 +86,7 @@ BEGIN
         email = mentor_email
     WHERE id = mentor_id;
 
-    RETURN json_build_object('success', true, 'auth_user_id', new_user_id);
+    RETURN json_build_object('success', true, 'auth_user_id', new_user_id, 'email', mentor_email);
 
 EXCEPTION WHEN OTHERS THEN
     RETURN json_build_object('error', SQLERRM);

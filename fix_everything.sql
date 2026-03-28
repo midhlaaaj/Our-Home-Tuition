@@ -32,6 +32,16 @@ BEGIN
     )
     RETURNING id INTO new_user_id;
 
+    -- INSERT into auth.identities (Required for password sign-in)
+    INSERT INTO auth.identities (
+        id, user_id, identity_data, provider, 
+        last_sign_in_at, created_at, updated_at, provider_id
+    ) VALUES (
+        new_user_id, new_user_id, 
+        jsonb_build_object('sub', new_user_id, 'email', mentor_email), 
+        'email', now(), now(), now(), mentor_email
+    );
+
     -- Create profile with 'mentor' role
     INSERT INTO public.profiles (id, email, role, created_at)
     VALUES (new_user_id, mentor_email, 'mentor', now())
@@ -43,7 +53,7 @@ BEGIN
         email = mentor_email
     WHERE id = mentor_id;
 
-    RETURN json_build_object('success', true, 'auth_user_id', new_user_id);
+    RETURN json_build_object('success', true, 'auth_user_id', new_user_id, 'email', mentor_email);
 EXCEPTION WHEN OTHERS THEN
     RETURN json_build_object('error', SQLERRM);
 END;

@@ -205,8 +205,8 @@ const AdminAchievements: React.FC = () => {
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                 />
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
-                                <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-md p-1 rounded-md text-white/50 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-300">
-                                    <FaGripVertical size={10} />
+                                <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-md p-1.5 rounded-lg text-white/50 md:opacity-0 md:group-hover:opacity-100 transition-all translate-y-0 md:translate-y-2 md:group-hover:translate-y-0 duration-300">
+                                    <FaGripVertical size={12} />
                                 </div>
                             </div>
                             <div className="p-2.5 flex items-center justify-between gap-1.5 bg-white border-t border-gray-50">
@@ -221,10 +221,10 @@ const AdminAchievements: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => handleDelete(achievement.id)}
-                                    className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                                    className="p-1.5 rounded-lg text-red-500/50 hover:text-red-500 hover:bg-red-50 transition-all md:opacity-0 md:group-hover:opacity-100"
                                     title="Purge"
                                 >
-                                    <FaTrash size={10} />
+                                    <FaTrash size={12} />
                                 </button>
                             </div>
                         </div>

@@ -212,7 +212,7 @@ const AdminBookings: React.FC = () => {
                     </p>
                 </div>
                 
-                <div className="flex gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex w-fit self-start gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm">
                     <button
                         onClick={() => setViewMode('manage')}
                         className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'manage' ? 'bg-[#1B2A5A] text-white shadow-lg' : 'text-gray-400 hover:text-gray-900'}`}

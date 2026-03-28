@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
     FaUser, FaCheckCircle, FaTrash, FaClock, FaHistory, FaPlus,
     FaTimes, FaCalendarAlt, FaWifi, FaHome, FaLinkedin, FaGraduationCap, 
-    FaBriefcase, FaStar, FaPen, FaSave, FaChevronDown, FaSignOutAlt, FaCalendarCheck, FaMapMarkerAlt
+    FaBriefcase, FaStar, FaPen, FaSave, FaChevronDown, FaSignOutAlt, FaCalendarCheck, FaMapMarkerAlt, FaBars
 } from 'react-icons/fa';
 import { useModal } from '../../context/ModalContext';
 
@@ -61,15 +61,22 @@ const MentorDashboard: React.FC = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history'>(() => {
+        const saved = localStorage.getItem('mentor_dashboard_tab');
+        return (saved as any) || 'profile';
+    });
+
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [visibleTasksCount, setVisibleTasksCount] = useState(5);
     const [nearbyOffers, setNearbyOffers] = useState<any[]>([]);
     const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
+
     const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
     const [selectedTaskForTime, setSelectedTaskForTime] = useState<Task | null>(null);
     const [selectedTime, setSelectedTime] = useState('');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const [editForm, setEditForm] = useState({
@@ -96,8 +103,17 @@ const MentorDashboard: React.FC = () => {
     });
 
     useEffect(() => {
-        if (user?.id) {
+        if (activeTab) {
+            localStorage.setItem('mentor_dashboard_tab', activeTab);
+        }
+    }, [activeTab]);
+
+    useEffect(() => {
+        // Only run on initial load or if user actually changes.
+        // This prevents the "auto-reload" when switching browser tabs (AuthContext sync).
+        if (user?.id && (isInitialLoad || !profile)) {
             fetchMentorData();
+            setIsInitialLoad(false);
         }
     }, [user?.id]);
 
@@ -434,6 +450,12 @@ const MentorDashboard: React.FC = () => {
     const handleAddAvailability = async () => {
         if (!profile) return;
         try {
+            // Helper to convert time string (HH:mm:ss) to minutes from midnight for comparison
+            const toMinutes = (time: string) => {
+                const [h, m] = time.split(':').map(Number);
+                return h * 60 + m;
+            };
+
             // Convert to 24h format for DB
             const convertTo24h = (h: string, m: string, ampm: string) => {
                 let hour = parseInt(h);
@@ -444,6 +466,34 @@ const MentorDashboard: React.FC = () => {
 
             const startTime = convertTo24h(newSlot.start_hour, newSlot.start_min, newSlot.start_ampm);
             const endTime = convertTo24h(newSlot.end_hour, newSlot.end_min, newSlot.end_ampm);
+
+            const startMins = toMinutes(startTime);
+            const endMins = toMinutes(endTime);
+
+            // Validation: End must be after Start
+            if (endMins <= startMins) {
+                showAlert("The end time must be later than the start time.");
+                return;
+            }
+
+            // CHECK FOR DUPLICATES OR OVERLAPS
+            const hasConflict = availability.find(existing => {
+                if (existing.day_of_week !== newSlot.day_of_week) return false;
+                
+                const existingStart = toMinutes(existing.start_time);
+                const existingEnd = toMinutes(existing.end_time);
+                
+                // Exact Duplicate
+                if (existingStart === startMins && existingEnd === endMins) return true;
+                
+                // Overlap check: (NewStart < ExistingEnd) AND (NewEnd > ExistingStart)
+                return (startMins < existingEnd) && (endMins > existingStart);
+            });
+
+            if (hasConflict) {
+                showAlert(`This conflict with an existing slot on ${newSlot.day_of_week} (${hasConflict.start_time.substring(0,5)} - ${hasConflict.end_time.substring(0,5)}). Please choose a different time.`);
+                return;
+            }
 
             const { data, error } = await supabase
                 .from('mentor_availability')
@@ -501,20 +551,29 @@ const MentorDashboard: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] font-['Urbanist'] pt-24">
+        <div className="min-h-screen bg-[#F8FAFC] font-['Urbanist'] pt-16 md:pt-24">
+
             {/* Home-style Header */}
             <header className="fixed w-full top-0 z-50 bg-white shadow-md border-b border-gray-100">
                 <div className="container mx-auto px-4 py-3 flex justify-between items-center">
                     <Link to="/" className="flex items-center space-x-0">
-                        <img src="/newlogo.png" alt="Hour Home Logo" className="w-16 h-16 object-contain -my-3" />
-                        <div className="ml-2">
+                        <img src="/newlogo.png" alt="Hour Home Logo" className="w-40 h-40 object-contain -my-15 ml-1 mr-1 scale-110" />
+                        <div className="ml-2 hidden sm:block">
                             <h1 className="text-lg font-black text-gray-900 tracking-tight leading-none">Mentor<span className="text-[#a0522d]">Portal</span></h1>
                             <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest mt-0.5">Faculty System</p>
                         </div>
                     </Link>
 
                     <div className="flex items-center gap-4">
-                        <div className="relative" ref={dropdownRef}>
+                        {/* Mobile Menu Button */}
+                        <button
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="lg:hidden w-10 h-10 flex items-center justify-center text-[#1B2A5A] hover:bg-gray-50 rounded-xl transition-all"
+                        >
+                            <FaBars size={24} />
+                        </button>
+
+                        <div className="relative hidden lg:block" ref={dropdownRef}>
                             <button
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                                 className="h-10 flex items-center gap-3 bg-[#1B2A5A] text-white px-2 pr-4 rounded-full hover:bg-[#142044] transition-all border border-white/10 shadow-sm"
@@ -560,13 +619,89 @@ const MentorDashboard: React.FC = () => {
                             </AnimatePresence>
                         </div>
                     </div>
+
+                    {/* Mobile Sidebar Navigation Drawer */}
+                    <AnimatePresence>
+                        {isMobileMenuOpen && (
+                            <>
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="fixed inset-0 bg-[#1B2A5A]/40 backdrop-blur-sm z-[100] lg:hidden"
+                                />
+                                <motion.div
+                                    initial={{ x: '100%' }}
+                                    animate={{ x: 0 }}
+                                    exit={{ x: '100%' }}
+                                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                                    className="fixed right-0 top-0 h-full w-[280px] bg-white shadow-2xl z-[101] lg:hidden flex flex-col"
+                                >
+                                    <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+                                        <h3 className="text-sm font-black text-[#1B2A5A] uppercase tracking-widest">Dashboard Menu</h3>
+                                        <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                                            <FaTimes size={18} />
+                                        </button>
+                                    </div>
+
+                                    {/* Mobile Profile Summary */}
+                                    <div className="p-6 bg-gray-50/50">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <img src={profile?.image_url} alt={profile?.name} className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md" />
+                                            <div>
+                                                <h4 className="text-sm font-black text-gray-900 leading-tight">{profile?.name}</h4>
+                                                <p className="text-[10px] font-bold text-[#a0522d] uppercase tracking-tighter mt-0.5">{profile?.subject}</p>
+                                                <div className="flex bg-yellow-400 text-white px-2 py-0.5 rounded-full items-center gap-1 mt-1.5 w-fit">
+                                                    <FaStar size={8} />
+                                                    <span className="text-[10px] font-black">{profile?.rating || '0.0'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+                                        {[
+                                            { id: 'profile', icon: <FaUser />, label: 'My Profile' },
+                                            { id: 'availability', icon: <FaCalendarCheck />, label: 'Availability' },
+                                            { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
+                                            { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
+                                            { id: 'history', icon: <FaHistory />, label: 'Booking History' }
+                                        ].map(tab => (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => { setActiveTab(tab.id as any); setIsMobileMenuOpen(false); }}
+                                                className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
+                                                    ? 'bg-[#1B2A5A] text-white shadow-lg'
+                                                    : 'bg-white text-gray-400 hover:text-gray-900 hover:shadow-sm'
+                                                }`}
+                                            >
+                                                <span className="text-sm">{tab.icon}</span>
+                                                {tab.label}
+                                            </button>
+                                        ))}
+                                    </nav>
+
+                                    <div className="p-4 border-t border-gray-50">
+                                        <button
+                                            onClick={handleSignOut}
+                                            className="w-full flex items-center gap-3 px-5 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-all"
+                                        >
+                                            <FaSignOutAlt size={16} />
+                                            Sign Out Account
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-6 py-8">
+            <main className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* Sidebar Tabs */}
-                    <div className="lg:col-span-3 space-y-2">
+                    {/* Sidebar Tabs - Hidden on Mobile, drawer used instead */}
+                    <div className="hidden lg:block lg:col-span-3 space-y-2">
                         {[
                             { id: 'profile', icon: <FaUser />, label: 'My Profile' },
                             { id: 'availability', icon: <FaCalendarCheck />, label: 'Availability' },
