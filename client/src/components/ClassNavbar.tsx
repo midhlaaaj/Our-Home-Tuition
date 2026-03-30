@@ -6,7 +6,7 @@ const ClassNavbar: React.FC = () => {
     const { id } = useParams<{ id: string }>();
 
     return (
-        <nav className="bg-[#282A35] text-white w-full overflow-x-auto scrollbar-hide">
+        <nav className="relative z-[60] bg-[#282A35] text-white w-full overflow-x-auto scrollbar-hide">
             <div className="flex items-center w-full min-w-max md:min-w-full">
                 {classesData.map((cls) => {
                     const isActive = id === cls.id.toString();

@@ -67,9 +67,9 @@ export default function IntroWrapper({ children }: { children: React.ReactNode }
             }
             transition={{
               type: 'spring',
-              stiffness: 70, // Slightly slower for more elegance
-              damping: 24,   // Higher damping to prevent oscillation
-              mass: 1.2,     // More mass for a 'heavier', premium feel
+              stiffness: 60, // Luxurious slower spring
+              damping: 26,
+              mass: 1.2,
             }}
           >
             <motion.img
@@ -78,16 +78,17 @@ export default function IntroWrapper({ children }: { children: React.ReactNode }
               draggable={false}
               className="select-none object-contain"
               fetchPriority="high"
-              initial={{ width: '350px', height: '350px', filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.1))' }}
+              initial={{ width: '400px', height: '400px', scale: 1, filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.12))' }}
               animate={{
-                width: isAnimating ? '160px' : '350px',
-                height: isAnimating ? '160px' : '350px',
-                filter: isAnimating ? 'drop-shadow(0 0px 0px rgba(0,0,0,0))' : 'drop-shadow(0 20px 40px rgba(0,0,0,0.1))'
+                width: isAnimating ? '160px' : '400px',
+                height: isAnimating ? '160px' : '400px',
+                scale: isAnimating ? 1.1 : 1, // matches scale-110 in Header
+                filter: isAnimating ? 'drop-shadow(0 0px 0px rgba(0,0,0,0))' : 'drop-shadow(0 30px 60px rgba(0,0,0,0.12))'
               }}
               transition={{
                 type: 'spring',
-                stiffness: 70,
-                damping: 24,
+                stiffness: 60,
+                damping: 26,
                 mass: 1.2,
               }}
             />

@@ -32,6 +32,10 @@ const AdminJobs = lazy(() => import('./pages/admin/AdminJobs'));
 const AdminApplications = lazy(() => import('./pages/admin/AdminApplications'));
 const AdminBlogs = lazy(() => import('./pages/admin/AdminBlogs'));
 const AdminLeads = lazy(() => import('./pages/admin/AdminLeads'));
+const AdminHomepage = lazy(() => import('./pages/admin/AdminHomepage'));
+const AdminOperations = lazy(() => import('./pages/admin/AdminOperations'));
+const AdminOther = lazy(() => import('./pages/admin/AdminOther'));
+const AdminFAQs = lazy(() => import('./pages/admin/AdminFAQs'));
 const Career = lazy(() => import('./pages/Career'));
 const Profile = lazy(() => import('./pages/Profile'));
 const ClassPage = lazy(() => import('./pages/ClassPage'));
@@ -48,9 +52,9 @@ const PageLoader = () => (
         <div className="relative">
             <div className="w-16 h-16 border-4 border-[#1B2A5A]/10 border-t-[#1B2A5A] rounded-full animate-spin"></div>
             <img
-                src="/brand-logo.png"
+                src="/HH-logo.png"
                 alt="Loading..."
-                className="absolute inset-0 w-10 h-10 m-auto object-contain animate-pulse"
+                className="absolute inset-0 w-12 h-auto m-auto object-contain animate-pulse"
             />
         </div>
     </div>
@@ -95,6 +99,17 @@ function App() {
                 <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                   <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<Dashboard />} />
+                    <Route path="homepage" element={<AdminHomepage />} />
+                    <Route path="operations" element={<AdminOperations />} />
+                    <Route path="other" element={<AdminOther />} />
+                    <Route path="homepage/sliders" element={<Sliders />} />
+                    <Route path="homepage/counters" element={<AdminCounters />} />
+                    <Route path="homepage/reviews" element={<Reviews />} />
+                    <Route path="homepage/brands" element={<Brands />} />
+                    <Route path="homepage/mentors" element={<Mentors />} />
+                    <Route path="homepage/partners" element={<AdminPartners />} />
+                    <Route path="homepage/faqs" element={<AdminFAQs />} />
+                    
                     <Route path="queries" element={<AdminQueries />} />
                     <Route path="bookings" element={<AdminBookings />} />
                     <Route path="sliders" element={<Sliders />} />

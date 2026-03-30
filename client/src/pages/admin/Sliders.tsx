@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FaSave, FaUpload } from 'react-icons/fa';
 import { uploadFile } from '../../utils/uploadHelper';
 import { useAuth } from '../../context/AuthContext';
@@ -128,10 +129,23 @@ const Sliders: React.FC = () => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6 pb-10 font-['Urbanist']">
-            <div>
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Hero Section Master</h1>
-                <p className="text-sm text-gray-500 font-medium">Control the first impression of your platform.</p>
+        <div className="max-w-6xl mx-auto space-y-6 pb-12 font-['Urbanist']">
+            <Link 
+                to="/admin/homepage" 
+                className="flex items-center gap-2 text-xs font-black text-gray-400 hover:text-[#1B2A5A] transition-colors uppercase tracking-widest mb-2 group w-fit"
+            >
+                <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
+                    </svg>
+                </div>
+                Back to Homepage Management
+            </Link>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Hero Section Master</h1>
+                    <p className="text-sm text-gray-500 font-medium">Control the first impression of your platform.</p>
+                </div>
             </div>
 
             <div className="bg-white p-6 rounded-[24px] shadow-xl border border-gray-50">
