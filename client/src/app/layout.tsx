@@ -86,11 +86,7 @@ export default function RootLayout({
               ],
               "opens": "00:00",
               "closes": "23:59"
-            },
-            "sameAs": [
-              "https://www.facebook.com/ourhometuition",
-              "https://www.instagram.com/ourhometuition"
-            ] 
+            } 
           })}
         </Script>
       </head>

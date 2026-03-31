@@ -18,8 +18,8 @@ const Footer: React.FC = () => {
     ];
 
     const socials = [
-        { icon: <FaFacebook size={18} />, href: 'https://www.facebook.com/ourhometuition', label: 'Facebook' },
-        { icon: <FaInstagram size={18} />, href: 'https://www.instagram.com/ourhometuition', label: 'Instagram' },
+        { icon: <FaFacebook size={18} />, href: '#', label: 'Facebook' },
+        { icon: <FaInstagram size={18} />, href: '#', label: 'Instagram' },
         { icon: <FaLinkedin size={18} />, href: '#', label: 'LinkedIn' },
         { icon: <FaYoutube size={18} />, href: '#', label: 'YouTube' },
     ];
