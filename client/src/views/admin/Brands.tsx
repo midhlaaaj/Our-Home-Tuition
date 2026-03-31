@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 import { FaTrash, FaEdit, FaUpload, FaPlus, FaTimes } from 'react-icons/fa';
 import { uploadFile } from '../../utils/uploadHelper';
+import BrandedLoading from '../../components/BrandedLoading';
 
 interface Brand {
     id: string; // Supabase uses string UUIDs usually, or numbers
@@ -273,7 +274,13 @@ const Brands: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {brands.length === 0 ? (
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="p-20 text-center">
+                                        <BrandedLoading className="mx-auto" />
+                                    </td>
+                                </tr>
+                            ) : brands.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="p-12 text-center text-gray-400 text-sm font-medium italic">No brands registered.</td>
                                 </tr>

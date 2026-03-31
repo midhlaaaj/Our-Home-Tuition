@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
-import { FaTrash, FaEdit, FaPlus, FaUserCircle, FaInfoCircle, FaMapMarkerAlt, FaStar } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaPlus, FaUserCircle, FaInfoCircle, FaMapMarkerAlt, FaStar, FaTimes } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import BrandedLoading from '../../components/BrandedLoading';
 
 interface Mentor {
     id: string; // Supabase uses id (uuid)
@@ -45,6 +46,7 @@ const Mentors: React.FC = () => {
     });
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState<string | null>(null);
+    const [showAddForm, setShowAddForm] = useState(false);
     const [accountLoading, setAccountLoading] = useState(false);
     const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -138,9 +140,9 @@ const Mentors: React.FC = () => {
                 }
             }
 
-            setForm({ is_active: true, name: '', subject: '', description: '', image_url: '', email: '', contact_no: '', linkedin_url: '', qualification: '', work_history: '', birth_year: undefined });
             setIsEditing(false);
             setEditId(null);
+            setShowAddForm(false);
             fetchMentors();
         } catch (err) {
             console.error('Error saving mentor:', err);
@@ -204,9 +206,10 @@ const Mentors: React.FC = () => {
         });
         setIsEditing(true);
         setEditId(mentor.id);
+        setShowAddForm(false);
     };
 
-    const resetForm = () => {
+    const cancelEdit = () => {
         setIsEditing(false);
         setEditId(null);
         setForm({ is_active: true, name: '', subject: '', description: '', image_url: '', email: '', contact_no: '', linkedin_url: '', qualification: '', work_history: '', birth_year: undefined });
@@ -240,82 +243,72 @@ const Mentors: React.FC = () => {
                         </div>
                     </div>
                 </div>
+                <button
+                    onClick={() => {
+                        setShowAddForm(!showAddForm);
+                        if (isEditing) cancelEdit();
+                    }}
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg ${showAddForm ? 'bg-orange-50 text-[#a0522d] border-2 border-[#a0522d]/20' : 'bg-[#1B2A5A] text-white hover:bg-[#142044] shadow-[#1B2A5A]/20'}`}
+                    title={showAddForm ? "Close Form" : "Add New Mentor"}
+                >
+                    {showAddForm ? <FaTimes size={18} /> : <FaPlus size={18} />}
+                </button>
             </div>
 
-            {/* Form */}
-            <div className="bg-white p-6 rounded-[24px] shadow-xl border border-gray-50 mb-8">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#a0522d] flex items-center justify-center">
-                        <FaEdit size={16} />
+            {/* Collapsible Add Form */}
+            {showAddForm && (
+                <div className="bg-white p-8 rounded-[32px] shadow-xl border border-gray-50 mb-8 animate-in slide-in-from-top-4 fade-in duration-300">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#a0522d] flex items-center justify-center">
+                            <FaPlus size={16} />
+                        </div>
+                        <h2 className="text-lg font-black text-gray-900 tracking-tight">Register New Mentor</h2>
                     </div>
-                    <h2 className="text-lg font-black text-gray-900 tracking-tight">
-                        {isEditing ? 'Edit Mentor Profile' : 'Register New Mentor'}
-                    </h2>
-                    {isEditing && !form.auth_user_id && form.id && (
-                        <button
-                            type="button"
-                            onClick={() => handleCreateAccount(form as any)}
-                            disabled={accountLoading}
-                            className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
-                        >
-                            <FaUserCircle size={14} />
-                            {accountLoading ? 'Creating...' : 'Enable Portal Access'}
-                        </button>
-                    )}
-                </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
-                        <div className="lg:col-span-4 space-y-1.5">
-                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Mentor Name</label>
-                            <input
-                                type="text"
-                                placeholder="Enter your name"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-medium text-sm"
-                                value={form.name || ''}
-                                onChange={e => {
-                                    const name = e.target.value;
-                                    const firstName = name.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
-                                    const generatedEmail = name ? `${firstName}@hourhome.com` : '';
-                                    setForm({ ...form, name, email: form.email || generatedEmail });
-                                }}
-                                required
-                            />
-                        </div>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Mentor Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="Enter full name"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                    value={form.name || ''}
+                                    onChange={e => {
+                                        const name = e.target.value;
+                                        const firstName = name.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
+                                        const generatedEmail = name ? `${firstName}@hourhome.com` : '';
+                                        setForm({ ...form, name, email: form.email || generatedEmail });
+                                    }}
+                                    required
+                                />
+                            </div>
 
-                        <div className="lg:col-span-4 space-y-1.5">
-                            <label className="text-sm font-bold text-[#1B2A5A] ml-1">Email Address</label>
-                            <input
-                                type="email"
-                                placeholder="name@email.com"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3 rounded-xl transition-all font-medium text-sm"
-                                value={form.email || ''}
-                                onChange={e => setForm({ ...form, email: e.target.value })}
-                                required
-                            />
-                        </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
+                                <input
+                                    type="email"
+                                    placeholder="name@hourhome.com"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#a0522d] focus:bg-white outline-none p-3.5 rounded-xl transition-all font-medium text-sm"
+                                    value={form.email || ''}
+                                    onChange={e => setForm({ ...form, email: e.target.value })}
+                                    required
+                                />
+                            </div>
 
-                        <div className="lg:col-span-4 flex gap-2 justify-end">
-                            {isEditing && (
+                            <div className="flex gap-2 justify-end col-span-2">
                                 <button
-                                    type="button"
-                                    onClick={resetForm}
-                                    className="px-4 py-3 bg-gray-100 text-gray-500 rounded-xl font-black hover:bg-gray-200 transition-all text-[10px] uppercase tracking-widest"
+                                    type="submit"
+                                    disabled={loading}
+                                    className="px-8 py-3.5 bg-[#1B2A5A] text-white rounded-xl font-black hover:bg-[#142044] disabled:opacity-50 transition-all shadow-xl shadow-[#1B2A5A]/10 text-sm flex items-center justify-center gap-2 min-w-[140px] uppercase tracking-widest"
                                 >
-                                    Cancel
+                                    {loading ? 'Processing...' : 'Register Mentor'}
                                 </button>
-                            )}
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="px-6 py-3 bg-[#1B2A5A] text-white rounded-xl font-black hover:bg-[#142044] disabled:opacity-50 transition-all shadow-lg text-[10px] flex items-center justify-center gap-2 min-w-[120px] uppercase tracking-widest"
-                            >
-                                {loading ? '...' : (isEditing ? 'Update Mentor' : 'Add Mentor')}
-                            </button>
+                            </div>
                         </div>
-                    </div>
-                </form>
-            </div>
+                    </form>
+                </div>
+            )}
 
             {/* List */}
             <div className="bg-white rounded-[24px] shadow-sm border border-gray-50 overflow-hidden">
@@ -337,13 +330,20 @@ const Mentors: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {mentors.length === 0 ? (
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="p-20 text-center">
+                                        <BrandedLoading className="mx-auto" />
+                                    </td>
+                                </tr>
+                            ) : mentors.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="p-12 text-center text-gray-400 text-sm font-medium italic">No mentor profiles registered yet.</td>
                                 </tr>
                             ) : (
                                 mentors.map((mentor) => (
-                                    <tr key={mentor.id} className="group hover:bg-gray-50/50 transition-all duration-300">
+                                    <React.Fragment key={mentor.id}>
+                                    <tr className={`group hover:bg-gray-50/50 transition-all duration-300 ${editId === mentor.id ? 'bg-orange-50/30' : ''}`}>
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
                                                 <img src={mentor.image_url} alt={mentor.name} className="h-10 w-10 rounded-xl object-cover border-2 border-white shadow-sm" />
@@ -384,28 +384,111 @@ const Mentors: React.FC = () => {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center justify-end gap-1.5">
-                                                {!mentor.auth_user_id && (
-                                                    <button
-                                                        onClick={() => handleCreateAccount(mentor)}
-                                                        disabled={accountLoading}
-                                                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/10"
-                                                        title="Create Login Portal"
-                                                    >
-                                                        {accountLoading ? '...' : 'Enable Portal'}
-                                                    </button>
+                                                {editId !== mentor.id && (
+                                                    <>
+                                                        {!mentor.auth_user_id && (
+                                                            <button
+                                                                onClick={() => handleCreateAccount(mentor)}
+                                                                disabled={accountLoading}
+                                                                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/10"
+                                                                title="Create Login Portal"
+                                                            >
+                                                                {accountLoading ? '...' : 'Enable Portal'}
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => { setSelectedMentor(mentor); setIsDetailOpen(true); }}
+                                                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-500 hover:bg-green-50 transition-all shadow-sm"
+                                                            title="View Full Profile"
+                                                        >
+                                                            <FaPlus size={14} />
+                                                        </button>
+                                                        <button onClick={() => handleEdit(mentor)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-all shadow-sm" title="Edit Profile"><FaEdit size={14} /></button>
+                                                        <button onClick={() => handleDelete(mentor.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm" title="Delete Profile"><FaTrash size={14} /></button>
+                                                    </>
                                                 )}
-                                                <button
-                                                    onClick={() => { setSelectedMentor(mentor); setIsDetailOpen(true); }}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-500 hover:bg-green-50 transition-all shadow-sm"
-                                                    title="View Full Profile"
-                                                >
-                                                    <FaPlus size={14} />
-                                                </button>
-                                                <button onClick={() => handleEdit(mentor)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-all shadow-sm" title="Edit Profile"><FaEdit size={14} /></button>
-                                                <button onClick={() => handleDelete(mentor.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm" title="Delete Profile"><FaTrash size={14} /></button>
                                             </div>
                                         </td>
                                     </tr>
+
+                                    {/* Inline Edit Form */}
+                                    {editId === mentor.id && (
+                                        <tr className="bg-orange-50/20 border-x-2 border-orange-100/50">
+                                            <td colSpan={5} className="p-6">
+                                                <div className="animate-in slide-in-from-top-2 fade-in duration-300">
+                                                    <form onSubmit={handleSubmit} className="space-y-6">
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                            <div className="space-y-1.5">
+                                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Mentor Name</label>
+                                                                <input
+                                                                    type="text"
+                                                                    className="w-full bg-white border-2 border-gray-100 focus:border-[#a0522d] outline-none p-3 rounded-xl transition-all font-medium text-sm shadow-sm"
+                                                                    value={form.name || ''}
+                                                                    onChange={e => setForm({ ...form, name: e.target.value })}
+                                                                    required
+                                                                />
+                                                            </div>
+
+                                                            <div className="space-y-1.5">
+                                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
+                                                                <input
+                                                                    type="email"
+                                                                    className="w-full bg-white border-2 border-gray-100 focus:border-[#a0522d] outline-none p-3 rounded-xl transition-all font-medium text-sm shadow-sm"
+                                                                    value={form.email || ''}
+                                                                    onChange={e => setForm({ ...form, email: e.target.value })}
+                                                                    required
+                                                                />
+                                                            </div>
+
+                                                            <div className="space-y-1.5">
+                                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Status</label>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setForm({ ...form, is_active: !form.is_active })}
+                                                                    className={`w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm ${form.is_active ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}
+                                                                >
+                                                                    <div className={`w-2 h-2 rounded-full ${form.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
+                                                                    {form.is_active ? 'Visible' : 'Hidden'}
+                                                                </button>
+                                                            </div>
+
+                                                            <div className="md:col-span-2 flex items-center gap-4">
+                                                                {!form.auth_user_id && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleCreateAccount(form as any)}
+                                                                        disabled={accountLoading}
+                                                                        className="px-6 py-3 bg-blue-50 text-blue-600 border-2 border-blue-100 rounded-xl font-black hover:bg-blue-100 transition-all text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-sm"
+                                                                    >
+                                                                        <FaUserCircle size={14} />
+                                                                        {accountLoading ? 'Creating...' : 'Enable Portal Access'}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="flex items-end justify-end gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={cancelEdit}
+                                                                    className="px-6 py-3 bg-gray-100 text-gray-500 rounded-xl font-black hover:bg-gray-200 transition-all text-[10px] uppercase tracking-widest"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                                <button
+                                                                    type="submit"
+                                                                    disabled={loading}
+                                                                    className="px-8 py-3 bg-[#a0522d] text-white rounded-xl font-black hover:bg-[#8b4513] disabled:opacity-50 transition-all shadow-md text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+                                                                >
+                                                                    {loading ? 'Saving...' : 'Update Mentor'}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                    </React.Fragment>
                                 ))
                             )}
                         </tbody>

@@ -602,14 +602,13 @@ const MentorDashboard: React.FC = () => {
         return `${h}:${m} ${ampm}`;
     };
 
-    if (loading) return (
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center font-['Urbanist']">
-            <div className="w-16 h-16 border-4 border-[#1B2A5A]/20 border-t-[#1B2A5A] rounded-full animate-spin"></div>
-        </div>
-    );
-
     return (
         <div className="min-h-screen bg-[#F8FAFC] font-['Urbanist'] pt-16 md:pt-24">
+            {loading && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/60 backdrop-blur-[2px]">
+                    <BrandedLoading />
+                </div>
+            )}
 
             {/* Home-style Header */}
             <header className="fixed w-full top-0 z-50 bg-white shadow-md border-b border-gray-100">
