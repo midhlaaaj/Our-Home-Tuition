@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { FaPaperPlane, FaCheck } from 'react-icons/fa';
@@ -10,7 +12,6 @@ const ContactForm: React.FC = () => {
         name: '',
         email: '',
         phone: '',
-        address: '',
         query: ''
     });
 
@@ -31,7 +32,6 @@ const ContactForm: React.FC = () => {
                     name: formData.name,
                     email: formData.email,
                     phone: `+91 ${formData.phone}`,
-                    address: formData.address,
                     query: formData.query
                 }]);
 
@@ -70,7 +70,7 @@ const ContactForm: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
                     {/* Left side: Premium Form */}
                     <div className="lg:col-span-7">
-                        <div className="bg-white p-6 md:p-10 rounded-[40px] shadow-2xl shadow-blue-900/5 border border-gray-100 relative h-full flex flex-col justify-center">
+                        <div className="bg-white p-6 md:p-10 rounded-[40px] shadow-2xl shadow-blue-900/5 border border-gray-100 relative h-full min-h-[600px] flex flex-col justify-center">
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#a0522d]/10 text-[#a0522d] rounded-full text-[9px] font-black uppercase tracking-widest mb-6 self-start border border-[#a0522d]/20">
                                 <span className="relative flex h-1.5 w-1.5">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#a0522d] opacity-75"></span>
@@ -83,7 +83,7 @@ const ContactForm: React.FC = () => {
                             <p className="text-gray-500 font-medium mb-8 text-sm">Join the top-rated tuition center for primary & high school students</p>
 
                             {submitted ? (
-                                <div className="py-16 text-center animate-in fade-in zoom-in duration-500 bg-gray-50 rounded-[32px] border border-gray-100">
+                                <div className="flex-1 flex flex-col justify-center py-16 text-center animate-in fade-in zoom-in duration-500 bg-gray-50 rounded-[32px] border border-gray-100">
                                     <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/30">
                                         <FaCheck size={32} />
                                     </div>
@@ -139,16 +139,7 @@ const ContactForm: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-bold text-[#1B2A5A] ml-1">Location / Address (Optional)</label>
-                                        <input
-                                            type="text"
-                                            value={formData.address || ''}
-                                            onChange={e => updateField('address', e.target.value)}
-                                            className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-[#a0522d]/30 focus:bg-white outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 text-sm"
-                                            placeholder="Enter your city or area"
-                                        />
-                                    </div>
+
 
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-bold text-[#1B2A5A] ml-1">Grade & Requirements</label>

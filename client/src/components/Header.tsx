@@ -1,7 +1,10 @@
+"use client";
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useCurriculum } from '../context/CurriculumContext';
 import { FaSignOutAlt, FaBell, FaChevronDown, FaUser, FaBars, FaTimes } from 'react-icons/fa';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 
@@ -34,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
     const notificationRef = useRef<HTMLDivElement>(null);
-    const location = useLocation();
+    const pathname = usePathname() || "";
 
     const getDisplayName = () => {
         const rawName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || '';
@@ -154,7 +157,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                 }`}
         >
             <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-                <Link to="/" className="flex items-center space-x-0">
+                <Link href="/" className="flex items-center space-x-0">
                     <img src="/brand-logo.png" alt="Hour Home Logo" className="w-40 h-40 object-contain -my-15 ml-1 mr-1 scale-110" fetchPriority="high" />
                 </Link>
 
@@ -167,11 +170,11 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                         { name: 'Blogs', path: '/blogs' },
                         { name: 'About Us', path: '/about' }
                     ].map((link) => {
-                        const isActive = location.pathname === link.path;
+                        const isActive = pathname === link.path;
                         return (
                             <Link
                                 key={link.name}
-                                to={link.path}
+                                href={link.path}
                                 className={`relative font-medium text-lg tracking-wide group py-2 transition-colors duration-200 ${isActive ? 'text-black' : 'text-gray-400 hover:text-black'}`}
                             >
                                 {link.name}
@@ -227,7 +230,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                         )}
                                     </div>
                                     <Link 
-                                        to="/notifications" 
+                                        href="/notifications" 
                                         onClick={() => setIsNotificationOpen(false)}
                                         className="block py-3 text-center text-[10px] font-black text-[#1B2A5A] bg-gray-50 hover:bg-gray-100 transition-colors uppercase tracking-widest border-t border-gray-100"
                                     >
@@ -256,7 +259,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                 {/* Right Side: Toggle & Auth - Desktop Only */}
                 <div className="hidden md:flex items-center space-x-4">
                     {/* Toggle Button */}
-                    {showToggle && location.pathname.startsWith('/class') && (
+                    {showToggle && pathname.startsWith('/class') && (
                         <button
                             onClick={toggleCurriculum}
                             className="relative w-32 h-10 bg-[#1B2A5A] rounded-full flex items-center p-1 cursor-pointer shadow-inner overflow-hidden border border-white/10"
@@ -346,7 +349,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                     {notifications.length > 0 && (
                                         <div className="px-6 pb-5 pt-3 flex justify-center border-t border-gray-50 bg-gray-50/30">
                                             <Link 
-                                                to="/notifications" 
+                                                href="/notifications" 
                                                 onClick={() => setIsNotificationOpen(false)}
                                                 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-[#1B2A5A] transition-all"
                                             >
@@ -401,7 +404,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                         </div>
 
                                         <Link
-                                            to="/profile"
+                                            href="/profile"
                                             onClick={() => setIsProfileOpen(false)}
                                             className="w-full flex items-center gap-3 px-5 py-3 text-sm font-black text-gray-600 hover:text-[#a0522d] hover:bg-orange-50 transition-all"
                                         >
@@ -465,11 +468,11 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                 { name: 'Blogs', path: '/blogs' },
                                 { name: 'Career', path: '/career' }
                             ].map((link) => {
-                                const isActive = location.pathname === link.path;
+                                const isActive = pathname === link.path;
                                 return (
                                     <div key={link.name} className="flex flex-col">
                                         <Link
-                                            to={link.path}
+                                            href={link.path}
                                             onClick={() => setIsMobileMenuOpen(false)}
                                             className={`py-5 text-lg font-black transition-all ${isActive ? 'text-[#a0522d]' : 'text-[#1B2A5A]/70 hover:text-[#1B2A5A]'}`}
                                         >
@@ -486,7 +489,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                             {user ? (
                                 <div className="flex items-center gap-4 group">
                                     <Link 
-                                        to="/profile" 
+                                        href="/profile" 
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className="relative"
                                     >
@@ -507,7 +510,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                                     </Link>
                                     <div className="flex-1 min-w-0">
                                         <Link 
-                                            to="/profile"
+                                            href="/profile"
                                             onClick={() => setIsMobileMenuOpen(false)}
                                             className="block"
                                         >

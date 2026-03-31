@@ -1,10 +1,12 @@
+"use client";
+
 import React from 'react';
 import { IoChatbubbleEllipsesOutline } from 'react-icons/io5';
 import { motion } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
+import { usePathname } from 'next/navigation';
 
 const AIChatButton: React.FC = () => {
-    const location = useLocation();
+    const pathname = usePathname();
     
     // Hide chat button on specific administrative and login pages
     const hideOnRoutes = [
@@ -14,7 +16,7 @@ const AIChatButton: React.FC = () => {
         '/login'
     ];
 
-    const shouldHide = hideOnRoutes.some(route => location.pathname.startsWith(route));
+    const shouldHide = hideOnRoutes.some(route => pathname?.startsWith(route));
 
     if (shouldHide) return null;
 

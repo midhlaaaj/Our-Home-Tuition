@@ -1,8 +1,9 @@
+"use client";
+
 import React, { useRef, useMemo, useEffect } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { classesData } from '../constants/classesData';
-
 
 const ClassesRoadmap: React.FC = () => {
     const containerRef = useRef<HTMLElement>(null);
@@ -304,7 +305,7 @@ const ClassesRoadmap: React.FC = () => {
                                             whileInView={{ opacity: 1, scale: 1 }}
                                             transition={{ delay: index * 0.1 }}
                                         >
-                                            <Link to={`/class/${cls.id}`} className="relative group block">
+                                            <Link href={`/class/${cls.id}`} className="relative group block">
                                                 {/* Marker */}
                                                 <div className={`w-14 h-14 bg-white rounded-full border-4 ${isEven ? 'border-orange-500' : 'border-blue-500'} shadow-lg flex items-center justify-center cursor-pointer hover:scale-110 transition-transform z-20 relative`}>
                                                     <span className="text-gray-800 font-bold text-lg">{cls.id}</span>

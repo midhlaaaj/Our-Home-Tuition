@@ -1,5 +1,8 @@
+"use client";
+
 import React, { useState } from 'react';
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { FaSignOutAlt, FaListOl, FaThLarge, FaBook, FaBriefcase, FaBars, FaTimes, FaHome, FaCog, FaChevronDown, FaStar, FaHandshake, FaChalkboardTeacher, FaQuestionCircle, FaUserPlus, FaCalendarCheck, FaInbox, FaTrophy, FaUserCircle, FaBookOpen } from 'react-icons/fa';
 
@@ -11,22 +14,22 @@ interface MenuItem {
     children?: { path: string; label: string; icon: React.ReactNode }[];
 }
 
-const AdminLayout: React.FC = () => {
+const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { signOut } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
+    const router = useRouter();
+    const pathname = usePathname() || "";
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const handleLogout = async () => {
         await signOut();
-        navigate('/admin/login');
+        router.push('/admin/login');
     };
 
     const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
         const initialState: Record<string, boolean> = {
-            homepage: location.pathname.startsWith('/admin/homepage'),
-            operations: ['/admin/leads', '/admin/bookings', '/admin/queries', '/admin/reviews', '/admin/jobs', '/admin/applications', '/admin/mentors'].some(path => location.pathname.startsWith(path)),
-            other: ['/admin/achievements', '/admin/avatars', '/admin/blogs'].some(path => location.pathname.startsWith(path))
+            homepage: pathname.startsWith('/admin/homepage'),
+            operations: ['/admin/leads', '/admin/bookings', '/admin/queries', '/admin/reviews', '/admin/jobs', '/admin/applications', '/admin/mentors'].some(path => pathname.startsWith(path)),
+            other: ['/admin/achievements', '/admin/avatars', '/admin/blogs'].some(path => pathname.startsWith(path))
         };
         return initialState;
     });
@@ -79,14 +82,14 @@ const AdminLayout: React.FC = () => {
 
     const getActiveLabel = () => {
         for (const item of menuStructure) {
-            if (item.path === location.pathname) return item.label;
+            if (item.path === pathname) return item.label;
             
             if (item.children) {
-                const child = item.children.find(c => c.path === location.pathname);
+                const child = item.children.find(c => c.path === pathname);
                 if (child) return child.label;
             }
 
-            if (item.path !== '/admin' && location.pathname.startsWith(item.path || '')) {
+            if (item.path !== '/admin' && pathname.startsWith(item.path || '')) {
                 return item.label;
             }
         }
@@ -96,8 +99,8 @@ const AdminLayout: React.FC = () => {
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
     const isPathActive = (path: string) => {
-        if (path === '/admin') return location.pathname === path;
-        return location.pathname.startsWith(path);
+        if (path === '/admin') return pathname === path;
+        return pathname.startsWith(path);
     };
 
     return (
@@ -133,7 +136,7 @@ const AdminLayout: React.FC = () => {
                         <div key={item.label}>
                             <div className="relative group">
                                 <Link
-                                    to={item.path || '#'}
+                                    href={item.path || '#'}
                                     onClick={() => {
                                         setIsSidebarOpen(false);
                                         if (item.children && item.id) {
@@ -165,14 +168,14 @@ const AdminLayout: React.FC = () => {
                                     {item.children.map((child) => (
                                         <Link
                                             key={child.path}
-                                            to={child.path}
+                                            href={child.path}
                                             onClick={() => setIsSidebarOpen(false)}
-                                            className={`flex items-center space-x-3 px-5 py-3 rounded-xl transition-all duration-300 group ${location.pathname === child.path
+                                            className={`flex items-center space-x-3 px-5 py-3 rounded-xl transition-all duration-300 group ${pathname === child.path
                                                 ? 'bg-white/10 text-[#ffb76c] font-black'
                                                 : 'text-white/50 hover:bg-white/5 hover:text-white font-semibold'
                                                 }`}
                                         >
-                                            <span className={`text-sm ${location.pathname === child.path ? 'text-[#ffb76c]' : 'text-white/20 group-hover:text-[#ffb76c]'}`}>
+                                            <span className={`text-sm ${pathname === child.path ? 'text-[#ffb76c]' : 'text-white/20 group-hover:text-[#ffb76c]'}`}>
                                                 {child.icon}
                                             </span>
                                             <span className="text-xs">{child.label}</span>
@@ -230,7 +233,7 @@ const AdminLayout: React.FC = () => {
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-gray-50/50">
-                    <Outlet />
+                    {children}
                 </main>
             </div>
         </div>

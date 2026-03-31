@@ -1,9 +1,13 @@
+"use client";
+
 import React from 'react';
-import { Link, useParams } from 'react-router-dom';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { classesData } from '../constants/classesData';
 
 const ClassNavbar: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
+    const params = useParams();
+    const id = params?.id as string;
 
     return (
         <nav className="relative z-[60] bg-[#282A35] text-white w-full overflow-x-auto scrollbar-hide">
@@ -13,7 +17,7 @@ const ClassNavbar: React.FC = () => {
                     return (
                         <Link
                             key={cls.id}
-                            to={`/class/${cls.id}`}
+                            href={`/class/${cls.id}`}
                             className={`flex-1 text-center px-2 py-3 text-sm font-medium transition-colors hover:bg-gray-700 hover:text-white ${isActive ? 'bg-[#c75e33] text-white' : 'text-gray-300'
                                 }`}
                         >

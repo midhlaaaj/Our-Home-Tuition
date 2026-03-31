@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { FaFacebook, FaInstagram, FaLinkedin, FaYoutube } from 'react-icons/fa';
 
 const Footer: React.FC = () => {
@@ -50,7 +50,7 @@ const Footer: React.FC = () => {
                             {[...linksCol1, ...linksCol2].map((link) => (
                                 <Link
                                     key={link.label}
-                                    to={link.to}
+                                    href={link.to}
                                     className="text-white/70 text-sm hover:text-white transition-colors duration-200"
                                 >
                                     {link.label}

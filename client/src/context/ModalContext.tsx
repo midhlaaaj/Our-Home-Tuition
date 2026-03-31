@@ -1,3 +1,5 @@
+"use client";
+
 import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaInfoCircle, FaQuestionCircle, FaCheckCircle } from 'react-icons/fa';

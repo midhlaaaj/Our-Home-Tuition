@@ -1,5 +1,7 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../supabaseClient';
 import { safeFetch } from '../utils/supabaseUtils';
 
@@ -10,7 +12,7 @@ const HeroSection: React.FC = () => {
     const [titleColor, setTitleColor] = useState<string>('#c75e33');
     const [subtitle, setSubtitle] = useState<string>('');
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
+    const router = useRouter();
 
     const initialized = React.useRef(false);
 
@@ -157,7 +159,7 @@ const HeroSection: React.FC = () => {
 
                                 <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto animate-fade-in-up mb-14" style={{ animationDelay: '0.3s' }}>
                                     <button
-                                        onClick={() => navigate('/class/1')}
+                                        onClick={() => router.push('/class/1')}
                                         className="px-8 py-3.5 bg-[#b35a2e] hover:bg-[#c75e33] text-white font-bold rounded-xl outline-none transition-all shadow-lg w-full sm:w-auto text-center"
                                     >
                                         Explore Classes

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -237,6 +239,13 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
             setLoading(false);
         }
     };
+
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) return null;
 
     return ReactDOM.createPortal(
         <AnimatePresence>

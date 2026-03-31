@@ -1,9 +1,17 @@
+"use client";
+
 import React, { createContext, useState, useContext } from 'react';
 import type { ReactNode } from 'react';
 
 type Curriculum = 'CBSE' | 'STATE';
 
 type StateRegion = 'ANDHRA' | 'TELANGANA';
+
+export interface BookingData {
+    selectedUnits: { subject: any, topic: any }[];
+    classInfo: any;
+    curriculum: string;
+}
 
 interface CurriculumContextType {
     curriculum: Curriculum;
@@ -12,6 +20,8 @@ interface CurriculumContextType {
     stateRegion: StateRegion;
     toggleStateRegion: () => void;
     setStateRegion: (r: StateRegion) => void;
+    bookingData: BookingData | null;
+    setBookingData: (data: BookingData | null) => void;
 }
 
 const CurriculumContext = createContext<CurriculumContextType | undefined>(undefined);
@@ -19,6 +29,7 @@ const CurriculumContext = createContext<CurriculumContextType | undefined>(undef
 export const CurriculumProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [curriculum, setCurriculumState] = useState<Curriculum>('CBSE');
     const [stateRegion, setStateRegionState] = useState<StateRegion>('ANDHRA');
+    const [bookingData, setBookingData] = useState<BookingData | null>(null);
 
     const toggleCurriculum = () => {
         setCurriculumState((prev) => (prev === 'CBSE' ? 'STATE' : 'CBSE'));
@@ -43,7 +54,9 @@ export const CurriculumProvider: React.FC<{ children: ReactNode }> = ({ children
             setCurriculum,
             stateRegion,
             toggleStateRegion,
-            setStateRegion
+            setStateRegion,
+            bookingData,
+            setBookingData
         }}>
             {children}
         </CurriculumContext.Provider>

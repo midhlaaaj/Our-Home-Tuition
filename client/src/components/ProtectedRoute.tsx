@@ -1,31 +1,35 @@
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+"use client";
+
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import BrandedLoading from './BrandedLoading';
 
 interface ProtectedRouteProps {
     allowedRoles?: string[];
     redirectPath?: string;
+    children: React.ReactNode;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     allowedRoles = ['admin'],
-    redirectPath = '/admin/login'
+    redirectPath = '/admin/login',
+    children
 }) => {
     const { user, role, loading } = useAuth();
+    const router = useRouter();
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-screen bg-[#F8FAFC]">
-                <div className="w-16 h-16 border-4 border-[#1B2A5A]/20 border-t-[#1B2A5A] rounded-full animate-spin"></div>
-            </div>
-        );
+    useEffect(() => {
+        if (!loading && (!user || (allowedRoles.length > 0 && role && !allowedRoles.includes(role)))) {
+            router.push(redirectPath);
+        }
+    }, [user, role, loading, allowedRoles, redirectPath, router]);
+
+    if (loading || !user || (allowedRoles.length > 0 && role && !allowedRoles.includes(role))) {
+        return <BrandedLoading fullPage size="lg" />;
     }
 
-    if (!user || (allowedRoles.length > 0 && !allowedRoles.includes(role || ''))) {
-        return <Navigate to={redirectPath} replace />;
-    }
-
-    return <Outlet />;
+    return <>{children}</>;
 };
 
 export default ProtectedRoute;
