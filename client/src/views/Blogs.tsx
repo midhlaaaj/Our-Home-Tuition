@@ -82,7 +82,8 @@ const Blogs: React.FC = () => {
                                             <div className="relative h-64 overflow-hidden">
                                                 <img 
                                                     src={blog.image_url || 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} 
-                                                    alt={blog.title}
+                                                    alt={`Cover image for blog: ${blog.title}`}
+                                                    title={blog.title}
                                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                 />
                                                 <div className="absolute top-6 left-6">

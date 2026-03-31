@@ -125,9 +125,10 @@ const HeroSection: React.FC = () => {
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <img
+                        <img
                                 src={mediaUrl}
-                                alt="Learning at home"
+                                alt="Student learning from home with Our Home Tuition tutor"
+                                title="Personalized Home Tutoring Service"
                                 className="w-full h-full object-cover"
                                 fetchPriority="high"
                             />

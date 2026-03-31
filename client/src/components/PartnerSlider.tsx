@@ -122,7 +122,8 @@ const PartnerSlider: React.FC = () => {
                             <div className="w-full aspect-video overflow-hidden rounded-xl shadow-sm">
                                 <img
                                     src={partner.media_url}
-                                    alt="Partner"
+                                    alt="Our Home Tuition Partner"
+                                    title="Strategic Partner"
                                     className="w-full h-full object-cover"
                                 />
                             </div>

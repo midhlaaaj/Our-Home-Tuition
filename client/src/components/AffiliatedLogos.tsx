@@ -73,7 +73,7 @@ const AffiliatedLogos: React.FC = () => {
                                 <img
                                     key={`1-${logo.id}-${index}`}
                                     src={logo.logo_url}
-                                    alt={logo.name}
+                                    alt={`${logo.name} associated with Our Home Tuition`}
                                     className="h-4 md:h-5 mx-8 object-contain flex-shrink-0"
                                     loading="lazy"
                                 />
@@ -104,7 +104,7 @@ const AffiliatedLogos: React.FC = () => {
                                 <img
                                     key={`1-${logo.id}-${index}`}
                                     src={logo.logo_url}
-                                    alt={logo.name}
+                                    alt={`${logo.name} partner of Our Home Tuition`}
                                     className="h-4 md:h-5 mx-8 object-contain flex-shrink-0"
                                     loading="lazy"
                                 />

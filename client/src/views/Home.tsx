@@ -21,30 +21,46 @@ const Home: React.FC = () => {
                 <Reveal>
                     <HeroSection />
                 </Reveal>
-                <Reveal delay={0.3}>
-                    <CounterSection />
-                </Reveal>
-                <Reveal>
-                    <BrowseClasses />
-                </Reveal>
-                <Reveal>
-                    <PartnerSlider />
-                </Reveal>
-                <Reveal>
-                    <AffiliatedLogos />
-                </Reveal>
-                <Reveal>
-                    <MentorsSection />
-                </Reveal>
-                <Reveal>
-                    <Reviews />
-                </Reveal>
-                <Reveal>
-                    <FAQs />
-                </Reveal>
-                <Reveal>
-                    <ContactForm />
-                </Reveal>
+                <section aria-label="Tutoring Statistics">
+                    <Reveal delay={0.3}>
+                        <CounterSection />
+                    </Reveal>
+                </section>
+                <section aria-label="Available Classes">
+                    <Reveal>
+                        <BrowseClasses />
+                    </Reveal>
+                </section>
+                <section aria-label="Our Partners">
+                    <Reveal>
+                        <PartnerSlider />
+                    </Reveal>
+                </section>
+                <section aria-label="Accreditations">
+                    <Reveal>
+                        <AffiliatedLogos />
+                    </Reveal>
+                </section>
+                <section aria-label="Expert Mentors">
+                    <Reveal>
+                        <MentorsSection />
+                    </Reveal>
+                </section>
+                <section aria-label="Student Reviews">
+                    <Reveal>
+                        <Reviews />
+                    </Reveal>
+                </section>
+                <section aria-label="Frequently Asked Questions">
+                    <Reveal>
+                        <FAQs />
+                    </Reveal>
+                </section>
+                <section aria-label="Contact Us">
+                    <Reveal>
+                        <ContactForm />
+                    </Reveal>
+                </section>
             </main>
 
             <Footer />

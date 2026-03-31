@@ -50,6 +50,7 @@ const Card: React.FC<CardProps> = ({ title, subtitle, Icon, href }) => {
     return (
         <Link
             href={href}
+            aria-label={`View courses for ${title}`}
             className="w-full p-4 rounded-xl relative overflow-hidden group bg-white flex flex-col items-start block shadow-sm hover:shadow-md transition-shadow duration-300"
         >
             <div className="absolute inset-0 bg-[#c75e33] translate-y-[100%] group-hover:translate-y-[0%] transition-transform duration-300" />

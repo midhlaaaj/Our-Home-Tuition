@@ -157,7 +157,7 @@ const MentorsSection: React.FC = () => {
         <section id="mentors" className="py-10 bg-[#374151] overflow-hidden">
             <div className="container mx-auto px-4">
                 <div className="text-center mb-8">
-                    <h3 className="text-[#ffb76c] font-semibold text-lg mb-2 font-['Urbanist']">Meet the mentors</h3>
+                    <p className="text-[#ffb76c] font-semibold text-lg mb-2 font-['Urbanist']">Meet our expert mentors</p>
                     <h2 className="text-4xl font-bold text-white font-['Urbanist']">
                         Clear your doubts with <span className="text-[#ffb76c]">expert mentorship</span>
                     </h2>
@@ -180,7 +180,8 @@ const MentorsSection: React.FC = () => {
                                     <div className="aspect-[4/3] overflow-hidden">
                                         <img
                                             src={mentor.image_url}
-                                            alt={mentor.name}
+                                            alt={`${mentor.name} - ${mentor.subject} Mentor at Our Home Tuition`}
+                                            title={`Expert ${mentor.subject} tutor ${mentor.name}`}
                                             className="w-full h-full object-cover pointer-events-none"
                                             loading="lazy"
                                         />

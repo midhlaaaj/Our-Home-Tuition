@@ -132,7 +132,8 @@ const About: React.FC = () => {
                                         <div key={index} className="w-full h-full flex-shrink-0 relative">
                                             <img
                                                 src={founder.image}
-                                                alt={founder.role}
+                                                alt={`${founder.role} of Our Home Tuition`}
+                                                title={`${founder.role} - Leadership Team`}
                                                 className="w-full h-full object-cover object-top"
                                             />
                                             <div className="absolute top-4 left-4 bg-[#c75e33] text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider shadow-md uppercase">
@@ -188,7 +189,8 @@ const About: React.FC = () => {
                                 {/* Placeholder for Approach Image */}
                                 <img
                                     src="https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                                    alt="Learning Approach"
+                                    alt="Our personalized home tuition learning approach"
+                                    title="Structured Learning Methodology"
                                     className="absolute inset-0 w-full h-full object-cover"
                                 />
                             </div>
@@ -261,7 +263,7 @@ const About: React.FC = () => {
                                         <div className="w-full aspect-video overflow-hidden rounded-xl shadow-sm">
                                             <img
                                                 src={achievement.icon}
-                                                alt="Achievement"
+                                                alt="Our Home Tuition Milestone Achievement"
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
