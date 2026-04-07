@@ -65,8 +65,8 @@ export async function safeFetch<T>(
 
             const isTimeoutError = errorMessage.includes('timed out');
 
-            if (isAbortError || isTimeoutError) {
-                if (!silent) console.warn(`[${requestId}] ${isTimeoutError ? 'Timeout' : 'Abort'} detected. Retrying...`);
+            if (isTimeoutError) {
+                if (!silent) console.warn(`[${requestId}] Timeout detected. Retrying...`);
                 if (i < retries) {
                     const nextDelay = delay * Math.pow(2, i); 
                     await new Promise(resolve => setTimeout(resolve, nextDelay));

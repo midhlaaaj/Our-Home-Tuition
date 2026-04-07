@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 import {
     FaUser, FaEnvelope, FaMapMarkerAlt, FaUsers,
     FaArrowLeft, FaCheckCircle, FaTrash, FaClipboardList, FaGraduationCap,
-    FaCalendarAlt, FaClock, FaWifi, FaHome
+    FaCalendarAlt, FaClock, FaWifi, FaHome, FaInfoCircle
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
@@ -59,6 +59,12 @@ const BookingPage: React.FC = () => {
     }, [user]);
 
     const handleAddStudent = () => {
+        const maxTotalStudents = 5;
+        
+        if (additionalStudents.length + 1 >= maxTotalStudents) {
+            showAlert(`Maximum ${maxTotalStudents} students allowed for ${state?.classInfo?.label}.`);
+            return;
+        }
         setAdditionalStudents([...additionalStudents, { id: Date.now().toString(), name: '', email: '' }]);
     };
 
@@ -70,7 +76,20 @@ const BookingPage: React.FC = () => {
         setAdditionalStudents(additionalStudents.map(s => s.id === id ? { ...s, [field]: value } : s));
     };
 
-    const totalPrice = state?.selectedUnits?.reduce((acc, curr) => acc + (curr.topic.unit_price || 100), 0) || 0;
+    
+    const getBasePrice = () => {
+        const studentCount = additionalStudents.length + 1;
+        const offlinePricing = [499, 699, 899, 1099, 1299];
+        const onlinePricing = [399, 599, 699, 799, 999];
+        
+        const priceList = sessionMode === 'offline' ? offlinePricing : onlinePricing;
+        // Pricing is for the 2h base block for all classes
+        return priceList[Math.min(studentCount, 5) - 1] || 0;
+    };
+
+    const basePrice = getBasePrice();
+    const charges = Math.round(basePrice * 0.23);
+    const totalPrice = basePrice + charges;
     const totalDuration = state?.selectedUnits?.reduce((acc, curr) => acc + (curr.topic.estimated_duration || 60), 0) || 0;
 
     const handleRazorpayPayment = async () => {
@@ -384,8 +403,8 @@ const BookingPage: React.FC = () => {
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         {[
-                                            { id: 'individual', icon: <FaUser size={14} />, title: 'Premium Solo', desc: '1-on-1 personalized academic coaching' },
-                                            { id: 'group', icon: <FaUsers size={14} />, title: 'Collaborative Duo', desc: 'Study with siblings or friends (Group)' }
+                                            { id: 'individual', icon: <FaUser size={14} />, title: '1-on-1 Session', desc: 'Single student session' },
+                                            { id: 'group', icon: <FaUsers size={14} />, title: 'Group Session', desc: 'Multiple students (Max 5)' }
                                         ].map(option => (
                                             <label
                                                 key={option.id}
@@ -623,19 +642,55 @@ const BookingPage: React.FC = () => {
 
                             <div className="space-y-8">
                                 <div className="space-y-4">
-                                    <div className="flex justify-between items-center bg-gray-900 p-4 rounded-2xl shadow-xl shadow-gray-900/10">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-[#ffb76c] text-[#1B2A5A] rounded-xl flex items-center justify-center font-black">
-                                                ₹
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Payable Amount</p>
-                                                <p className="text-lg font-black text-white tracking-tight">₹{totalPrice}</p>
+                                    <div className="flex flex-col gap-2 bg-gray-900 p-6 rounded-[32px] shadow-xl shadow-gray-900/10 mb-6">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-[#ffb76c] text-[#1B2A5A] rounded-xl flex items-center justify-center font-black">
+                                                    ₹
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Base Fare</p>
+                                                    <p className="text-lg font-black text-white tracking-tight">₹{basePrice}</p>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col items-end pr-1">
-                                            <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Total Time</p>
-                                            <p className="text-sm font-black text-[#ffb76c]">{totalDuration} Min</p>
+
+                                        <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Charges (23%)</p>
+                                                    <div className="group relative">
+                                                        <FaInfoCircle size={10} className="text-[#ffb76c]/60 cursor-help" />
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white p-3 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100]">
+                                                            <div className="space-y-1.5">
+                                                                <div className="flex justify-between text-[9px] font-black uppercase tracking-wider">
+                                                                    <span className="text-gray-400">TDS (3%)</span>
+                                                                    <span className="text-gray-900">₹{Math.round(basePrice * 0.03)}</span>
+                                                                </div>
+                                                                <div className="flex justify-between text-[9px] font-black uppercase tracking-wider">
+                                                                    <span className="text-gray-400">GST (18%)</span>
+                                                                    <span className="text-gray-900">₹{Math.round(basePrice * 0.18)}</span>
+                                                                </div>
+                                                                <div className="flex justify-between text-[9px] font-black uppercase tracking-wider">
+                                                                    <span className="text-gray-400">PG Charges (2%)</span>
+                                                                    <span className="text-gray-900">₹{Math.round(basePrice * 0.02)}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-white"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <p className="text-sm font-black text-[#ffb76c]">₹{charges}</p>
+                                            </div>
+
+                                        <div className="flex justify-between items-center pt-3 border-t-2 border-white/10">
+                                            <div>
+                                                <p className="text-[9px] font-black text-[#ffb76c] uppercase tracking-widest leading-none mb-1">Total Amount</p>
+                                                <p className="text-2xl font-black text-white tracking-tighter">₹{totalPrice}</p>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                                <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Est. Duration</p>
+                                                <p className="text-sm font-black text-white/90">{totalDuration / 60} Hour{totalDuration / 60 !== 1 ? 's' : ''}</p>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -658,8 +713,7 @@ const BookingPage: React.FC = () => {
                                                 <div className="flex justify-between items-start mb-1">
                                                     <p className="text-xs font-black text-gray-300 uppercase tracking-widest">{item.subject.name}</p>
                                                     <div className="text-right">
-                                                        <p className="text-xs font-black text-[#a0522d]">₹{item.topic.unit_price || 100}</p>
-                                                        <p className="text-[10px] font-bold text-green-600">{item.topic.estimated_duration || 60}m</p>
+                                                        <p className="text-[10px] font-bold text-green-600">{(item.topic.estimated_duration || 60) / 60} Hour</p>
                                                     </div>
                                                 </div>
                                                 <p className="text-sm font-black text-gray-800 leading-relaxed">{item.topic.name}</p>

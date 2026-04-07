@@ -79,7 +79,7 @@ const ContactForm: React.FC = () => {
                                 Direct Enrollment
                             </div>
 
-                            <h3 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">Begin your success journey!</h3>
+                            <h3 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">Still doubtful? Raise a query or request a callback</h3>
                             <p className="text-gray-500 font-medium mb-8 text-sm">Join the top-rated tuition center for primary & high school students</p>
 
                             {submitted ? (
@@ -156,12 +156,12 @@ const ContactForm: React.FC = () => {
                                     <button
                                         disabled={loading}
                                         type="submit"
-                                        className="w-full bg-[#FF7F50] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#FF6347] disabled:opacity-50 transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-3 group mt-2 transform active:scale-95"
+                                        className="w-full bg-[#FF7F50] text-white py-4 md:py-5 rounded-2xl md:rounded-[28px] font-black text-base md:text-xl hover:bg-[#FF6347] disabled:opacity-50 transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-3 group mt-2 transform active:scale-95"
                                     >
                                         {loading ? (
                                             <>Processing... <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div></>
                                         ) : (
-                                            <>Book Free Demo <FaPaperPlane className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform text-sm" /></>
+                                            <>Request Callback <FaPaperPlane className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform text-sm" /></>
                                         )}
                                     </button>
 

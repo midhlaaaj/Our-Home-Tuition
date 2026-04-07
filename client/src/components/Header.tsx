@@ -139,16 +139,6 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
         }
     };
 
-    // Scroll Logic
-    useEffect(() => {
-        const handleScroll = () => {
-            // Visibility logic - always show the header as sticky throughout the website
-            setIsHeaderVisible(true);
-        };
-
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     return (
         <header

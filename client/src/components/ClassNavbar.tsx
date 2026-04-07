@@ -10,7 +10,7 @@ const ClassNavbar: React.FC = () => {
     const id = params?.id as string;
 
     return (
-        <nav className="relative z-[60] bg-[#282A35] text-white w-full overflow-x-auto scrollbar-hide">
+        <nav className="sticky top-[68px] z-[60] bg-[#282A35] text-white w-full overflow-x-auto scrollbar-hide">
             <div className="flex items-center w-full min-w-max md:min-w-full">
                 {classesData.map((cls) => {
                     const isActive = id === cls.id.toString();
@@ -18,7 +18,7 @@ const ClassNavbar: React.FC = () => {
                         <Link
                             key={cls.id}
                             href={`/class/${cls.id}`}
-                            className={`flex-1 text-center px-2 py-3 text-sm font-medium transition-colors hover:bg-gray-700 hover:text-white ${isActive ? 'bg-[#c75e33] text-white' : 'text-gray-300'
+                            className={`flex-1 text-center whitespace-nowrap px-6 py-3 text-sm font-normal font-sans tracking-wider transition-all hover:bg-gray-700 hover:text-white ${isActive ? 'bg-[#c75e33] text-white' : 'text-gray-300'
                                 }`}
                         >
                             {cls.label.toUpperCase()}

@@ -11,6 +11,7 @@ export interface BookingData {
     selectedUnits: { subject: any, topic: any }[];
     classInfo: any;
     curriculum: string;
+    bookingType?: 'regular' | 'custom-combo' | 'all-in-one';
 }
 
 interface CurriculumContextType {

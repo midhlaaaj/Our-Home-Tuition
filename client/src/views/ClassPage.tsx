@@ -9,7 +9,9 @@ import { classesData } from '../constants/classesData';
 import { useCurriculum } from '../context/CurriculumContext';
 import { supabase } from '../supabaseClient';
 import BrandedLoading from '../components/BrandedLoading';
-import { FaPlus, FaMinus, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaMinus, FaTimes, FaCheckCircle } from 'react-icons/fa';
+import { useModal } from '../context/ModalContext';
+
 
 
 interface Subject {
@@ -34,7 +36,8 @@ const ClassPage: React.FC = () => {
     const params = useParams();
     const id = params?.id as string;
     const classInfo = classesData.find(c => c.id.toString() === id);
-    const { curriculum, stateRegion, toggleStateRegion } = useCurriculum();
+    const { curriculum, stateRegion, toggleStateRegion, setBookingData } = useCurriculum();
+    const { showAlert } = useModal();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [topics, setTopics] = useState<Record<string, Topic[]>>({});
     const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
@@ -44,6 +47,7 @@ const ClassPage: React.FC = () => {
     // Booking Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedUnits, setSelectedUnits] = useState<{ subject: Subject, topic: Topic }[]>([]);
+    const [bookingType, setBookingType] = useState<'regular' | 'custom-combo' | 'all-in-one'>('regular');
 
     // Fetch subjects for this class filtered by curriculum
     useEffect(() => {
@@ -114,7 +118,7 @@ const ClassPage: React.FC = () => {
 
     const [expandedUnits, setExpandedUnits] = useState<Record<string, number | null>>({});
     const router = useRouter();
-    const { setCurriculum, setStateRegion, setBookingData } = useCurriculum();
+    const { setCurriculum, setStateRegion } = useCurriculum();
 
     const handleToggleBoard = (board: string) => {
         if (expandedBoard === board) {
@@ -188,7 +192,7 @@ const ClassPage: React.FC = () => {
                                                     <div className="flex-grow">
                                                         <div className="flex items-center justify-between gap-4">
                                                             <p className="text-gray-800 font-semibold text-sm tracking-tight group-hover:text-[#a0522d] transition-colors">{topic.name}</p>
-                                                            <span className="text-xs font-bold text-green-500 bg-green-50 px-2 py-0.5 rounded-full shrink-0">{topic.estimated_duration || 60}m</span>
+                                                            <span className="text-xs font-bold text-green-500 bg-green-50 px-2 py-0.5 rounded-full shrink-0">{(topic.estimated_duration || 60) / 60} Hour</span>
                                                         </div>
                                                         {topic.description && (
                                                             <p className="text-gray-400 text-xs font-medium mt-1 leading-relaxed">{topic.description}</p>
@@ -218,14 +222,42 @@ const ClassPage: React.FC = () => {
     };
 
     const toggleUnitSelection = (subject: Subject, topic: Topic) => {
+        const isSelected = selectedUnits.some(u => u.topic.id === topic.id);
+        
+        if (bookingType === 'custom-combo') {
+            if (!isSelected && selectedUnits.length >= 2) {
+                // Already have 2, can't add more
+                return;
+            }
+        }
+
         setSelectedUnits(prev => {
-            const isSelected = prev.some(u => u.topic.id === topic.id);
             if (isSelected) {
                 return prev.filter(u => u.topic.id !== topic.id);
             } else {
                 return [...prev, { subject, topic }];
             }
         });
+    };
+
+    const handleBookingTypeChange = (type: 'regular' | 'custom-combo' | 'all-in-one') => {
+        setBookingType(type);
+        if (type === 'all-in-one') {
+            // Select exactly two topics (from any core subjects) to match 2 hours
+            const allSelected: { subject: Subject, topic: Topic }[] = [];
+            let count = 0;
+            for (const subject of subjects) {
+                const subjectTopics = topics[subject.id];
+                if (subjectTopics && subjectTopics.length > 0) {
+                    allSelected.push({ subject, topic: subjectTopics[0] });
+                    count++;
+                }
+                if (count >= 2) break; // Fixed 2 hours
+            }
+            setSelectedUnits(allSelected);
+        } else {
+            setSelectedUnits([]);
+        }
     };
 
     const toggleSubjectSelection = (subject: Subject) => {
@@ -244,17 +276,22 @@ const ClassPage: React.FC = () => {
     };
 
     const handleProceedToBooking = () => {
+        const totalDuration = selectedUnits.reduce((acc, curr) => acc + (curr.topic.estimated_duration || 60), 0);
+        
+        if (totalDuration !== 120) {
+            showAlert("Exactly 2 hour booking is required.");
+            return;
+        }
+
         setIsModalOpen(false);
-        setBookingData({ selectedUnits, classInfo, curriculum });
+        setBookingData({ selectedUnits, classInfo, curriculum, bookingType });
         router.push('/book-session');
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col font-sans pt-[64px]">
+        <div className="min-h-screen bg-gray-50 flex flex-col font-sans pt-[68px]">
             <Header />
-            <div className="w-full">
-                <ClassNavbar />
-            </div>
+            {!isModalOpen && <ClassNavbar />}
 
             <main className="flex-grow container mx-auto px-4 py-8">
                 {classInfo ? (
@@ -331,7 +368,7 @@ const ClassPage: React.FC = () => {
                                         </button>
 
                                         {expandedBoard === board.id && (
-                                            <div className="bg-gray-50/50 p-4 animate-in slide-in-from-top-2 duration-300 flex justify-center py-8">
+                                            <div className="bg-gray-50/50 p-4 animate-in slide-in-from-top-2 duration-300 flex flex-col w-full py-8">
                                                 {loading ? (
                                                     <BrandedLoading size="md" />
                                                 ) : subjects.length === 0 ? (
@@ -429,123 +466,204 @@ const ClassPage: React.FC = () => {
 
                         {/* Modal Body - Scrollable */}
                         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                            <div className="mb-6 grid grid-cols-3 gap-2">
+                                {[
+                                    { id: 'regular', label: 'Regular' },
+                                    { id: 'custom-combo', label: 'Custom Combo' },
+                                    { id: 'all-in-one', label: 'All In One' }
+                                ].map(type => (
+                                    <button
+                                        key={type.id}
+                                        onClick={() => handleBookingTypeChange(type.id as any)}
+                                        className={`py-2 text-[10px] font-black uppercase tracking-widest rounded-xl border-2 transition-all ${
+                                            bookingType === type.id
+                                                ? 'bg-[#1B2A5A] border-[#1B2A5A] text-white shadow-lg'
+                                                : 'bg-white border-gray-100 text-gray-400 hover:border-[#1B2A5A]/30'
+                                        }`}
+                                    >
+                                        {type.label}
+                                    </button>
+                                ))}
+                            </div>
+
+
                             {subjects.length === 0 ? (
                                 <p className="text-center text-gray-500 py-8">No subjects available.</p>
                             ) : (
-                                <div className="space-y-4">
-                                    {subjects.map(subject => (
-                                        <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                            <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                                                <h3 className="font-black text-gray-900 tracking-tight text-sm">{subject.name}</h3>
-                                                {topics[subject.id] && topics[subject.id].length > 0 && (
-                                                    <button
-                                                        onClick={() => toggleSubjectSelection(subject)}
-                                                        className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all border ${
-                                                            topics[subject.id].every(t => selectedUnits.some(u => u.topic.id === t.id))
-                                                                ? 'bg-[#a0522d] text-white border-[#a0522d]'
-                                                                : 'bg-white text-[#a0522d] border-[#a0522d]/20 hover:border-[#a0522d]/50'
-                                                        }`}
-                                                    >
-                                                        {topics[subject.id].every(t => selectedUnits.some(u => u.topic.id === t.id))
-                                                            ? 'Selected All'
-                                                            : 'Select Entire Subject'}
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <div className="divide-y divide-gray-100">
-                                                {!topics[subject.id] ? (
-                                                    <div className="px-4 py-3 text-sm text-gray-500">Loading topics...</div>
-                                                ) : topics[subject.id].length === 0 ? (
-                                                    <div className="px-4 py-3 text-sm text-gray-500">No units available.</div>
-                                                ) : (
-                                                    <div className="divide-y divide-gray-100">
-                                                        {groupTopicsByUnit(topics[subject.id]).map((group) => (
-                                                            <div key={group.unit_no} className="bg-white">
-                                                                <div className="px-4 py-2 bg-gray-50/50">
-                                                                    <p className="text-sm font-bold text-[#a0522d] tracking-wide">
-                                                                        Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
+                                <div className="space-y-4 pb-20">
+                                    {bookingType === 'all-in-one' ? (
+                                        /* Simplified Combo View for All In One */
+                                        <div className="grid grid-cols-1 gap-3">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Select a 2-hour Subject Combo</p>
+                                            {(() => {
+                                                const combos: { name: string, subjects: Subject[] }[] = [];
+                                                for (let i = 0; i < subjects.length; i += 2) {
+                                                    if (subjects[i] && subjects[i+1]) {
+                                                        combos.push({ 
+                                                            name: `${subjects[i].name} & ${subjects[i+1].name}`, 
+                                                            subjects: [subjects[i], subjects[i+1]] 
+                                                        });
+                                                    }
+                                                }
+                                                // If odd number or just one combo, add a mixed one if possible
+                                                if (subjects.length >= 3 && combos.length < 2) {
+                                                    combos.push({ 
+                                                        name: `${subjects[0].name} & ${subjects[2].name}`, 
+                                                        subjects: [subjects[0], subjects[2]] 
+                                                    });
+                                                }
+
+                                                return combos.map((combo, idx) => {
+                                                    const isSelected = combo.subjects.every(s => selectedUnits.some(u => u.subject.id === s.id));
+                                                    
+                                                    return (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => {
+                                                                if (isSelected) {
+                                                                    setSelectedUnits([]);
+                                                                } else {
+                                                                    const newUnits: { subject: Subject, topic: Topic }[] = [];
+                                                                    combo.subjects.forEach(s => {
+                                                                        const subjectTopics = topics[s.id] || [];
+                                                                        if (subjectTopics.length > 0) {
+                                                                            newUnits.push({ subject: s, topic: subjectTopics[0] });
+                                                                        }
+                                                                    });
+                                                                    setSelectedUnits(newUnits);
+                                                                }
+                                                            }}
+                                                            className={`flex items-center justify-between p-5 rounded-2xl border-2 transition-all group ${
+                                                                isSelected 
+                                                                    ? 'bg-gray-50 border-gray-200 shadow-sm' 
+                                                                    : 'bg-white border-gray-100 hover:border-gray-200 text-gray-500 opacity-80 hover:opacity-100'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-4">
+                                                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-[#1B2A5A] border-[#1B2A5A]' : 'border-gray-200 bg-white'}`}>
+                                                                    {isSelected && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                                                </div>
+                                                                <div className="text-left">
+                                                                    <h3 className={`font-black uppercase tracking-tight text-base ${isSelected ? 'text-[#1B2A5A]' : 'text-gray-400 group-hover:text-gray-600'}`}>
+                                                                        {combo.name}
+                                                                    </h3>
+                                                                    <p className="text-[10px] font-bold text-green-600 leading-none mt-1">
+                                                                        2 Hours Combined Session
                                                                     </p>
                                                                 </div>
-                                                                {group.topics.map(topic => {
-                                                                    const isSelected = selectedUnits.some(u => u.topic.id === topic.id);
-                                                                    return (
-                                                                        <label
-                                                                            key={topic.id}
-                                                                            className={`flex items-start gap-4 px-6 py-3 cursor-pointer hover:bg-orange-50/50 transition-colors ${isSelected ? 'bg-orange-50/30' : ''}`}
-                                                                        >
-                                                                            <div className="mt-0.5">
-                                                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-[#a0522d] border-[#a0522d]' : 'border-gray-300 bg-white'}`}>
-                                                                                    {isSelected && <svg className="w-3.5 h-3.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                                                                                </div>
-                                                                                <input
-                                                                                    type="checkbox"
-                                                                                    className="sr-only"
-                                                                                    checked={isSelected}
-                                                                                    onChange={() => toggleUnitSelection(subject, topic)}
-                                                                                />
-                                                                            </div>
-                                                                            <div className="flex-1">
-                                                                                <div className="flex items-center justify-between gap-4">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className="text-[#e69b48]">•</span>
-                                                                                        <p className={`text-base font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
-                                                                                    </div>
-                                                                                    <div className="text-right shrink-0">
-                                                                                        <p className="text-xs font-black text-gray-400 leading-none">₹{topic.unit_price || 100}</p>
-                                                                                        <p className="text-[10px] font-bold text-green-500 leading-none mt-1">({topic.estimated_duration || 60}m)</p>
-                                                                                    </div>
-                                                                                </div>
-                                                                                {topic.description && (
-                                                                                    <p className="text-sm text-gray-500 mt-1 ml-4 line-clamp-2">{topic.description}</p>
-                                                                                )}
-                                                                            </div>
-                                                                        </label>
-                                                                    );
-                                                                })}
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
+                                                            <div className="shrink-0 opacity-0"></div>
+                                                        </button>
+                                                    );
+                                                });
+                                            })()}
                                         </div>
-                                    ))}
+                                    ) : (
+                                        subjects.map(subject => (
+                                            <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                                <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                                                    <h3 className="font-black text-gray-900 tracking-tight text-sm">{subject.name}</h3>
+                                                </div>
+                                                <div className="divide-y divide-gray-100">
+                                                    {!topics[subject.id] ? (
+                                                        <div className="px-4 py-3 text-sm text-gray-500">Loading topics...</div>
+                                                    ) : topics[subject.id].length === 0 ? (
+                                                        <div className="px-4 py-3 text-sm text-gray-500">No units available.</div>
+                                                    ) : (
+                                                            <div className="divide-y divide-gray-100">
+                                                                {groupTopicsByUnit(topics[subject.id]).map((group) => (
+                                                                    <div key={group.unit_no} className="bg-white">
+                                                                        <div className="px-4 py-2 bg-gray-50/50">
+                                                                            <p className="text-sm font-bold text-[#a0522d] tracking-wide">
+                                                                                Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
+                                                                            </p>
+                                                                        </div>
+                                                                        {group.topics.map(topic => {
+                                                                            const isSelected = selectedUnits.some(u => u.topic.id === topic.id);
+                                                                            return (
+                                                                                <label
+                                                                                    key={topic.id}
+                                                                                className={`flex items-start gap-4 px-6 py-3 cursor-pointer transition-all ${
+                                                                                    isSelected 
+                                                                                        ? 'bg-orange-50/30' 
+                                                                                        : (selectedUnits.length >= 2)
+                                                                                            ? 'opacity-40 grayscale pointer-events-none bg-gray-50/50'
+                                                                                            : 'hover:bg-orange-50/50'
+                                                                                }`}
+                                                                                >
+                                                                                    <div className="mt-0.5">
+                                                                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-[#a0522d] border-[#a0522d]' : 'border-gray-200 bg-white'}`}>
+                                                                                            {isSelected && <svg className="w-3.5 h-3.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                                                                        </div>
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            className="sr-only"
+                                                                                            checked={isSelected}
+                                                                                            onChange={() => toggleUnitSelection(subject, topic)}
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="flex-1">
+                                                                                        <div className="flex items-center justify-between gap-4">
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <span className="text-[#e69b48]">•</span>
+                                                                                                <p className={`text-base font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
+                                                                                            </div>
+                                                                                            <div className="text-right shrink-0">
+                                                                                                <p className="text-[10px] font-bold text-green-500 leading-none mt-1">({(topic.estimated_duration || 60) / 60} Hour)</p>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        {topic.description && (
+                                                                                            <p className="text-sm text-gray-500 mt-1 ml-4 line-clamp-2">{topic.description}</p>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </label>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             )}
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="px-6 py-4 border-t border-gray-100 bg-white flex items-center justify-between sticky bottom-0 z-10">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Total Selected</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-xl font-black text-gray-900 leading-none">
-                                        ₹{selectedUnits.reduce((acc, curr) => acc + (curr.topic.unit_price || 100), 0)}
-                                    </span>
+                        <div className="px-6 py-4 border-t border-gray-100 bg-white sticky bottom-0 z-10">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div className="flex flex-row md:flex-col items-center md:items-start justify-between w-full md:w-auto gap-2">
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-gray-400">
-                                            ({selectedUnits.length} unit{selectedUnits.length !== 1 ? 's' : ''})
+                                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Total Selected</span>
+                                        <span className="text-lg md:text-xl font-black text-gray-900 leading-none">Dynamic Pricing</span>
+                                    </div>
+                                    <div className="flex flex-col text-right md:text-left">
+                                        <span className="text-[9px] font-bold text-gray-400 leading-none">
+                                            ({selectedUnits.length} Units)
                                         </span>
-                                        <span className="text-[10px] font-bold text-green-600">
-                                            {selectedUnits.reduce((acc, curr) => acc + (curr.topic.estimated_duration || 60), 0)} Minutes Est.
+                                        <span className="text-[9px] font-bold text-green-600 mt-0.5 leading-none">
+                                            {selectedUnits.reduce((acc, curr) => acc + (curr.topic.estimated_duration || 60), 0) / 60} Hours Est.
                                         </span>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setSelectedUnits([])}
-                                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
-                                    disabled={selectedUnits.length === 0}
-                                >
-                                    Clear All
-                                </button>
-                                <button
-                                    onClick={handleProceedToBooking}
-                                    disabled={selectedUnits.length === 0}
-                                    className="bg-[#a0522d] hover:bg-[#804224] disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg font-bold transition-colors shadow-sm"
-                                >
-                                    Proceed to Booking
-                                </button>
+                                <div className="flex items-center justify-between w-full md:w-auto gap-4">
+                                    <button
+                                        onClick={() => setSelectedUnits([])}
+                                        className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors py-2"
+                                        disabled={selectedUnits.length === 0}
+                                    >
+                                        Clear All
+                                    </button>
+                                    <button
+                                        onClick={handleProceedToBooking}
+                                        disabled={selectedUnits.length === 0}
+                                        className="flex-1 md:flex-none bg-[#a0522d] hover:bg-[#804224] disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 md:py-3.5 rounded-[14px] font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-lg shadow-[#a0522d]/20 active:scale-95"
+                                    >
+                                        Proceed to Booking
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
