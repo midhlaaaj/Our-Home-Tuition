@@ -42,7 +42,7 @@ const BookingPage: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [preferredDate, setPreferredDate] = useState('');
-    const [preferredTimes, setPreferredTimes] = useState<string[]>([]);
+    const [preferredTime, setPreferredTime] = useState('');
     const [sessionMode, setSessionMode] = useState<'online' | 'offline'>('offline');
     const [lat, setLat] = useState<number | null>(null);
     const [lng, setLng] = useState<number | null>(null);
@@ -157,7 +157,7 @@ const BookingPage: React.FC = () => {
                     class_type: classType,
                     additional_students: classType === 'group' ? additionalStudents : [],
                     preferred_date: preferredDate || null,
-                    preferred_time: preferredTimes.join(', ') || null,
+                    preferred_time: preferredTime || null,
                     session_mode: sessionMode,
                     latitude: lat,
                     longitude: lng,
@@ -181,6 +181,58 @@ const BookingPage: React.FC = () => {
 
             if (notifError) {
                 console.error("Notification Error:", notifError);
+            }
+
+            // === Notify nearby available mentors ===
+            if (lat && lng) {
+                try {
+                    // 1. Fetch all mentors with geo coords
+                    const { data: allMentors } = await supabase
+                        .from('mentors')
+                        .select('id, name, latitude, longitude')
+                        .not('latitude', 'is', null)
+                        .not('longitude', 'is', null);
+
+                    const haversine = (la1: number, lo1: number, la2: number, lo2: number) => {
+                        const R = 6371;
+                        const dLat = (la2 - la1) * Math.PI / 180;
+                        const dLon = (lo2 - lo1) * Math.PI / 180;
+                        const a = Math.sin(dLat / 2) ** 2 +
+                            Math.cos(la1 * Math.PI / 180) * Math.cos(la2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+                        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                    };
+
+                    const nearbyMentors = (allMentors || []).filter((m: any) =>
+                        haversine(lat, lng, m.latitude, m.longitude) <= 20
+                    );
+
+                    const mentorFare = Math.round(basePrice * 0.8);
+
+                    for (const mentor of nearbyMentors) {
+                        // 2. Check for scheduling conflict
+                        const { data: conflicts } = await supabase
+                            .from('bookings')
+                            .select('id')
+                            .eq('assigned_mentor_id', mentor.id)
+                            .eq('preferred_date', preferredDate)
+                            .ilike('preferred_time', `%${preferredTime}%`)
+                            .not('status', 'eq', 'cancelled');
+
+                        if (conflicts && conflicts.length > 0) continue; // Skip busy mentor
+
+                        // 3. Insert mentor notification
+                        await supabase.from('mentor_notifications').insert({
+                            mentor_id: mentor.id,
+                            booking_id: null, // will be linked via booking lookup
+                            title: 'New Session Nearby',
+                            message: `A new 2-hour ${sessionMode} session is available near you. Class ${state?.classInfo?.label}, Date: ${preferredDate}, Time: ${preferredTime}. Tap Nearby Offers to accept.`,
+                            mentor_fare: mentorFare,
+                            is_read: false
+                        });
+                    }
+                } catch (mentorNotifErr) {
+                    console.error('Mentor notification error:', mentorNotifErr);
+                }
             }
 
             setIsSuccess(true);
@@ -499,7 +551,6 @@ const BookingPage: React.FC = () => {
                                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a0522d] flex items-center gap-3">
                                                     <span className="w-8 h-[1px] bg-[#a0522d]/30"></span> <FaClock size={11} className="opacity-70" /> Available Hours
                                                 </h3>
-                                                <p className="text-[8.5px] font-black text-gray-400 uppercase tracking-widest">Select multiple</p>
                                             </div>
                                             <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                                                 {[
@@ -507,18 +558,12 @@ const BookingPage: React.FC = () => {
                                                     '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM',
                                                     '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM'
                                                 ].map((time) => {
-                                                    const isSelected = preferredTimes.includes(time);
+                                                    const isSelected = preferredTime === time;
                                                     return (
                                                         <button
                                                             key={time}
                                                             type="button"
-                                                            onClick={() => {
-                                                                if (isSelected) {
-                                                                    setPreferredTimes(preferredTimes.filter(t => t !== time));
-                                                                } else {
-                                                                    setPreferredTimes([...preferredTimes, time].sort());
-                                                                }
-                                                            }}
+                                                            onClick={() => setPreferredTime(isSelected ? '' : time)}
                                                             className={`py-3 px-1 rounded-xl text-[9px] font-black transition-all border-2 flex flex-col items-center justify-center gap-0 ${isSelected
                                                                 ? 'bg-[#a0522d] border-[#a0522d] text-white shadow-lg shadow-[#a0522d]/20 scale-[1.02]'
                                                                 : 'bg-white border-gray-50 text-gray-400 hover:border-orange-100 hover:text-[#a0522d]'
@@ -532,7 +577,7 @@ const BookingPage: React.FC = () => {
                                                     );
                                                 })}
                                             </div>
-                                            <input type="hidden" required value={preferredTimes.join(',')} />
+                                            <input type="hidden" required value={preferredTime} />
                                         </div>
                                     </div>
                                 </div>

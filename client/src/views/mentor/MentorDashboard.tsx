@@ -10,8 +10,13 @@ import { useRouter } from 'next/navigation';
 import {
     FaUser, FaCheckCircle, FaTrash, FaClock, FaHistory, FaPlus,
     FaTimes, FaCalendarAlt, FaWifi, FaHome, FaLinkedin, FaGraduationCap, 
-    FaBriefcase, FaStar, FaPen, FaSave, FaChevronDown, FaSignOutAlt, FaCalendarCheck, FaMapMarkerAlt, FaBars, FaInfoCircle, FaEye, FaEyeSlash
+    FaBriefcase, FaStar, FaPen, FaSave, FaChevronDown, FaSignOutAlt, FaCalendarCheck, FaMapMarkerAlt, FaBars, FaInfoCircle, FaEye, FaEyeSlash,
+    FaChevronLeft, FaChevronRight
 } from 'react-icons/fa';
+import {
+    format, addMonths, subMonths, startOfMonth, endOfMonth,
+    startOfWeek, endOfWeek, isSameMonth, isSameDay, eachDayOfInterval
+} from 'date-fns';
 import { useModal } from '../../context/ModalContext';
 
 interface MentorProfile {
@@ -65,7 +70,7 @@ const MentorDashboard: React.FC = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history' | 'security'>(() => {
+    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history' | 'security' | 'calendar'>(() => {
         if (typeof window !== 'undefined') {
             const saved = window.localStorage.getItem('mentor_dashboard_tab');
             return (saved as any) || 'profile';
@@ -80,11 +85,16 @@ const MentorDashboard: React.FC = () => {
     const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-    const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
-    const [selectedTaskForTime, setSelectedTaskForTime] = useState<Task | null>(null);
-    const [selectedTime, setSelectedTime] = useState('');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Calendar state
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(new Date());
+
+    const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+    const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+
 
     const [editForm, setEditForm] = useState({
         name: '',
@@ -317,7 +327,7 @@ const MentorDashboard: React.FC = () => {
         }
     };
 
-    const finalizeAcceptTask = async (taskId: string, selectedTime: string, bookingData: any) => {
+    const finalizeAcceptTask = async (taskId: string, singleTime: string, bookingData: any) => {
         if (!profile) return;
 
         // 1. Stop if already confirmed (Prevents duplicate notifications)
@@ -340,7 +350,7 @@ const MentorDashboard: React.FC = () => {
         // 3. Confirm Booking
         const { error } = await supabase
             .from('bookings')
-            .update({ status: 'confirmed', selected_time: selectedTime })
+            .update({ status: 'confirmed', selected_time: singleTime })
             .eq('id', taskId);
         
         if (error) throw error;
@@ -349,7 +359,7 @@ const MentorDashboard: React.FC = () => {
         const { error: notifError } = await supabase.from('notifications').insert({
             user_id: bookingData.user_id,
             title: 'Booking Confirmed!',
-            message: `Great news! ${profile?.name} has been assigned as your mentor. Your session is scheduled for ${selectedTime}. Your Session OTP is: ${currentOtp}. ⚠️ Do not share this OTP at any other time except during the session.`,
+            message: `Great news! ${profile?.name} has been assigned as your mentor. Your session is scheduled for ${singleTime}. Your Session OTP is: ${currentOtp}. ⚠️ Do not share this OTP at any other time except during the session.`,
             type: 'booking_confirmed'
         });
 
@@ -359,7 +369,7 @@ const MentorDashboard: React.FC = () => {
         } else {
             showSuccess("Task accepted and parent notified!");
         }
-        setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed', selected_time: selectedTime } : t));
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed', selected_time: singleTime } : t));
     };
 
     const handleAcceptTask = async (taskId: string, type: 'query' | 'booking') => {
@@ -375,20 +385,8 @@ const MentorDashboard: React.FC = () => {
 
                 if (fetchError || !bookingData) throw new Error("Could not fetch booking details");
                 
-                const times = (bookingData.preferred_time || '').split(',').map((t: string) => t.trim()).filter(Boolean);
-                
-                if (times.length > 1) {
-                    setSelectedTaskForTime({ ...bookingData, type: 'booking' });
-                    setIsTimeModalOpen(true);
-                    setProcessingTaskId(null); // Release processing state for modal
-                    return;
-                } else if (times.length === 1) {
-                    // Auto-select if only one
-                    await finalizeAcceptTask(taskId, times[0], bookingData);
-                } else {
-                    // No time specified? (Shouldn't happen with current logic but stay safe)
-                    await finalizeAcceptTask(taskId, 'TBD', bookingData);
-                }
+                // Directly finalize since time is single selection now
+                await finalizeAcceptTask(taskId, bookingData.preferred_time || 'TBD', bookingData);
             } else {
                 const { error } = await supabase
                     .from('contact_queries')
@@ -766,6 +764,7 @@ const MentorDashboard: React.FC = () => {
                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
                             { id: 'history', icon: <FaHistory />, label: 'Booking History' },
+                            { id: 'calendar', icon: <FaCalendarAlt />, label: 'Calendar' },
                             { id: 'security', icon: <FaSignOutAlt />, label: 'Password Settings' }
                         ].map(tab => (
                             <button
@@ -1049,6 +1048,10 @@ const MentorDashboard: React.FC = () => {
                                                                     <span className="text-[10px] font-bold text-gray-600">{offer.preferred_time || 'TBD'}</span>
                                                                 </div>
                                                             </div>
+                                                            <div className="pt-2 border-t border-gray-50 flex items-center gap-2">
+                                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Your Earning</span>
+                                                                <span className="text-sm font-black text-green-600 tracking-tight">₹{Math.round(offer.paid_amount * 0.8)}</span>
+                                                            </div>
                                                         </div>
                                                         <button
                                                             onClick={() => handleAcceptOffer(offer.id)}
@@ -1278,6 +1281,125 @@ const MentorDashboard: React.FC = () => {
                                             ))}
                                         </div>
                                     )}
+                                </motion.div>
+                            )}
+
+                            {activeTab === 'calendar' && (
+                                <motion.div
+                                    key="calendar"
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.98 }}
+                                    className="max-w-4xl mx-auto space-y-6"
+                                >
+                                    <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                                        <div className="flex items-center justify-between mb-8">
+                                            <div>
+                                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">My Calendar</h2>
+                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Confirmed Sessions Schedule</p>
+                                            </div>
+                                            <div className="flex bg-gray-50 rounded-2xl p-1 gap-2">
+                                                <button onClick={prevMonth} className="w-10 h-10 flex flex-col items-center justify-center text-gray-400 hover:text-[#a0522d] hover:bg-white rounded-xl transition-all shadow-sm">
+                                                    <FaChevronLeft size={12} />
+                                                </button>
+                                                <div className="px-6 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-100">
+                                                    <span className="text-sm font-black text-[#1B2A5A] uppercase tracking-widest">{format(currentMonth, 'MMMM yyyy')}</span>
+                                                </div>
+                                                <button onClick={nextMonth} className="w-10 h-10 flex flex-col items-center justify-center text-gray-400 hover:text-[#a0522d] hover:bg-white rounded-xl transition-all shadow-sm">
+                                                    <FaChevronRight size={12} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-7 mb-4">
+                                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                                <div key={day} className="text-center text-[10px] font-black uppercase tracking-widest text-gray-400 pb-4">
+                                                    {day}
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="grid grid-cols-7 gap-2">
+                                            {eachDayOfInterval({
+                                                start: startOfWeek(startOfMonth(currentMonth)),
+                                                end: endOfWeek(endOfMonth(currentMonth))
+                                            }).map((day, idx) => {
+                                                const daySessions = tasks.filter(t => 
+                                                    t.type === 'booking' && 
+                                                    t.status === 'confirmed' && 
+                                                    t.preferred_date === format(day, 'yyyy-MM-dd')
+                                                );
+                                                
+                                                const isSelected = isSameDay(day, selectedDate);
+                                                const isCurrentMonth = isSameMonth(day, currentMonth);
+                                                const isToday = isSameDay(day, new Date());
+
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => setSelectedDate(day)}
+                                                        className={`min-h-[80px] p-2 rounded-2xl border transition-all flex flex-col items-center justify-start gap-1 relative ${
+                                                            !isCurrentMonth ? 'opacity-30 bg-gray-50 border-transparent' : 
+                                                            isSelected ? 'border-[#a0522d] bg-orange-50/50 shadow-sm' : 
+                                                            isToday ? 'border-[#1B2A5A]/30 bg-[#1B2A5A]/5' : 
+                                                            'border-gray-100 hover:border-gray-300 bg-white'
+                                                        }`}
+                                                    >
+                                                        <span className={`text-xs font-black ${
+                                                            isSelected ? 'text-[#a0522d]' : 
+                                                            isToday ? 'text-[#1B2A5A]' : 
+                                                            'text-gray-600'
+                                                        }`}>
+                                                            {format(day, 'd')}
+                                                        </span>
+                                                        <div className="flex flex-wrap gap-1 justify-center max-w-full px-1">
+                                                            {daySessions.map((_, i) => (
+                                                                <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#a0522d]" />
+                                                            ))}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Selected Day Details */}
+                                    <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                                        <h3 className="text-sm font-black text-gray-900 mb-6 flex items-center gap-3">
+                                            <FaCalendarCheck className="text-[#a0522d]" /> 
+                                            Sessions for {format(selectedDate, 'do MMMM yyyy')}
+                                        </h3>
+                                        
+                                        {tasks.filter(t => t.type === 'booking' && t.status === 'confirmed' && t.preferred_date === format(selectedDate, 'yyyy-MM-dd')).length === 0 ? (
+                                            <div className="text-center py-10 bg-gray-50 rounded-3xl border border-dashed border-gray-200 text-gray-400 font-bold text-xs">
+                                                No sessions scheduled for this date.
+                                            </div>
+                                        ) : (
+                                            <div className="grid gap-4">
+                                                {tasks.filter(t => t.type === 'booking' && t.status === 'confirmed' && t.preferred_date === format(selectedDate, 'yyyy-MM-dd')).map(session => (
+                                                    <div key={session.id} className="p-4 rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="text-sm font-black text-gray-900">{session.name}</span>
+                                                                <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-widest">{session.curriculum}</span>
+                                                            </div>
+                                                            <p className="text-[10px] font-bold text-gray-500">{session.phone}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex items-center gap-1.5 text-[#a0522d] bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100/50">
+                                                                <FaClock size={12} />
+                                                                <span className="text-[11px] font-black uppercase tracking-widest">{session.selected_time || session.preferred_time}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 text-gray-600 bg-white border border-gray-200 px-3 py-1.5 rounded-xl">
+                                                                {session.session_mode === 'online' ? <FaWifi size={12} /> : <FaHome size={12} />}
+                                                                <span className="text-[11px] font-black uppercase tracking-widest">{session.session_mode || 'Offline'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </motion.div>
                             )}
 
@@ -1553,83 +1675,6 @@ const MentorDashboard: React.FC = () => {
                 )}
             </AnimatePresence>
 
-            {/* Time Selection Modal */}
-            <AnimatePresence>
-                {isTimeModalOpen && selectedTaskForTime && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white w-full max-w-md rounded-[40px] shadow-2xl overflow-hidden p-8"
-                        >
-                            <div className="text-center mb-8">
-                                <div className="w-16 h-16 bg-orange-50 text-[#a0522d] rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <FaClock size={24} />
-                                </div>
-                                <h2 className="text-2xl font-black text-gray-900 leading-none">Select Session Time</h2>
-                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-2 px-1">Multiple slots requested</p>
-                            </div>
-
-                            <div className="space-y-3 mb-8">
-                                {(selectedTaskForTime.preferred_time || '').split(',').map((time, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => setSelectedTime(time.trim())}
-                                        className={`w-full p-5 rounded-2xl border-2 transition-all text-left flex items-center justify-between group ${
-                                            selectedTime === time.trim() 
-                                            ? 'border-[#a0522d] bg-orange-50/50' 
-                                            : 'border-gray-100 hover:border-gray-200 bg-gray-50/30'
-                                        }`}
-                                    >
-                                        <span className={`font-bold ${selectedTime === time.trim() ? 'text-[#a0522d]' : 'text-gray-600'}`}>
-                                            {time.trim()}
-                                        </span>
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                            selectedTime === time.trim() ? 'border-[#a0522d] bg-[#a0522d]' : 'border-gray-200'
-                                        }`}>
-                                            {selectedTime === time.trim() && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div className="flex gap-4">
-                                <button
-                                    disabled={!selectedTime || processingTaskId === selectedTaskForTime.id}
-                                    onClick={async () => {
-                                        if (!selectedTime) return;
-                                        setProcessingTaskId(selectedTaskForTime.id);
-                                        try {
-                                            await finalizeAcceptTask(selectedTaskForTime.id, selectedTime, selectedTaskForTime);
-                                            setIsTimeModalOpen(false);
-                                            setSelectedTaskForTime(null);
-                                            setSelectedTime('');
-                                        } catch (e) {
-                                            console.error(e);
-                                        } finally {
-                                            setProcessingTaskId(null);
-                                        }
-                                    }}
-                                    className="flex-1 py-4 bg-[#1B2A5A] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#142044] transition-all shadow-xl shadow-[#1B2A5A]/20 disabled:opacity-50"
-                                >
-                                    {processingTaskId === selectedTaskForTime.id ? "Processing..." : "Confirm Schedule"}
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setIsTimeModalOpen(false);
-                                        setSelectedTaskForTime(null);
-                                        setSelectedTime('');
-                                    }}
-                                    className="px-6 py-4 border-2 border-gray-100 text-gray-400 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-gray-50 transition-all"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
         </div>
     );
 };

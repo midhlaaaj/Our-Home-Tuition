@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin/', '/login', '/auth/'],
+      disallow: ['/admin/', '/auth/'],
     },
     sitemap: 'https://our-home-tuition.vercel.app/sitemap.xml',
   }

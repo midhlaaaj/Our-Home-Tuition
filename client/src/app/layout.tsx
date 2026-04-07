@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Urbanist } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "../context/AuthContext";
+import { RoleBasedAuthProvider } from "../context/RoleBasedAuthProvider";
 import { ModalProvider } from "../context/ModalContext";
 import { CurriculumProvider } from "../context/CurriculumContext";
 
@@ -91,13 +91,13 @@ export default function RootLayout({
         </Script>
       </head>
       <body className="min-h-full flex flex-col font-sans">
-        <AuthProvider>
+        <RoleBasedAuthProvider>
           <CurriculumProvider>
             <ModalProvider>
               {children}
             </ModalProvider>
           </CurriculumProvider>
-        </AuthProvider>
+        </RoleBasedAuthProvider>
       </body>
     </html>
   );

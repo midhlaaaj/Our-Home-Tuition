@@ -12,8 +12,7 @@ const AIChatButton: React.FC = () => {
     const hideOnRoutes = [
         '/admin',
         '/mentor',
-        '/auth',
-        '/login'
+        '/auth'
     ];
 
     const shouldHide = hideOnRoutes.some(route => pathname?.startsWith(route));
