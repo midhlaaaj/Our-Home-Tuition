@@ -142,7 +142,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
 
     return (
         <header
-            className={`fixed w-full top-0 z-50 transition-all duration-300 ease-in-out transform font-['Urbanist'] ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+            className={`fixed w-full top-0 z-[100] transition-all duration-300 ease-in-out transform font-['Urbanist'] ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
                 } ${bgClass ? bgClass : 'bg-white shadow-md border-b border-gray-100'
                 }`}
         >
