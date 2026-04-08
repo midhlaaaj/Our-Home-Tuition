@@ -49,11 +49,18 @@ const AdminOperations: React.FC = () => {
             color: 'bg-teal-50 text-teal-600'
         },
         {
-            title: 'Mentors',
-            description: 'Complete mentor profiles and administrative status management.',
+            title: 'Mentor Access',
+            description: 'Manage mentor credentials, logins, and administrative status.',
             icon: <FaChalkboardTeacher />,
             path: '/admin/mentors',
             color: 'bg-orange-50 text-orange-600'
+        },
+        {
+            title: 'Mentor Management',
+            description: 'Track sessions, review performance, and manage incentive payouts.',
+            icon: <FaChalkboardTeacher />,
+            path: '/admin/mentor-management',
+            color: 'bg-blue-50 text-blue-600'
         }
     ];
 

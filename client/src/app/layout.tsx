@@ -5,6 +5,8 @@ import "./globals.css";
 import { RoleBasedAuthProvider } from "../context/RoleBasedAuthProvider";
 import { ModalProvider } from "../context/ModalContext";
 import { CurriculumProvider } from "../context/CurriculumContext";
+import AIChatButton from "../components/AIChatButton";
+import ScrollToTop from "../components/ScrollToTop";
 
 const urbanist = Urbanist({
   subsets: ["latin"],
@@ -94,7 +96,9 @@ export default function RootLayout({
         <RoleBasedAuthProvider>
           <CurriculumProvider>
             <ModalProvider>
+              <ScrollToTop />
               {children}
+              <AIChatButton />
             </ModalProvider>
           </CurriculumProvider>
         </RoleBasedAuthProvider>

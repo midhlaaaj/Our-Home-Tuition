@@ -8,14 +8,15 @@ import { usePathname } from 'next/navigation';
 const AIChatButton: React.FC = () => {
     const pathname = usePathname();
     
-    // Hide chat button on specific administrative and login pages
+    // Hide chat button on specific administrative, dashboard, and login pages
     const hideOnRoutes = [
         '/admin',
         '/mentor',
-        '/auth'
+        '/auth',
+        '/dashboard'
     ];
 
-    const shouldHide = hideOnRoutes.some(route => pathname?.startsWith(route));
+    const shouldHide = !pathname || hideOnRoutes.some(route => pathname.startsWith(route));
 
     if (shouldHide) return null;
 

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import { FaSignOutAlt, FaListOl, FaThLarge, FaBook, FaBriefcase, FaBars, FaTimes, FaHome, FaCog, FaChevronDown, FaStar, FaHandshake, FaChalkboardTeacher, FaQuestionCircle, FaUserPlus, FaCalendarCheck, FaInbox, FaTrophy, FaUserCircle, FaBookOpen } from 'react-icons/fa';
+import { FaSignOutAlt, FaListOl, FaThLarge, FaBook, FaBriefcase, FaBars, FaTimes, FaHome, FaCog, FaChevronDown, FaStar, FaHandshake, FaChalkboardTeacher, FaQuestionCircle, FaUserPlus, FaCalendarCheck, FaInbox, FaTrophy, FaUserCircle, FaBookOpen, FaUsers } from 'react-icons/fa';
 
 interface MenuItem {
     path?: string;
@@ -63,7 +63,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 { path: '/admin/reviews', label: 'Reviews', icon: <FaStar /> },
                 { path: '/admin/jobs', label: 'Post Jobs', icon: <FaBriefcase /> },
                 { path: '/admin/applications', label: 'Applications', icon: <FaChalkboardTeacher /> },
-                { path: '/admin/mentors', label: 'Mentors', icon: <FaChalkboardTeacher /> },
+                { path: '/admin/mentors', label: 'Mentor Access', icon: <FaChalkboardTeacher /> },
+                { path: '/admin/mentor-management', label: 'Mentor Management', icon: <FaUsers /> },
             ]
         },
         { path: '/admin/classes', icon: <FaBook />, label: 'Classes' },

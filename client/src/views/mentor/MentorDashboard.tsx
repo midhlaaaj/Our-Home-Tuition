@@ -11,7 +11,7 @@ import {
     FaUser, FaCheckCircle, FaTrash, FaClock, FaHistory, FaPlus,
     FaTimes, FaCalendarAlt, FaWifi, FaHome, FaLinkedin, FaGraduationCap, 
     FaBriefcase, FaStar, FaPen, FaSave, FaChevronDown, FaSignOutAlt, FaCalendarCheck, FaMapMarkerAlt, FaBars, FaInfoCircle, FaEye, FaEyeSlash,
-    FaChevronLeft, FaChevronRight
+    FaChevronLeft, FaChevronRight, FaLock
 } from 'react-icons/fa';
 import {
     format, addMonths, subMonths, startOfMonth, endOfMonth,
@@ -70,7 +70,7 @@ const MentorDashboard: React.FC = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history' | 'security' | 'calendar'>(() => {
+    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history' | 'security' | 'calendar' | 'incentives'>(() => {
         if (typeof window !== 'undefined') {
             const saved = window.localStorage.getItem('mentor_dashboard_tab');
             return (saved as any) || 'profile';
@@ -128,6 +128,9 @@ const MentorDashboard: React.FC = () => {
     const [showCurrentPass, setShowCurrentPass] = useState(false);
     const [showNewPass, setShowNewPass] = useState(false);
     const [showConfirmPass, setShowConfirmPass] = useState(false);
+    
+    // Incentive states
+    const [offlineSessionCount, setOfflineSessionCount] = useState(0);
 
     useEffect(() => {
         if (activeTab) {
@@ -154,6 +157,35 @@ const MentorDashboard: React.FC = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Real-time subscription for Incentives
+    useEffect(() => {
+        if (!user?.id || !profile?.id) return;
+
+        const channel = supabase
+            .channel('mentor_incentive_updates')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'bookings',
+                    filter: `assigned_mentor_id=eq.${profile.id}`
+                },
+                (payload: any) => {
+                    console.log('Realtime update received:', payload);
+                    // If a booking is marked completed, refresh data
+                    if (payload.new.status === 'completed') {
+                        fetchMentorData();
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user?.id, profile?.id]);
 
     const handleValidateOTP = async (taskId: string, enteredOtp: string) => {
         setProcessingTaskId(taskId);
@@ -186,6 +218,60 @@ const MentorDashboard: React.FC = () => {
             showAlert("Error: " + err.message);
         } finally {
             setProcessingTaskId(null);
+        }
+    };
+    
+    const handleRaiseInvoice = async () => {
+        if (!profile || offlineSessionCount < 10) return;
+        
+        setIsSaving(true);
+        try {
+            // Get the 10 oldest completed offline bookings that are not claimed
+            const { data: bookingsToClaim, error: fetchError } = await supabase
+                .from('bookings')
+                .select('id')
+                .eq('assigned_mentor_id', profile.id)
+                .eq('status', 'completed')
+                .or('session_mode.eq.offline,session_mode.is.null')
+                .eq('claimed_for_incentive', false)
+                .order('created_at', { ascending: true })
+                .limit(10);
+
+            if (fetchError) throw fetchError;
+            if (!bookingsToClaim || bookingsToClaim.length < 10) {
+                showAlert("Not enough qualifying sessions found to raise an invoice.");
+                return;
+            }
+
+            const bookingIds = bookingsToClaim.map((b: any) => b.id);
+
+            // 1. Create the incentive claim
+            const { error: claimError } = await supabase
+                .from('incentive_claims')
+                .insert([{
+                    mentor_id: profile.id,
+                    amount: 1000,
+                    status: 'pending',
+                    booking_ids: bookingIds
+                }]);
+
+            if (claimError) throw claimError;
+
+            // 2. Mark bookings as claimed
+            const { error: updateError } = await supabase
+                .from('bookings')
+                .update({ claimed_for_incentive: true })
+                .in('id', bookingIds);
+
+            if (updateError) throw updateError;
+
+            showSuccess("Invoice raised successfully! Your incentive bar has been reset.");
+            fetchMentorData(); // Refresh counts
+        } catch (err: any) {
+            console.error('Error raising invoice:', err);
+            showAlert(`Failed to raise invoice: ${err.message}`);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -248,6 +334,14 @@ const MentorDashboard: React.FC = () => {
                 const combinedTasks = [...formattedQueries, ...formattedBookings];
                 combinedTasks.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                 setTasks(combinedTasks);
+
+                // Calculate offline session count (only those not yet claimed for incentive)
+                const offlineCount = (bookingData || []).filter((b: any) => 
+                    b.status === 'completed' && 
+                    (b.session_mode === 'offline' || !b.session_mode) &&
+                    !b.claimed_for_incentive
+                ).length;
+                setOfflineSessionCount(offlineCount);
             }
         } catch (err) {
             console.error('Error fetching mentor data:', err);
@@ -722,6 +816,7 @@ const MentorDashboard: React.FC = () => {
                                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
                                             { id: 'history', icon: <FaHistory />, label: 'Booking History' },
+                                            { id: 'incentives', icon: <FaStar />, label: 'Incentives' },
                                             { id: 'security', icon: <FaSignOutAlt />, label: 'Password' }
                                         ].map(tab => (
                                             <button
@@ -764,6 +859,7 @@ const MentorDashboard: React.FC = () => {
                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
                             { id: 'history', icon: <FaHistory />, label: 'Booking History' },
+                            { id: 'incentives', icon: <FaStar />, label: 'Incentives' },
                             { id: 'calendar', icon: <FaCalendarAlt />, label: 'Calendar' },
                             { id: 'security', icon: <FaSignOutAlt />, label: 'Password Settings' }
                         ].map(tab => (
@@ -1399,6 +1495,101 @@ const MentorDashboard: React.FC = () => {
                                                 ))}
                                             </div>
                                         )}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {activeTab === 'incentives' && (
+                                <motion.div
+                                    key="incentives"
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.98 }}
+                                    className="max-w-4xl mx-auto space-y-4"
+                                >
+                                    <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-8 opacity-5">
+                                            <FaStar size={100} />
+                                        </div>
+                                        
+                                        <div className="relative z-10">
+                                            <div className="mb-8">
+                                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">My Incentives</h2>
+                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">Earn rewards upon 10 successful offline sessions</p>
+                                            </div>
+
+                                            {/* Tiered Progress Path */}
+                                            <div className="relative px-4 pb-12 pt-12">
+                                                {/* Connecting Line (Background) */}
+                                                <div className="absolute top-[108px] left-12 right-12 h-1 bg-gray-100 rounded-full" />
+                                                
+                                                {/* Progress Line (Active) */}
+                                                <div className="absolute top-[108px] left-12 right-12 h-1 overflow-hidden pointer-events-none">
+                                                    <motion.div 
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${Math.min((offlineSessionCount / 10) * 100, 100)}%` }}
+                                                        className="h-full bg-[#1B2A5A]"
+                                                    />
+                                                </div>
+
+                                                <div className="flex justify-between items-center relative z-20">
+                                                    {[
+                                                        { count: 3, label: '3 Gigs' },
+                                                        { count: 4, label: '4 Gigs' },
+                                                        { count: 5, label: '5 Gigs' },
+                                                        { count: 7, label: '7 Gigs' },
+                                                        { count: 8, label: '8 Gigs' },
+                                                        { count: 10, reward: '₹1000', label: '10 Gigs', locked: true }
+                                                    ].map((m, idx) => {
+                                                        const isAchieved = offlineSessionCount >= m.count;
+                                                        return (
+                                                            <div key={idx} className="flex flex-col items-center gap-6">
+                                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-tight h-5">
+                                                                    {m.reward || ''}
+                                                                </div>
+                                                                <div className={`w-8 h-8 rounded-full border-4 flex items-center justify-center transition-all duration-500 bg-white ${
+                                                                    isAchieved ? 'border-[#1B2A5A] scale-110 shadow-lg' : 'border-gray-100'
+                                                                }`}>
+                                                                    {m.locked && !isAchieved ? (
+                                                                        <FaLock size={10} className="text-gray-300" />
+                                                                    ) : (
+                                                                        <div className={`w-2 h-2 rounded-full ${isAchieved ? 'bg-[#1B2A5A]' : 'bg-gray-100'}`} />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex flex-col items-center">
+                                                                    <div className={`text-[10px] font-black transition-colors ${isAchieved ? 'text-gray-900' : 'text-gray-300'}`}>
+                                                                        {m.count}
+                                                                    </div>
+                                                                    <div className="text-[8px] font-black uppercase text-gray-300 tracking-widest">
+                                                                        Gigs
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-8 p-6 bg-gray-50 rounded-3xl border border-gray-100 max-w-lg mx-auto flex flex-col items-center gap-4">
+                                                <p className="text-[10px] font-bold text-gray-500 leading-relaxed uppercase tracking-tight text-center">
+                                                    Complete <span className="text-[#1B2A5A] font-black">10 successful offline sessions</span> to unlock the premium <span className="text-[#a0522d] font-black">₹1000 Incentive</span>. Keep up the great work!
+                                                </p>
+                                                
+                                                {offlineSessionCount >= 10 && (
+                                                    <motion.button
+                                                        initial={{ scale: 0.9, opacity: 0 }}
+                                                        animate={{ scale: 1, opacity: 1 }}
+                                                        whileHover={{ scale: 1.05 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                        onClick={handleRaiseInvoice}
+                                                        disabled={isSaving}
+                                                        className="px-8 py-3 bg-[#1B2A5A] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#1B2A5A]/20 hover:bg-[#142044] transition-all disabled:opacity-50"
+                                                    >
+                                                        {isSaving ? 'Processing...' : 'Raise Invoice (₹1000)'}
+                                                    </motion.button>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </motion.div>
                             )}

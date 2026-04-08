@@ -16,7 +16,20 @@ interface SignInProps {
 
 const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin' }) => {
     const { supabaseClient: supabase } = useAuth();
-    const [isLogin, setIsLogin] = useState(initialView === 'signin');
+    
+    // Helper to get the correct redirect URL
+    const getURL = () => {
+        let url =
+          process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+          'https://www.hourhome.in';
+        // Make sure to include `https://` when not localhost.
+        url = url.includes('http') ? url : `https://${url}`;
+        // Make sure to include a trailing `/`.
+        url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
+        return url;
+    };
+    type AuthView = 'signin' | 'signup' | 'forgot-password' | 'magic-link';
+    const [view, setView] = useState<AuthView>(initialView === 'signin' ? 'signin' : 'signup');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showVerifyPassword, setShowVerifyPassword] = useState(false);
@@ -41,7 +54,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
     if (isOpen !== prevIsOpen) {
         setPrevIsOpen(isOpen);
         if (isOpen) {
-            setIsLogin(initialView === 'signin');
+            setView(initialView === 'signin' ? 'signin' : 'signup');
             setErrors({});
             setLoginData({ email: '', password: '' });
             // Note: registerData is handled by persistence hook
@@ -162,6 +175,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                         full_name: registerData.name,
                         phone: registerData.phone,
                     },
+                    redirectTo: getURL(),
                 },
             });
 
@@ -215,11 +229,56 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.origin }
+                options: { redirectTo: getURL() }
             });
             if (error) setErrors({ auth: error.message });
         } catch (error: any) {
             setErrors({ auth: error?.message || 'An unexpected error occurred.' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!loginData.email) {
+            setErrors({ email: 'Email is required' });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(loginData.email, {
+                redirectTo: `${getURL()}auth/reset-password`,
+            });
+            if (error) throw error;
+            setErrors({ success: 'Password reset link sent! Please check your email.' });
+        } catch (error: any) {
+            setErrors({ auth: error.message });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleMagicLinkSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!loginData.email) {
+            setErrors({ email: 'Email is required' });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.signInWithOtp({
+                email: loginData.email,
+                options: {
+                    emailRedirectTo: getURL(),
+                },
+            });
+            if (error) throw error;
+            setErrors({ success: 'Magic link sent! Please check your email to sign in.' });
+        } catch (error: any) {
+            setErrors({ auth: error.message });
         } finally {
             setLoading(false);
         }
@@ -230,7 +289,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'facebook',
-                options: { redirectTo: window.location.origin }
+                options: { redirectTo: getURL() }
             });
             if (error) setErrors({ auth: error.message });
         } catch (error: any) {
@@ -279,7 +338,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                             </div>
 
                             <div className="p-5 sm:p-6 flex flex-col items-center">
-                                {isLogin ? (
+                                {(view === 'signin' || view === 'magic-link') && (
                                     <>
                                         <div className="w-24 h-16 flex items-center justify-center mb-6">
                                             <img src="/brand-logo.png" alt="Hour Home" className="w-full h-full object-contain scale-150" />
@@ -300,7 +359,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                             <div className="flex-1 h-px bg-gray-200"></div>
                                         </div>
                                     </>
-                                ) : null}
+                                )}
 
                                 {(errors.auth || errors.success) && (
                                     <div className={`w-full mb-4 p-3 text-sm rounded-lg border text-center ${errors.success ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-500 border-red-100'}`}>
@@ -309,7 +368,7 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                 )}
 
                                 <AnimatePresence mode="wait" initial={false}>
-                                    {isLogin ? (
+                                    {view === 'signin' ? (
                                         <motion.form key="login" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }} onSubmit={handleLoginSubmit} className="w-full space-y-4">
                                             <div>
                                                 <input id="login-email" name="email" type="email" autoComplete="email" placeholder="Email" value={loginData.email} onChange={handleLoginChange} className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`} />
@@ -328,23 +387,26 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                 </button>
                                             </div>
                                             <div className="text-center pt-2 space-y-3">
-                                                <a href="#" className="text-sm font-medium text-[#1B2A5A] hover:text-[#142044]">Forgot Password?</a>
-                                                <div className="text-sm text-gray-900">
-                                                    Not a member yet? <button type="button" onClick={() => { setIsLogin(false); setErrors({}); }} className="font-medium text-[#1B2A5A] hover:text-[#142044]">Sign Up</button>
+                                                <div className="flex flex-col gap-2">
+                                                    <button type="button" onClick={() => setView('forgot-password')} className="text-sm font-medium text-[#1B2A5A] hover:text-[#142044]">Forgot Password?</button>
+                                                    <button type="button" onClick={() => setView('magic-link')} className="text-sm font-medium text-[#1B2A5A] hover:text-[#142044]">Sign in with Magic Link</button>
+                                                </div>
+                                                <div className="text-sm text-gray-900 border-t border-gray-100 pt-3 mt-3">
+                                                    Not a member yet? <button type="button" onClick={() => { setView('signup'); setErrors({}); }} className="font-medium text-[#1B2A5A] hover:text-[#142044]">Sign Up</button>
                                                 </div>
                                             </div>
                                         </motion.form>
-                                    ) : (
+                                    ) : view === 'signup' ? (
                                         <motion.form key="register" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.1 }} onSubmit={handleRegisterSubmit} className="w-full space-y-4" noValidate>
                                             <div className="w-24 h-16 flex items-center justify-center mb-6 mx-auto">
                                                 <img src="/brand-logo.png" alt="Hour Home" className="w-full h-full object-contain scale-150" />
                                             </div>
                                             <div className="w-full flex gap-3 mb-5">
-                                                <button type="button" className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                                <button type="button" onClick={handleGoogleSignIn} className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                                     <span className="text-sm font-medium text-gray-800">Sign Up</span>
                                                     <FcGoogle size={18} />
                                                 </button>
-                                                <button type="button" className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                                <button type="button" onClick={handleFacebookSignIn} className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                                     <span className="text-sm font-medium text-gray-800">Sign Up</span>
                                                     <FaFacebook size={18} className="text-[#1877F2]" />
                                                 </button>
@@ -388,7 +450,45 @@ const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin'
                                                 </button>
                                             </div>
                                             <div className="text-center pt-3 space-y-4">
-                                                <div className="text-sm text-gray-900 font-medium">Already have an account? <button type="button" onClick={() => { setIsLogin(true); setErrors({}); }} className="text-[#1B2A5A] hover:text-[#142044]">Sign In</button></div>
+                                                <div className="text-sm text-gray-900 font-medium whitespace-nowrap">Already have an account? <button type="button" onClick={() => { setView('signin'); setErrors({}); }} className="text-[#1B2A5A] hover:text-[#142044]">Sign In</button></div>
+                                            </div>
+                                        </motion.form>
+                                    ) : view === 'forgot-password' ? (
+                                        <motion.form key="forgot" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }} onSubmit={handleForgotPasswordSubmit} className="w-full space-y-4">
+                                            <div className="text-center mb-6">
+                                                <h3 className="text-lg font-bold text-gray-900">Reset Password</h3>
+                                                <p className="text-sm text-gray-500 mt-1">Enter your email and we'll send you a recovery link.</p>
+                                            </div>
+                                            <div>
+                                                <input id="forgot-email" name="email" type="email" placeholder="Email" value={loginData.email} onChange={handleLoginChange} className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`} />
+                                                {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                                            </div>
+                                            <div className="pt-2">
+                                                <button type="submit" disabled={!loginData.email || loading} className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#1B2A5A] hover:bg-[#142044] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1B2A5A] disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-sm">
+                                                    {loading ? 'Sending Link...' : 'Send Reset Link'}
+                                                </button>
+                                            </div>
+                                            <div className="text-center pt-2">
+                                                <button type="button" onClick={() => { setView('signin'); setErrors({}); }} className="text-sm font-medium text-[#1B2A5A] hover:text-[#142044]">Back to Login</button>
+                                            </div>
+                                        </motion.form>
+                                    ) : (
+                                        <motion.form key="magic" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }} onSubmit={handleMagicLinkSubmit} className="w-full space-y-4">
+                                            <div className="text-center mb-6">
+                                                <h3 className="text-lg font-bold text-gray-900">Magic Link Login</h3>
+                                                <p className="text-sm text-gray-500 mt-1">Sign in instantly without a password.</p>
+                                            </div>
+                                            <div>
+                                                <input id="magic-email" name="email" type="email" placeholder="Email" value={loginData.email} onChange={handleLoginChange} className={`appearance-none block w-full px-4 py-3 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#1B2A5A] focus:border-[#1B2A5A]'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 transition duration-200 text-sm`} />
+                                                {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                                            </div>
+                                            <div className="pt-2">
+                                                <button type="submit" disabled={!loginData.email || loading} className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#1B2A5A] hover:bg-[#142044] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1B2A5A] disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 shadow-sm">
+                                                    {loading ? 'Sending Link...' : 'Send Magic Link'}
+                                                </button>
+                                            </div>
+                                            <div className="text-center pt-2">
+                                                <button type="button" onClick={() => { setView('signin'); setErrors({}); }} className="text-sm font-medium text-[#1B2A5A] hover:text-[#142044]">Back to Login</button>
                                             </div>
                                         </motion.form>
                                     )}

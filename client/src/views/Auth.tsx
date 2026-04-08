@@ -8,7 +8,21 @@ import { useFormPersistence, STORAGE_KEY } from '../hooks/useFormPersistence';
 
 const Auth: React.FC = () => {
     const { supabaseClient: supabase } = useAuth();
-    const [isLogin, setIsLogin] = useState(true);
+    
+    // Helper to get the correct redirect URL
+    const getURL = () => {
+        let url =
+          process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+          'https://www.hourhome.in';
+        // Make sure to include `https://` when not localhost.
+        url = url.includes('http') ? url : `https://${url}`;
+        // Make sure to include a trailing `/`.
+        url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
+        return url;
+    };
+
+    type AuthView = 'signin' | 'signup' | 'forgot-password' | 'magic-link';
+    const [view, setView] = useState<AuthView>('signin');
     const [loading, setLoading] = useState(false);
     
     // Register form with persistence
@@ -151,20 +165,65 @@ const Auth: React.FC = () => {
         }
     };
 
+    const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!loginData.email) {
+            setErrors({ email: 'Email is required' });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(loginData.email, {
+                redirectTo: `${getURL()}auth/reset-password`,
+            });
+            if (error) throw error;
+            setErrors({ success: 'Password reset link sent! Please check your email.' });
+        } catch (error: any) {
+            setErrors({ auth: error.message });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleMagicLinkSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!loginData.email) {
+            setErrors({ email: 'Email is required' });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.signInWithOtp({
+                email: loginData.email,
+                options: {
+                    emailRedirectTo: getURL(),
+                },
+            });
+            if (error) throw error;
+            setErrors({ success: 'Magic link sent! Please check your email to sign in.' });
+        } catch (error: any) {
+            setErrors({ auth: error.message });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden">
                 <div className="flex border-b border-gray-100">
                     <button
-                        onClick={() => setIsLogin(true)}
-                        className={`flex-1 py-4 text-sm font-bold uppercase tracking-widest transition-all ${isLogin ? 'text-[#1B2A5A] bg-white border-b-2 border-[#1B2A5A]' : 'text-gray-400 bg-gray-50 hover:bg-gray-100'
+                        onClick={() => setView('signin')}
+                        className={`flex-1 py-4 text-sm font-bold uppercase tracking-widest transition-all ${view === 'signin' || view === 'forgot-password' || view === 'magic-link' ? 'text-[#1B2A5A] bg-white border-b-2 border-[#1B2A5A]' : 'text-gray-400 bg-gray-50 hover:bg-gray-100'
                             }`}
                     >
                         Sign In
                     </button>
                     <button
-                        onClick={() => setIsLogin(false)}
-                        className={`flex-1 py-4 text-sm font-bold uppercase tracking-widest transition-all ${!isLogin ? 'text-[#1B2A5A] bg-white border-b-2 border-[#1B2A5A]' : 'text-gray-400 bg-gray-50 hover:bg-gray-100'
+                        onClick={() => setView('signup')}
+                        className={`flex-1 py-4 text-sm font-bold uppercase tracking-widest transition-all ${view === 'signup' ? 'text-[#1B2A5A] bg-white border-b-2 border-[#1B2A5A]' : 'text-gray-400 bg-gray-50 hover:bg-gray-100'
                             }`}
                     >
                         Sign Up
@@ -174,13 +233,13 @@ const Auth: React.FC = () => {
                 <div className="p-8">
                     <div className="flex flex-col items-center mb-8">
                         <div className="w-48 h-24 mb-4">
-                            <img src="/newlogo.png" alt="Hour Home" className="w-full h-full object-contain scale-125" />
+                            <img src="/brand-logo.png" alt="Hour Home" className="w-full h-full object-contain scale-125" />
                         </div>
                         <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-                            {isLogin ? 'Welcome Back' : 'Create Account'}
+                            {view === 'signin' ? 'Welcome Back' : view === 'signup' ? 'Create Account' : view === 'forgot-password' ? 'Reset Password' : 'Magic Link'}
                         </h2>
                         <p className="text-sm font-bold text-[#1B2A5A] mt-1 uppercase tracking-widest text-[10px]">
-                            {isLogin ? 'Sign in to access your dashboard' : 'Join our learning community'}
+                            {view === 'signin' ? 'Sign in to access your dashboard' : view === 'signup' ? 'Join our learning community' : view === 'forgot-password' ? 'Get a recovery link' : 'Quick sign in'}
                         </p>
                     </div>
 
@@ -191,7 +250,7 @@ const Auth: React.FC = () => {
                     )}
 
                     <AnimatePresence mode="wait">
-                        {isLogin ? (
+                        {view === 'signin' ? (
                             <motion.form
                                 key="login"
                                 initial={{ opacity: 0, x: -20 }}
@@ -252,8 +311,14 @@ const Auth: React.FC = () => {
                                     {loading ? 'Processing...' : 'Sign In'}
                                     <FaArrowRight size={14} />
                                 </button>
+                                
+                                <div className="flex flex-col gap-3 pt-2 text-center">
+                                    <button type="button" onClick={() => setView('forgot-password')} className="text-sm font-bold text-[#1B2A5A] hover:opacity-70 transition-opacity uppercase tracking-widest text-[10px]">Forgot Password?</button>
+                                    <div className="h-px bg-gray-100 w-full" />
+                                    <button type="button" onClick={() => setView('magic-link')} className="text-sm font-bold text-gray-500 hover:text-[#1B2A5A] transition-colors uppercase tracking-widest text-[10px]">Sign in with Magic Link</button>
+                                </div>
                             </motion.form>
-                        ) : (
+                        ) : view === 'signup' ? (
                             <motion.form
                                 key="register"
                                 initial={{ opacity: 0, x: 20 }}
@@ -366,6 +431,80 @@ const Auth: React.FC = () => {
                                     {loading ? 'Processing...' : 'Create Account'}
                                     <FaArrowRight size={14} />
                                 </button>
+                            </motion.form>
+                        ) : view === 'forgot-password' ? (
+                            <motion.form
+                                key="forgot"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                transition={{ duration: 0.3 }}
+                                onSubmit={handleForgotPasswordSubmit}
+                                className="space-y-4"
+                            >
+                                <div>
+                                    <label htmlFor="forgot-email" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Email</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-300">
+                                            <FaEnvelope size={14} />
+                                        </div>
+                                        <input
+                                            id="forgot-email"
+                                            name="email"
+                                            type="email"
+                                            placeholder="name@email.com"
+                                            value={loginData.email}
+                                            onChange={handleLoginChange}
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={loading || !loginData.email}
+                                    className="w-full bg-[#1B2A5A] text-white py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-[#142044] transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-xl shadow-blue-900/10"
+                                >
+                                    {loading ? 'Sending Link...' : 'Send Reset Link'}
+                                    <FaArrowRight size={14} />
+                                </button>
+                                <button type="button" onClick={() => setView('signin')} className="w-full text-center text-sm font-bold text-gray-500 hover:text-[#1B2A5A] transition-colors uppercase tracking-widest text-[10px] pt-4">Back to Login</button>
+                            </motion.form>
+                        ) : (
+                            <motion.form
+                                key="magic"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                transition={{ duration: 0.3 }}
+                                onSubmit={handleMagicLinkSubmit}
+                                className="space-y-4"
+                            >
+                                <div>
+                                    <label htmlFor="magic-email" className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Email</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-300">
+                                            <FaEnvelope size={14} />
+                                        </div>
+                                        <input
+                                            id="magic-email"
+                                            name="email"
+                                            type="email"
+                                            placeholder="name@email.com"
+                                            value={loginData.email}
+                                            onChange={handleLoginChange}
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#1B2A5A] focus:bg-white transition-all font-bold text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={loading || !loginData.email}
+                                    className="w-full bg-[#1B2A5A] text-white py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-[#142044] transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4 shadow-xl shadow-blue-900/10"
+                                >
+                                    {loading ? 'Sending Link...' : 'Send Magic Link'}
+                                    <FaArrowRight size={14} />
+                                </button>
+                                <button type="button" onClick={() => setView('signin')} className="w-full text-center text-sm font-bold text-gray-500 hover:text-[#1B2A5A] transition-colors uppercase tracking-widest text-[10px] pt-4">Back to Login</button>
                             </motion.form>
                         )}
                     </AnimatePresence>
