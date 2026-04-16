@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import {
     FaEnvelope, FaPhone,
-    FaCheckCircle, FaUndo, FaFileCsv, FaFileExcel
+    FaCheckCircle, FaUndo, FaFileCsv, FaFileExcel, FaChevronDown
 } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 
@@ -29,12 +29,16 @@ interface Booking {
     deleted_at?: string | null;
     paid_amount: number;
     razorpay_payment_id: string | null;
+    latitude?: number;
+    longitude?: number;
 }
 
 interface Mentor {
     id: string;
     name: string;
     subject: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 const AdminBookings: React.FC = () => {
@@ -59,7 +63,7 @@ const AdminBookings: React.FC = () => {
         try {
             const [bookingsRes, mentorsRes] = await Promise.all([
                 supabase.from('bookings').select('*').order('created_at', { ascending: false }),
-                supabase.from('mentors').select('id, name, subject')
+                supabase.from('mentors').select('id, name, subject, latitude, longitude')
             ]);
 
             if (bookingsRes.error) throw bookingsRes.error;
@@ -76,6 +80,107 @@ const AdminBookings: React.FC = () => {
             setSelectedMentors(mentorsMap);
         } catch (err) {
             console.error('Error fetching bookings:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371; // km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    };
+
+    const getAvailableMentors = async (booking: Booking) => {
+        if (!booking.latitude || !booking.longitude || !booking.preferred_date || !booking.preferred_time) {
+            return mentors; // Fallback to all if data missing
+        }
+
+        const bookingDate = new Date(booking.preferred_date);
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const bookingDay = dayNames[bookingDate.getDay()];
+
+        // Convert preferred_time to 24h for comparison
+        const timeStr = booking.preferred_time; // "09:00 AM"
+        const [time, ampm] = timeStr.split(' ');
+        let [hour, minute] = time.split(':').map(Number);
+        if (ampm === 'PM' && hour < 12) hour += 12;
+        if (ampm === 'AM' && hour === 12) hour = 0;
+        const bookingMinutes = hour * 60 + minute;
+
+        // 1. Fetch ALL mentor availability for this day
+        const { data: availability } = await supabase
+            .from('mentor_availability')
+            .select('mentor_id, start_time, end_time')
+            .eq('day_of_week', bookingDay);
+
+        // 2. Fetch existing confirmed/awaiting_approval bookings for this date to check overlap
+        const { data: existingBookings } = await supabase
+            .from('bookings')
+            .select('assigned_mentor_id, preferred_time')
+            .eq('preferred_date', booking.preferred_date)
+            .in('status', ['confirmed', 'awaiting_approval']);
+
+        return mentors.filter(m => {
+            // Check Radius (10km)
+            if (!m.latitude || !m.longitude) return false;
+            const dist = calculateDistance(booking.latitude!, booking.longitude!, m.latitude, m.longitude);
+            if (dist > 10) return false;
+
+            // Check Availability Slot
+            const mAvail = availability?.filter((a: any) => a.mentor_id === m.id);
+            if (!mAvail || mAvail.length === 0) return false;
+
+            const isWithinSlot = mAvail.some((slot: any) => {
+                const [sH, sM] = slot.start_time.split(':').map(Number);
+                const [eH, eM] = slot.end_time.split(':').map(Number);
+                const startMins = sH * 60 + sM;
+                const endMins = eH * 60 + eM;
+                return bookingMinutes >= startMins && bookingMinutes < endMins;
+            });
+            if (!isWithinSlot) return false;
+
+            // Check Collision
+            const hasCollision = existingBookings?.some((b: any) => 
+                b.assigned_mentor_id === m.id && b.preferred_time === booking.preferred_time
+            );
+            if (hasCollision) return false;
+
+            return true;
+        });
+    };
+
+    const handleBroadcast = async (booking: Booking) => {
+        setLoading(true);
+        try {
+            const availableMentors = await getAvailableMentors(booking);
+            if (availableMentors.length === 0) {
+                alert("No available mentors found within 10km for this slot.");
+                return;
+            }
+
+            const baseFare = booking.paid_amount / 1.23;
+            const payout = Math.round(baseFare * 0.8);
+
+            const offers = availableMentors.map(m => ({
+                booking_id: booking.id,
+                mentor_id: m.id,
+                offered_payout: payout,
+                status: 'pending'
+            }));
+
+            const { error } = await supabase.from('mentor_assignment_offers').insert(offers);
+            if (error) throw error;
+
+            alert(`Broadcasted to ${availableMentors.length} mentors!`);
+        } catch (err) {
+            console.error("Broadcast error:", err);
+            alert("Failed to broadcast assignment.");
         } finally {
             setLoading(false);
         }
@@ -313,22 +418,58 @@ const AdminBookings: React.FC = () => {
                                         </div>
                                         <div className="lg:w-80">
                                             <div className="p-5 bg-gray-900 rounded-[24px] space-y-4">
-                                                <select
-                                                    value={selectedMentors[booking.id] || 'unassigned'}
-                                                    onChange={(e) => setSelectedMentors(prev => ({ ...prev, [booking.id]: e.target.value }))}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-black text-white outline-none focus:border-[#ffb76c] transition-all cursor-pointer appearance-none"
-                                                    disabled={booking.status === 'confirmed'}
-                                                >
-                                                    <option value="unassigned" className="bg-[#1F2937]">Select Mentor</option>
-                                                    {mentors.map(m => <option key={m.id} value={m.id} className="bg-[#1F2937] text-white">{m.name}</option>)}
-                                                </select>
-                                                <div className="flex gap-2">
-                                                    {booking.status === 'pending' ? (
-                                                        <button onClick={() => handleAssignMentor(booking.id, selectedMentors[booking.id])} disabled={selectedMentors[booking.id] === 'unassigned'} className="flex-1 bg-[#ffb76c] text-[#1B2A5A] rounded-xl py-3 text-[9px] font-black uppercase tracking-widest">Assign</button>
-                                                    ) : booking.status === 'awaiting_approval' && (
-                                                        <button onClick={() => handleUpdateStatus(booking.id, 'confirmed')} className="flex-1 bg-green-500 text-white rounded-xl py-3 text-[9px] font-black uppercase tracking-widest">Confirm</button>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Assign Individually</label>
+                                                    <div className="relative group/select">
+                                                        <select
+                                                            value={selectedMentors[booking.id] || 'unassigned'}
+                                                            onChange={(e) => setSelectedMentors(prev => ({ ...prev, [booking.id]: e.target.value }))}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-black text-white outline-none focus:border-[#ffb76c] transition-all cursor-pointer appearance-none pr-10"
+                                                            disabled={booking.status === 'confirmed'}
+                                                        >
+                                                            <option value="unassigned" className="bg-[#1F2937]">Select Mentor</option>
+                                                            {mentors.map(m => <option key={m.id} value={m.id} className="bg-[#1F2937] text-white">{m.name}</option>)}
+                                                        </select>
+                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/20">
+                                                            <FaChevronDown size={10} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+                                                    {booking.status === 'pending' && (
+                                                        <>
+                                                            <button 
+                                                                onClick={() => handleBroadcast(booking)} 
+                                                                className="w-full bg-[#1B2A5A] text-white border border-[#1B2A5A] rounded-xl py-3 text-[9px] font-black uppercase tracking-widest hover:bg-[#a0522d] hover:border-[#a0522d] transition-all flex items-center justify-center gap-2"
+                                                            >
+                                                                Broadcast to Nearby
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleAssignMentor(booking.id, selectedMentors[booking.id])} 
+                                                                disabled={selectedMentors[booking.id] === 'unassigned'} 
+                                                                className="w-full bg-[#ffb76c] text-[#1B2A5A] rounded-xl py-3 text-[9px] font-black uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white transition-all shadow-lg shadow-orange-500/10"
+                                                            >
+                                                                Assign Selection
+                                                            </button>
+                                                        </>
                                                     )}
-                                                    <button onClick={() => handleDeleteBooking(booking.id)} className="flex-1 bg-white/5 text-white/40 rounded-xl py-3 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 transition-all">Delete</button>
+                                                    
+                                                    {booking.status === 'awaiting_approval' && (
+                                                        <button 
+                                                            onClick={() => handleUpdateStatus(booking.id, 'confirmed')} 
+                                                            className="w-full bg-green-500 text-white rounded-xl py-3 text-[9px] font-black uppercase tracking-widest hover:bg-green-600 transition-all shadow-lg shadow-green-500/10"
+                                                        >
+                                                            Confirm Assignment
+                                                        </button>
+                                                    )}
+                                                    
+                                                    <button 
+                                                        onClick={() => handleDeleteBooking(booking.id)} 
+                                                        className="w-full bg-white/5 text-white/40 rounded-xl py-3 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                                                    >
+                                                        Remove Booking
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>

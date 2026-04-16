@@ -7,6 +7,7 @@ import { FaTimes, FaFacebook, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from '../context/AuthContext';
 import { useFormPersistence, STORAGE_KEY } from '../hooks/useFormPersistence';
+import { getURL } from '../utils/urlUtils';
 
 interface SignInProps {
     isOpen: boolean;
@@ -17,17 +18,6 @@ interface SignInProps {
 const SignIn: React.FC<SignInProps> = ({ isOpen, onClose, initialView = 'signin' }) => {
     const { supabaseClient: supabase } = useAuth();
     
-    // Helper to get the correct redirect URL
-    const getURL = () => {
-        let url =
-          process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
-          'https://www.hourhome.in';
-        // Make sure to include `https://` when not localhost.
-        url = url.includes('http') ? url : `https://${url}`;
-        // Make sure to include a trailing `/`.
-        url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
-        return url;
-    };
     type AuthView = 'signin' | 'signup' | 'forgot-password' | 'magic-link';
     const [view, setView] = useState<AuthView>(initialView === 'signin' ? 'signin' : 'signup');
     const [loading, setLoading] = useState(false);

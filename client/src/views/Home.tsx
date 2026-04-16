@@ -18,9 +18,7 @@ const Home: React.FC = () => {
             <Header showToggle={false} />
 
             <main className="flex-grow">
-                <Reveal>
-                    <HeroSection />
-                </Reveal>
+                <HeroSection />
                 <section aria-label="Tutoring Statistics">
                     <Reveal delay={0.3}>
                         <CounterSection />

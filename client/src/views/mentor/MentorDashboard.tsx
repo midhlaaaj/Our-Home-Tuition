@@ -70,7 +70,7 @@ const MentorDashboard: React.FC = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history' | 'security' | 'calendar' | 'incentives'>(() => {
+    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history' | 'security' | 'calendar' | 'incentives' | 'assignments'>(() => {
         if (typeof window !== 'undefined') {
             const saved = window.localStorage.getItem('mentor_dashboard_tab');
             return (saved as any) || 'profile';
@@ -82,6 +82,7 @@ const MentorDashboard: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [visibleTasksCount, setVisibleTasksCount] = useState(5);
     const [nearbyOffers, setNearbyOffers] = useState<any[]>([]);
+    const [assignmentOffers, setAssignmentOffers] = useState<any[]>([]);
     const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
@@ -342,6 +343,14 @@ const MentorDashboard: React.FC = () => {
                     !b.claimed_for_incentive
                 ).length;
                 setOfflineSessionCount(offlineCount);
+
+                // Fetch direct assignment offers
+                const { data: directOffers } = await supabase
+                    .from('mentor_assignment_offers')
+                    .select('*, booking:bookings(*)')
+                    .eq('mentor_id', mentorData.id)
+                    .eq('status', 'pending');
+                setAssignmentOffers(directOffers || []);
             }
         } catch (err) {
             console.error('Error fetching mentor data:', err);
@@ -397,6 +406,75 @@ const MentorDashboard: React.FC = () => {
             setNearbyOffers(nearby);
         } catch (err) {
             console.error('Error fetching nearby offers:', err);
+        }
+    };
+
+    const handleAcceptAssignmentOffer = async (offer: any) => {
+        if (!profile) return;
+        setProcessingTaskId(offer.id);
+        try {
+            // 1. Double check if booking is still pending
+            const { data: booking, error: fetchErr } = await supabase
+                .from('bookings')
+                .select('status')
+                .eq('id', offer.booking_id)
+                .single();
+            
+            if (fetchErr || !booking) throw new Error("Booking not found");
+            if (booking.status !== 'pending') {
+                showAlert("This assignment is no longer available.");
+                setAssignmentOffers(assignmentOffers.filter(o => o.id !== offer.id));
+                return;
+            }
+
+            // 2. Accept this offer
+            const { error: offerErr } = await supabase
+                .from('mentor_assignment_offers')
+                .update({ status: 'accepted' })
+                .eq('id', offer.id);
+            if (offerErr) throw offerErr;
+
+            // 3. Update the booking
+            const { error: bookingErr } = await supabase
+                .from('bookings')
+                .update({ 
+                    assigned_mentor_id: profile.id,
+                    status: 'awaiting_approval' // Or 'confirmed'? User said: "awaiting admin's acceptance" in existing logic, but for direct broadcast maybe confirmed?
+                    // Actually, let's stick to 'awaiting_approval' as per handleAcceptOffer logic at line 410.
+                })
+                .eq('id', offer.booking_id);
+            if (bookingErr) throw bookingErr;
+
+            // 4. Expire all other offers for this booking
+            await supabase
+                .from('mentor_assignment_offers')
+                .update({ status: 'expired' })
+                .eq('booking_id', offer.booking_id)
+                .neq('id', offer.id)
+                .eq('status', 'pending');
+
+            showSuccess("Assignment accepted! Awaiting admin's final confirmation.");
+            setAssignmentOffers(assignmentOffers.filter(o => o.id !== offer.id));
+            fetchMentorData();
+        } catch (err: any) {
+            console.error('Error accepting assignment offer:', err);
+            showAlert("Error: " + err.message);
+        } finally {
+            setProcessingTaskId(null);
+        }
+    };
+
+    const handleRejectAssignmentOffer = async (offerId: string) => {
+        try {
+            const { error } = await supabase
+                .from('mentor_assignment_offers')
+                .update({ status: 'rejected' })
+                .eq('id', offerId);
+            if (error) throw error;
+            setAssignmentOffers(assignmentOffers.filter(o => o.id !== offerId));
+            showSuccess("Request declined.");
+        } catch (err) {
+            console.error('Error rejecting offer:', err);
         }
     };
 
@@ -813,6 +891,7 @@ const MentorDashboard: React.FC = () => {
                                         {[
                                             { id: 'profile', icon: <FaUser />, label: 'My Profile' },
                                             { id: 'availability', icon: <FaCalendarCheck />, label: 'Availability' },
+                                            { id: 'assignments', icon: <FaCalendarAlt />, label: 'Assignments' },
                                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
                                             { id: 'history', icon: <FaHistory />, label: 'Booking History' },
@@ -856,6 +935,7 @@ const MentorDashboard: React.FC = () => {
                         {[
                             { id: 'profile', icon: <FaUser />, label: 'My Profile' },
                             { id: 'availability', icon: <FaCalendarCheck />, label: 'Availability' },
+                            { id: 'assignments', icon: <FaCalendarAlt />, label: 'Assignments' },
                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
                             { id: 'history', icon: <FaHistory />, label: 'Booking History' },
@@ -1068,9 +1148,9 @@ const MentorDashboard: React.FC = () => {
                                 </motion.div>
                             )}
 
-                            {activeTab === 'offers' && (
+                            {activeTab === 'assignments' && (
                                 <motion.div
-                                    key="offers"
+                                    key="assignments"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -20 }}
@@ -1079,96 +1159,112 @@ const MentorDashboard: React.FC = () => {
                                     <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
                                         <div className="flex justify-between items-center mb-8">
                                             <div>
-                                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Nearby Opportunities</h2>
-                                                <p className="text-sm font-bold text-[#1B2A5A] mt-1">Bookings within 20km of your location</p>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <button 
-                                                    onClick={() => profile && fetchNearbyOffers(profile)}
-                                                    className="p-2 text-gray-400 hover:text-[#a0522d] transition-colors"
-                                                    title="Refresh Offers"
-                                                >
-                                                    <div className={loading ? 'animate-spin' : ''}><FaHistory size={14} /></div>
-                                                </button>
-                                                <div className="px-4 py-2 bg-orange-50 text-[#a0522d] rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                                                    <FaMapMarkerAlt size={12} /> {profile?.location_address?.split(',')[0] || 'Location Set'}
-                                                </div>
+                                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Direct Assignments</h2>
+                                                <p className="text-sm font-bold text-[#1B2A5A] mt-1">Special requests assigned to you by the Admin</p>
                                             </div>
                                         </div>
 
-                                        {!profile?.latitude ? (
-                                            <div className="text-center py-12 bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200">
-                                                <FaMapMarkerAlt size={32} className="text-gray-200 mx-auto mb-4" />
-                                                <h4 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-2">Location Not Set</h4>
-                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest max-w-xs mx-auto leading-loose mb-6">
-                                                    Please pin your location in "My Profile" to discover student bookings in your neighborhood.
-                                                </p>
-                                                <button onClick={() => setActiveTab('profile')} className="px-8 py-3 bg-[#1B2A5A] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#142044] transition-all">
-                                                    Go to Profile
-                                                </button>
-                                            </div>
-                                        ) : nearbyOffers.length === 0 ? (
-                                            <div className="text-center py-12 bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200">
-                                                <FaClock size={32} className="text-gray-200 mx-auto mb-4" />
-                                                <h4 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-2">No Nearby Bookings</h4>
+                                        {assignmentOffers.length === 0 ? (
+                                            <div className="text-center py-20 bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200">
+                                                <FaCalendarCheck size={32} className="text-gray-200 mx-auto mb-4" />
+                                                <h4 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-2">No active assignments</h4>
                                                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest max-w-xs mx-auto leading-loose">
-                                                    We couldn't find any pending bookings within 20km right now. Check back later!
+                                                    You don't have any pending assignment requests at the moment.
                                                 </p>
                                             </div>
                                         ) : (
-                                            <div className="space-y-4">
-                                                {nearbyOffers.map(offer => (
-                                                    <div key={offer.id} className="bg-white p-6 rounded-[32px] border-2 border-gray-50 hover:border-orange-100 transition-all flex flex-col md:flex-row justify-between items-center gap-6">
-                                                        <div className="flex-1 space-y-3 shrink-0">
+                                            <div className="grid grid-cols-1 gap-6">
+                                                {assignmentOffers.map(offer => (
+                                                    <div key={offer.id} className="bg-white p-6 rounded-[32px] border-2 border-orange-50 hover:border-orange-200 transition-all flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden group">
+                                                        <div className="flex-1 space-y-4">
                                                             <div className="flex items-center gap-3">
-                                                                <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[9px] font-black uppercase tracking-widest">
-                                                                    {offer.curriculum}
+                                                                <span className="px-3 py-1 bg-orange-50 text-[#a0522d] rounded-full text-[9px] font-black uppercase tracking-widest border border-orange-100">
+                                                                    Priority Assignment
                                                                 </span>
-                                                                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest flex items-center gap-1">
-                                                                    <FaMapMarkerAlt size={10} /> {offer.distance?.toFixed(1)} km away
+                                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                                                                    ID: {offer.booking_id.slice(0, 8)}
                                                                 </span>
                                                             </div>
-                                                            <h4 className="text-lg font-black text-gray-900 tracking-tight leading-none">
-                                                                New Booking Request
-                                                            </h4>
-                                                            <p className="text-[10px] text-gray-400 font-bold max-w-md truncate">
-                                                                {offer.primary_student?.address || 'Address hidden for privacy'}
-                                                            </p>
-                                                            <div className="flex gap-2">
-                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-lg border border-gray-100">
-                                                                    <FaCalendarAlt size={10} className="text-[#a0522d]" />
-                                                                    <span className="text-[10px] font-bold text-gray-600">{offer.preferred_date || 'TBD'}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-lg border border-gray-100">
-                                                                    <FaClock size={10} className="text-[#a0522d]" />
-                                                                    <span className="text-[10px] font-bold text-gray-600">{offer.preferred_time || 'TBD'}</span>
-                                                                </div>
+                                                            <div>
+                                                                <h4 className="text-xl font-black text-gray-900 tracking-tight mb-1">
+                                                                    {offer.booking?.curriculum} • Level {offer.booking?.class_id}
+                                                                </h4>
+                                                                <p className="text-[11px] font-bold text-gray-500 flex items-center gap-2">
+                                                                    <FaMapMarkerAlt size={10} className="text-[#a0522d]" />
+                                                                    {offer.booking?.primary_student?.address || 'Address provided upon acceptance'}
+                                                                </p>
                                                             </div>
-                                                            <div className="pt-2 border-t border-gray-50 flex items-center gap-2">
-                                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Your Earning</span>
-                                                                <span className="text-sm font-black text-green-600 tracking-tight">₹{Math.round(offer.paid_amount * 0.8)}</span>
+                                                            <div className="flex flex-wrap gap-4">
+                                                                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl border border-gray-100">
+                                                                    <FaCalendarAlt size={12} className="text-[#a0522d]" />
+                                                                    <span className="text-[11px] font-black text-gray-700">{offer.booking?.preferred_date}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl border border-gray-100">
+                                                                    <FaClock size={12} className="text-[#a0522d]" />
+                                                                    <span className="text-[11px] font-black text-gray-700">{offer.booking?.preferred_time}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-xl border border-green-100">
+                                                                    <span className="text-[11px] font-black text-green-600">Payout: ₹{offer.offered_payout}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <button
-                                                            onClick={() => handleAcceptOffer(offer.id)}
-                                                            disabled={processingTaskId === offer.id}
-                                                            className="w-full md:w-auto px-8 py-4 bg-[#1B2A5A] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#142044] transition-all shadow-xl shadow-[#1B2A5A]/10 flex items-center justify-center gap-2 disabled:opacity-50"
-                                                        >
-                                                            {processingTaskId === offer.id ? (
-                                                                <span className="flex items-center gap-2">
-                                                                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                                    Processing...
-                                                                </span>
-                                                            ) : (
-                                                                <>
-                                                                    <FaCheckCircle size={12} /> Show Interest
-                                                                </>
-                                                            )}
-                                                        </button>
+                                                        <div className="flex items-center gap-3 w-full md:w-auto">
+                                                            <button
+                                                                onClick={() => handleAcceptAssignmentOffer(offer)}
+                                                                disabled={processingTaskId === offer.id}
+                                                                className="flex-1 md:flex-none px-8 py-4 bg-[#1B2A5A] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#a0522d] transition-all shadow-xl shadow-[#1B2A5A]/10 flex items-center justify-center gap-2"
+                                                            >
+                                                                {processingTaskId === offer.id ? (
+                                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                                ) : (
+                                                                    <>Accept Request</>
+                                                                )}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleRejectAssignmentOffer(offer.id)}
+                                                                className="p-4 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                                                title="Decline Request"
+                                                            >
+                                                                <FaTrash size={14} />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {activeTab === 'offers' && (
+                                <motion.div
+                                    key="offers"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    className="space-y-6"
+                                >
+                                    <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 relative overflow-hidden min-h-[400px] flex items-center justify-center text-center">
+                                        <div className="relative z-10 space-y-6 max-w-md">
+                                            <div className="w-24 h-24 bg-orange-50 text-[#a0522d] rounded-[32px] flex items-center justify-center mx-auto shadow-inner border border-orange-100">
+                                                <FaWifi size={40} className="animate-pulse" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-2">Nearby Offers</h2>
+                                                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                                                    Coming Soon in Phase 2
+                                                </div>
+                                                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest leading-loose">
+                                                    We are building a passive offer system that will notify you of students in your neighborhood looking for mentors. Stay tuned!
+                                                </p>
+                                            </div>
+                                            <button 
+                                                onClick={() => setActiveTab('assignments')}
+                                                className="px-8 py-4 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#a0522d] transition-all shadow-xl shadow-black/10"
+                                            >
+                                                Check Direct Assignments
+                                            </button>
+                                        </div>
                                     </div>
                                 </motion.div>
                             )}

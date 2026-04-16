@@ -5,21 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaEnvelope, FaLock, FaUser, FaArrowRight, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useFormPersistence, STORAGE_KEY } from '../hooks/useFormPersistence';
+import { getURL } from '../utils/urlUtils';
 
 const Auth: React.FC = () => {
     const { supabaseClient: supabase } = useAuth();
     
-    // Helper to get the correct redirect URL
-    const getURL = () => {
-        let url =
-          process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
-          'https://www.hourhome.in';
-        // Make sure to include `https://` when not localhost.
-        url = url.includes('http') ? url : `https://${url}`;
-        // Make sure to include a trailing `/`.
-        url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
-        return url;
-    };
 
     type AuthView = 'signin' | 'signup' | 'forgot-password' | 'magic-link';
     const [view, setView] = useState<AuthView>('signin');
