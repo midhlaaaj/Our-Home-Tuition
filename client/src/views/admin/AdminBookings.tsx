@@ -435,6 +435,11 @@ const AdminBookings: React.FC = () => {
                                                             Paid: ₹{booking.paid_amount}
                                                         </span>
                                                     )}
+                                                    {booking.status === 'confirmed' && booking.otp && (
+                                                        <span className="text-[10px] font-black bg-green-100 text-green-700 px-2 py-0.5 rounded-full uppercase tracking-tighter mt-1 border border-green-200">
+                                                            OTP: {booking.otp}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -617,10 +622,20 @@ const AdminBookings: React.FC = () => {
                                                 <td className="px-8 py-6">
                                                     <p className="font-black text-gray-900">{b.primary_student?.name}</p>
                                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Level {b.class_id}</p>
+                                                    <p className="text-[10px] text-blue-500 font-bold mt-1 flex items-center gap-1">
+                                                        <FaPhone size={8} /> {b.primary_student?.phone || 'N/A'}
+                                                    </p>
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <p className="font-bold text-gray-600">{b.curriculum}</p>
-                                                    <p className="text-[10px] text-[#a0522d] font-black uppercase tracking-widest">{b.preferred_time || 'TBD'}</p>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <p className="text-[10px] text-[#a0522d] font-black uppercase tracking-widest">{b.preferred_time || 'TBD'}</p>
+                                                        {b.otp && (
+                                                            <span className="text-[9px] bg-orange-100 text-[#a0522d] px-1.5 py-0.5 rounded-md font-black">
+                                                                OTP: {b.otp}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <p className="font-black text-gray-900">₹{b.paid_amount || 0}</p>
