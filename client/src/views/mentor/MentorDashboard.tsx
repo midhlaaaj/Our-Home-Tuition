@@ -58,6 +58,7 @@ interface Task {
     preferred_date?: string | null;
     preferred_time?: string | null;
     session_mode?: string;
+    selected_units?: any[];
 }
 
 const MentorDashboard: React.FC = () => {
@@ -1197,6 +1198,15 @@ const MentorDashboard: React.FC = () => {
                                                                 <h4 className="text-xl font-black text-gray-900 tracking-tight mb-1">
                                                                     {offer.booking?.curriculum} • Level {offer.booking?.class_id}
                                                                 </h4>
+                                                                {offer.booking?.selected_units && (
+                                                                    <div className="flex flex-wrap gap-1.5 mb-2 mt-2">
+                                                                        {offer.booking.selected_units.map((unit: any, idx: number) => (
+                                                                            <span key={idx} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-bold text-gray-500 uppercase tracking-tight">
+                                                                                {unit.topic_name}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                                 <p className="text-[11px] font-bold text-gray-500 flex items-center gap-2">
                                                                     <FaMapMarkerAlt size={10} className="text-[#a0522d]" />
                                                                     {offer.booking?.primary_student?.address || 'Address provided upon acceptance'}
@@ -1312,9 +1322,20 @@ const MentorDashboard: React.FC = () => {
                                                         {task.query ? (
                                                             <p className="text-xs text-gray-500 font-medium italic mb-4">"{task.query}"</p>
                                                         ) : (
-                                                            <p className="text-xs text-[#a0522d] font-black uppercase tracking-widest mb-4">
-                                                                {task.curriculum} • Level {task.class_id}
-                                                            </p>
+                                                            <div className="mb-4">
+                                                                <p className="text-xs text-[#a0522d] font-black uppercase tracking-widest mb-1.5">
+                                                                    {task.curriculum} • Level {task.class_id}
+                                                                </p>
+                                                                {task.selected_units && (
+                                                                    <div className="flex flex-wrap gap-1.5 pt-1 border-t border-gray-50">
+                                                                        {task.selected_units.map((unit: any, idx: number) => (
+                                                                            <span key={idx} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-bold text-gray-400 uppercase tracking-tight">
+                                                                                {unit.topic_name}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         )}
                                                         <div className="flex flex-wrap gap-4">
                                                             <span className="text-[10px] font-bold text-gray-400">Email: {task.email}</span>
@@ -1456,9 +1477,20 @@ const MentorDashboard: React.FC = () => {
                                                                 Completed
                                                             </span>
                                                         </div>
-                                                        <p className="text-xs text-[#a0522d] font-black uppercase tracking-widest mb-4">
-                                                            {task.curriculum} • Level {task.class_id}
-                                                        </p>
+                                                        <div className="mb-4">
+                                                            <p className="text-xs text-[#a0522d] font-black uppercase tracking-widest mb-1.5">
+                                                                {task.curriculum} • Level {task.class_id}
+                                                            </p>
+                                                            {task.selected_units && (
+                                                                <div className="flex flex-wrap gap-1.5 pt-1 border-t border-gray-50">
+                                                                    {task.selected_units.map((unit: any, idx: number) => (
+                                                                        <span key={idx} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-bold text-gray-400 uppercase tracking-tight">
+                                                                            {unit.topic_name}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                         <div className="flex flex-wrap gap-4">
                                                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-lg border border-gray-100">
                                                                 <FaCalendarAlt size={10} className="text-[#a0522d]" />
