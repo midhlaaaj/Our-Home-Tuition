@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import {
@@ -274,15 +275,12 @@ const BookingPage: React.FC = () => {
                         </div>
                         <h2 className="text-2xl font-black text-gray-900 tracking-tight">Cart Empty</h2>
                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-2 mb-8">Please select units to proceed with booking</p>
-                        <button
-                            onClick={() => {
-                                const lastClassId = typeof window !== 'undefined' ? localStorage.getItem('last_visited_class_id') : null;
-                                router.push(`/class/${lastClassId || 1}`);
-                            }}
-                            className="w-full bg-[#1B2A5A] hover:bg-[#142044] text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#1B2A5A]/20"
+                        <Link
+                            href={`/class/${typeof window !== 'undefined' ? localStorage.getItem('last_visited_class_id') || '1' : '1'}`}
+                            className="w-full bg-[#1B2A5A] hover:bg-[#142044] text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#1B2A5A]/20 block text-center"
                         >
                             Return to Class Page
-                        </button>
+                        </Link>
                     </motion.div>
                 </div>
                 <Footer />
@@ -328,18 +326,12 @@ const BookingPage: React.FC = () => {
             <Header />
 
             <main className="flex-grow container mx-auto px-6 py-12 max-w-7xl">
-                <motion.button
-                    initial={{ x: -10, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    onClick={() => {
-                        const savedId = typeof window !== 'undefined' ? localStorage.getItem('last_visited_class_id') : null;
-                        const finalId = classInfo?.id?.toString() || savedId || '1';
-                        router.push(`/class/${finalId}`);
-                    }}
-                    className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-all font-black text-[10px] uppercase tracking-widest mb-10 group"
+                <Link
+                    href={`/class/${classInfo?.id?.toString() || (typeof window !== 'undefined' ? localStorage.getItem('last_visited_class_id') || '1' : '1')}`}
+                    className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-all font-black text-[10px] uppercase tracking-widest mb-10 group relative z-10"
                 >
                     <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" /> Back to {classInfo?.label || 'Class'}
-                </motion.button>
+                </Link>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     {/* Form Section */}

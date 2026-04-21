@@ -147,8 +147,13 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                 }`}
         >
             <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-                <Link href="/" className="flex items-center space-x-0">
-                    <img src="/brand-logo.png" alt="Hour Home Logo" className="w-40 h-40 object-contain -my-15 ml-1 mr-1 scale-110" fetchPriority="high" />
+                <Link href="/" className="flex items-center">
+                    <img 
+                        src="/brand-logo.png" 
+                        alt="Hour Home Logo" 
+                        className="h-12 md:h-40 w-auto md:w-40 object-contain md:-my-15 md:scale-110 transition-transform" 
+                        fetchPriority="high" 
+                    />
                 </Link>
 
                 {/* Navigation Links - Desktop */}
