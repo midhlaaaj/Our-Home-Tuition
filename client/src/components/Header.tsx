@@ -151,7 +151,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                     <img 
                         src="/brand-logo.png" 
                         alt="Hour Home Logo" 
-                        className="h-12 md:h-40 w-auto md:w-40 object-contain md:-my-15 md:scale-110 transition-transform" 
+                        className="h-12 md:h-24 w-auto object-contain transition-transform" 
                         fetchPriority="high" 
                     />
                 </Link>
