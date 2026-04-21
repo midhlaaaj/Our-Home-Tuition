@@ -303,24 +303,61 @@ const MentorDashboard: React.FC = () => {
                     longitude: mentorData.longitude || null
                 });
 
-                const { data: availData } = await supabase
-                    .from('mentor_availability')
-                    .select('*')
-                    .eq('mentor_id', mentorData.id);
-                setAvailability(availData || []);
+                // Helper to enrich unit numbers for legacy data
+                const enrichBookings = async (data: any[]) => {
+                    if (!data || data.length === 0) return data;
+                    const topicsToFetch = new Set<string>();
+                    data.forEach(b => {
+                        b.selected_units?.forEach((u: any) => {
+                            if (u.topic_id && (u.unit_no === undefined || u.unit_no === null)) {
+                                topicsToFetch.add(u.topic_id);
+                            }
+                        });
+                    });
 
-                const { data: queryData } = await supabase
-                    .from('contact_queries')
-                    .select('*')
-                    .eq('assigned_mentor_id', mentorData.id);
+                    if (topicsToFetch.size === 0) return data;
 
-                const { data: bookingData } = await supabase
-                    .from('bookings')
-                    .select('*')
-                    .eq('assigned_mentor_id', mentorData.id);
+                    const { data: topicMappings } = await supabase
+                        .from('class_topics')
+                        .select('id, unit_no')
+                        .in('id', Array.from(topicsToFetch));
 
-                const formattedQueries = (queryData || []).map((q: any) => ({ ...q, type: 'query' as const }));
-                const formattedBookings = (bookingData || []).map((b: any) => ({
+                    if (!topicMappings) return data;
+
+                    const mappingDict = topicMappings.reduce((acc: any, t: any) => ({
+                        ...acc,
+                        [t.id]: t.unit_no
+                    }), {});
+
+                    return data.map(b => ({
+                        ...b,
+                        selected_units: b.selected_units?.map((u: any) => ({
+                            ...u,
+                            unit_no: (u.unit_no !== undefined && u.unit_no !== null) ? u.unit_no : mappingDict[u.topic_id]
+                        }))
+                    }));
+                };
+
+                const [availData, queryData, rawBookings, rawOffers] = await Promise.all([
+                    supabase.from('mentor_availability').select('*').eq('mentor_id', mentorData.id),
+                    supabase.from('contact_queries').select('*').eq('assigned_mentor_id', mentorData.id),
+                    supabase.from('bookings').select('*').eq('assigned_mentor_id', mentorData.id).order('created_at', { ascending: false }),
+                    supabase.from('mentor_assignment_offers').select('*, booking:bookings(*)').eq('mentor_id', mentorData.id).eq('status', 'pending')
+                ]);
+
+                setAvailability(availData.data || []);
+                
+                const enrichedBookings = await enrichBookings(rawBookings.data || []);
+                const enrichedOffers = await Promise.all((rawOffers.data || []).map(async (offer: any) => {
+                    if (offer.booking) {
+                        const [enriched] = await enrichBookings([offer.booking]);
+                        return { ...offer, booking: enriched };
+                    }
+                    return offer;
+                }));
+
+                const formattedQueries = (queryData.data || []).map((q: any) => ({ ...q, type: 'query' as const }));
+                const formattedBookings = (enrichedBookings || []).map((b: any) => ({
                     ...b,
                     name: b.primary_student?.name,
                     email: b.primary_student?.email,
@@ -335,22 +372,14 @@ const MentorDashboard: React.FC = () => {
                 const combinedTasks = [...formattedQueries, ...formattedBookings];
                 combinedTasks.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                 setTasks(combinedTasks);
+                setAssignmentOffers(enrichedOffers || []);
 
-                // Calculate offline session count (only those not yet claimed for incentive)
-                const offlineCount = (bookingData || []).filter((b: any) => 
+                const offlineCount = (rawBookings.data || []).filter((b: any) => 
                     b.status === 'completed' && 
                     (b.session_mode === 'offline' || !b.session_mode) &&
                     !b.claimed_for_incentive
                 ).length;
                 setOfflineSessionCount(offlineCount);
-
-                // Fetch direct assignment offers
-                const { data: directOffers } = await supabase
-                    .from('mentor_assignment_offers')
-                    .select('*, booking:bookings(*)')
-                    .eq('mentor_id', mentorData.id)
-                    .eq('status', 'pending');
-                setAssignmentOffers(directOffers || []);
             }
         } catch (err) {
             console.error('Error fetching mentor data:', err);
@@ -1196,13 +1225,13 @@ const MentorDashboard: React.FC = () => {
                                                             </div>
                                                             <div>
                                                                 <h4 className="text-xl font-black text-gray-900 tracking-tight mb-1">
-                                                                    {offer.booking?.curriculum} • Level {offer.booking?.class_id}
+                                                                    {offer.booking?.curriculum} • Class {offer.booking?.class_id}
                                                                 </h4>
                                                                 {offer.booking?.selected_units && (
                                                                     <div className="flex flex-wrap gap-1.5 mb-2 mt-2">
                                                                         {offer.booking.selected_units.map((unit: any, idx: number) => (
                                                                             <span key={idx} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-bold text-gray-500 uppercase tracking-tight">
-                                                                                {unit.unit_no ? `Unit ${unit.unit_no}: ` : ''}{unit.topic_name}
+                                                                                {(unit.unit_no !== undefined && unit.unit_no !== null) ? `Unit ${unit.unit_no}: ` : ''}{unit.topic_name}
                                                                             </span>
                                                                         ))}
                                                                     </div>
@@ -1324,13 +1353,13 @@ const MentorDashboard: React.FC = () => {
                                                         ) : (
                                                             <div className="mb-4">
                                                                 <p className="text-xs text-[#a0522d] font-black uppercase tracking-widest mb-1.5">
-                                                                    {task.curriculum} • Level {task.class_id}
+                                                                    {task.curriculum} • Class {task.class_id}
                                                                 </p>
                                                                 {task.selected_units && (
                                                                     <div className="flex flex-wrap gap-1.5 pt-1 border-t border-gray-50">
                                                                         {task.selected_units.map((unit: any, idx: number) => (
                                                                             <span key={idx} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-bold text-gray-400 uppercase tracking-tight">
-                                                                                {unit.unit_no ? `Unit ${unit.unit_no}: ` : ''}{unit.topic_name}
+                                                                                {(unit.unit_no !== undefined && unit.unit_no !== null) ? `Unit ${unit.unit_no}: ` : ''}{unit.topic_name}
                                                                             </span>
                                                                         ))}
                                                                     </div>
@@ -1479,13 +1508,13 @@ const MentorDashboard: React.FC = () => {
                                                         </div>
                                                         <div className="mb-4">
                                                             <p className="text-xs text-[#a0522d] font-black uppercase tracking-widest mb-1.5">
-                                                                {task.curriculum} • Level {task.class_id}
+                                                                {task.curriculum} • Class {task.class_id}
                                                             </p>
                                                             {task.selected_units && (
                                                                 <div className="flex flex-wrap gap-1.5 pt-1 border-t border-gray-50">
                                                                     {task.selected_units.map((unit: any, idx: number) => (
                                                                         <span key={idx} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-bold text-gray-400 uppercase tracking-tight">
-                                                                            {unit.unit_no ? `Unit ${unit.unit_no}: ` : ''}{unit.topic_name}
+                                                                            {(unit.unit_no !== undefined && unit.unit_no !== null) ? `Unit ${unit.unit_no}: ` : ''}{unit.topic_name}
                                                                         </span>
                                                                     ))}
                                                                 </div>

@@ -90,12 +90,48 @@ const AdminBookings: React.FC = () => {
             if (mentorsRes.error) throw mentorsRes.error;
             if (offersRes.error) throw offersRes.error;
 
-            setBookings(bookingsRes.data || []);
+            // Helper to enrich unit numbers for legacy data
+            const enrichBookings = async (data: any[]) => {
+                if (!data || data.length === 0) return data;
+                const topicsToFetch = new Set<string>();
+                data.forEach(b => {
+                    b.selected_units?.forEach((u: any) => {
+                        if (u.topic_id && (u.unit_no === undefined || u.unit_no === null)) {
+                            topicsToFetch.add(u.topic_id);
+                        }
+                    });
+                });
+
+                if (topicsToFetch.size === 0) return data;
+
+                const { data: topicMappings } = await supabase
+                    .from('class_topics')
+                    .select('id, unit_no')
+                    .in('id', Array.from(topicsToFetch));
+
+                if (!topicMappings) return data;
+
+                const mappingDict = topicMappings.reduce((acc: any, t: any) => ({
+                    ...acc,
+                    [t.id]: t.unit_no
+                }), {});
+
+                return data.map(b => ({
+                    ...b,
+                    selected_units: b.selected_units?.map((u: any) => ({
+                        ...u,
+                        unit_no: (u.unit_no !== undefined && u.unit_no !== null) ? u.unit_no : mappingDict[u.topic_id]
+                    }))
+                }));
+            };
+
+            const enrichedBookings = await enrichBookings(bookingsRes.data || []);
+            setBookings(enrichedBookings || []);
             setMentors(mentorsRes.data || []);
             setAssignmentOffers(offersRes.data || []);
 
             // Initialize selected mentors
-            const mentorsMap = (bookingsRes.data || []).reduce((acc: any, b: any) => ({
+            const mentorsMap = (enrichedBookings || []).reduce((acc: any, b: any) => ({
                 ...acc,
                 [b.id]: b.assigned_mentor_id || 'unassigned'
             }), {});
@@ -213,7 +249,7 @@ const AdminBookings: React.FC = () => {
     const prepareExportData = () => {
         return historyBookings.map(b => ({
             'Student Name': b.primary_student?.name || 'N/A',
-            'Class/Level': `Level ${b.class_id}`,
+            'Class/Level': `Class ${b.class_id}`,
             'Curriculum': b.curriculum,
             'Time': b.preferred_time || 'TBD',
             'OTP': b.otp || 'N/A',
@@ -424,7 +460,7 @@ const AdminBookings: React.FC = () => {
                                                     <h3 className="text-xl font-black text-gray-900 leading-none">{booking.primary_student?.name}</h3>
                                                 </div>
                                                 <div className="flex items-center gap-3">
-                                                    <p className="text-xs font-black text-[#a0522d] uppercase tracking-widest mt-1">{booking.curriculum} • Level {booking.class_id}</p>
+                                                    <p className="text-xs font-black text-[#a0522d] uppercase tracking-widest mt-1">{booking.curriculum} • Class {booking.class_id}</p>
                                                     {assignmentOffers.some(o => o.booking_id === booking.id) && (
                                                         <span className="text-[10px] font-black bg-orange-100 text-[#a0522d] px-2 py-0.5 rounded-full uppercase tracking-tighter mt-1 animate-pulse">
                                                             Broadcasted
@@ -630,7 +666,7 @@ const AdminBookings: React.FC = () => {
                                             <tr key={b.id} className="group hover:bg-gray-50/50 transition-colors text-xs">
                                                 <td className="px-8 py-6">
                                                     <p className="font-black text-gray-900">{b.primary_student?.name}</p>
-                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Level {b.class_id}</p>
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Class {b.class_id}</p>
                                                     <p className="text-[10px] text-blue-500 font-bold mt-1 flex items-center gap-1">
                                                         <FaPhone size={8} /> {b.primary_student?.phone || 'N/A'}
                                                     </p>
