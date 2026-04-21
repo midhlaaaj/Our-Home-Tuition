@@ -147,14 +147,15 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                 }`}
         >
             <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-                <Link href="/" className="relative flex items-center h-12 md:h-16 w-32 md:w-48">
+                <div className="relative flex items-center">
+                    <Link href="/" className="absolute inset-0 z-10" aria-label="Home" />
                     <img 
                         src="/brand-logo.png" 
                         alt="Hour Home Logo" 
-                        className="h-12 md:h-48 w-auto md:w-auto object-contain md:absolute md:top-1/2 md:left-0 md:-translate-y-1/2 md:scale-125 transition-transform" 
+                        className="h-12 md:h-40 w-auto md:w-40 object-contain md:-my-15 md:scale-110 transition-transform md:pointer-events-none" 
                         fetchPriority="high" 
                     />
-                </Link>
+                </div>
 
                 {/* Navigation Links - Desktop */}
                 <nav className="hidden md:flex items-center space-x-16 ml-auto mr-12">
