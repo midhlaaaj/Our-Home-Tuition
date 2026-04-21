@@ -302,6 +302,9 @@ const ClassPage: React.FC = () => {
 
         setIsModalOpen(false);
         setBookingData({ selectedUnits, classInfo, curriculum, bookingType });
+        if (classInfo?.id) {
+            localStorage.setItem('last_visited_class_id', classInfo.id.toString());
+        }
         router.push('/book-session');
     };
 

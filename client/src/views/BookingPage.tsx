@@ -51,12 +51,25 @@ const BookingPage: React.FC = () => {
     // Pre-fill user data
     useEffect(() => {
         if (user) {
-            setName(user.user_metadata?.full_name || '');
-            setEmail(user.email || '');
-            setPhone(user.user_metadata?.phone || '');
-            setAddress(user.user_metadata?.address || '');
+            setName(user.user_metadata?.full_name || localStorage.getItem('booking_name') || '');
+            setEmail(user.email || localStorage.getItem('booking_email') || '');
+            setPhone(user.user_metadata?.phone || localStorage.getItem('booking_phone') || '');
+            setAddress(user.user_metadata?.address || localStorage.getItem('booking_address') || '');
+        } else {
+            setName(localStorage.getItem('booking_name') || '');
+            setEmail(localStorage.getItem('booking_email') || '');
+            setPhone(localStorage.getItem('booking_phone') || '');
+            setAddress(localStorage.getItem('booking_address') || '');
         }
     }, [user]);
+
+    // Save to localStorage when changed
+    useEffect(() => {
+        if (name) localStorage.setItem('booking_name', name);
+        if (email) localStorage.setItem('booking_email', email);
+        if (phone) localStorage.setItem('booking_phone', phone);
+        if (address) localStorage.setItem('booking_address', address);
+    }, [name, email, phone, address]);
 
     const handleAddStudent = () => {
         const maxTotalStudents = 5;
@@ -262,7 +275,10 @@ const BookingPage: React.FC = () => {
                         <h2 className="text-2xl font-black text-gray-900 tracking-tight">Cart Empty</h2>
                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-2 mb-8">Please select units to proceed with booking</p>
                         <button
-                            onClick={() => router.back()}
+                            onClick={() => {
+                                const lastClassId = typeof window !== 'undefined' ? localStorage.getItem('last_visited_class_id') : null;
+                                router.push(lastClassId ? `/class/${lastClassId}` : '/');
+                            }}
                             className="w-full bg-[#1B2A5A] hover:bg-[#142044] text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#1B2A5A]/20"
                         >
                             Return to Class Page
@@ -315,10 +331,13 @@ const BookingPage: React.FC = () => {
                 <motion.button
                     initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    onClick={() => router.back()}
+                    onClick={() => {
+                        const lastId = classInfo?.id || (typeof window !== 'undefined' ? localStorage.getItem('last_visited_class_id') : null);
+                        router.push(lastId ? `/class/${lastId}` : '/');
+                    }}
                     className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-all font-black text-[10px] uppercase tracking-widest mb-10 group"
                 >
-                    <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" /> Back to {classInfo.label}
+                    <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" /> Back to {classInfo?.label || 'Class'}
                 </motion.button>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -356,6 +375,7 @@ const BookingPage: React.FC = () => {
                                                 <input
                                                     type="text"
                                                     required
+                                                    autoComplete="name"
                                                     value={name}
                                                     onChange={e => setName(e.target.value)}
                                                     className="w-full pl-12 pr-6 py-3 border border-gray-200 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#1B2A5A] focus:border-[#1B2A5A] transition duration-200 text-sm font-bold"
@@ -372,6 +392,7 @@ const BookingPage: React.FC = () => {
                                                 <input
                                                     type="email"
                                                     required
+                                                    autoComplete="email"
                                                     value={email}
                                                     onChange={e => setEmail(e.target.value)}
                                                     className="w-full pl-12 pr-6 py-3 border border-gray-200 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#1B2A5A] focus:border-[#1B2A5A] transition duration-200 text-sm font-bold"
@@ -388,6 +409,7 @@ const BookingPage: React.FC = () => {
                                                 <input
                                                     type="tel"
                                                     required
+                                                    autoComplete="tel"
                                                     value={phone}
                                                     onChange={e => {
                                                         const val = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -437,6 +459,7 @@ const BookingPage: React.FC = () => {
                                             <div className="relative group col-span-full">
                                                 <textarea
                                                     required
+                                                    autoComplete="street-address"
                                                     value={address}
                                                     onChange={e => setAddress(e.target.value)}
                                                     rows={1}

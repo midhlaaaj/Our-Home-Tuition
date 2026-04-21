@@ -9,9 +9,9 @@ import { safeFetch } from '../utils/supabaseUtils';
 const HeroSection: React.FC = () => {
     const [mediaUrl, setMediaUrl] = useState<string | null>(null);
     const [mediaType, setMediaType] = useState<'image' | 'video' | null>('image');
-    const [title, setTitle] = useState<string>('Helping Young\nMinds Grow\nwith *Confidence*');
+    const [title, setTitle] = useState<string>('');
     const [titleColor, setTitleColor] = useState<string>('#c75e33');
-    const [subtitle, setSubtitle] = useState<string>('Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.');
+    const [subtitle, setSubtitle] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
@@ -147,8 +147,7 @@ const HeroSection: React.FC = () => {
                 <div className="flex flex-col lg:flex-row items-center justify-between gap-12 w-full">
 
                     {/* Left Content Column */}
-                    <div className="w-full lg:w-[65%] flex flex-col items-start text-left mt-24 lg:mt-32">
-                        <>
+                    <div className={`w-full lg:w-[65%] flex flex-col items-start text-left mt-24 lg:mt-32 transition-opacity duration-700 ease-in-out ${loading ? 'opacity-0' : 'opacity-100'}`}>
                             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[70px] font-extrabold text-white leading-[1.1] mb-6 animate-fade-in-up tracking-tight font-['Urbanist']" style={{ animationDelay: '0.1s' }}>
                                 {renderTitle(title)}
                             </h1>
@@ -170,7 +169,6 @@ const HeroSection: React.FC = () => {
                                     View Tutors
                                 </button>
                             </div>
-                        </>
                     </div>
                 </div>
             </div>
