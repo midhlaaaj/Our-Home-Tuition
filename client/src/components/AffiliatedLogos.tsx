@@ -73,7 +73,7 @@ const AffiliatedLogos: React.FC = () => {
                                 <img
                                     key={`1-${logo.id}-${index}`}
                                     src={logo.logo_url}
-                                    alt={`${logo.name} associated with Our Home Tuition`}
+                                    alt=""
                                     className="h-4 md:h-5 mx-8 object-contain flex-shrink-0"
                                     loading="lazy"
                                 />
@@ -83,7 +83,7 @@ const AffiliatedLogos: React.FC = () => {
                                 <img
                                     key={`2-${logo.id}-${index}`}
                                     src={logo.logo_url}
-                                    alt={logo.name}
+                                    alt=""
                                     className="h-4 md:h-5 mx-8 object-contain flex-shrink-0"
                                     loading="lazy"
                                 />
@@ -104,7 +104,7 @@ const AffiliatedLogos: React.FC = () => {
                                 <img
                                     key={`1-${logo.id}-${index}`}
                                     src={logo.logo_url}
-                                    alt={`${logo.name} partner of Our Home Tuition`}
+                                    alt=""
                                     className="h-4 md:h-5 mx-8 object-contain flex-shrink-0"
                                     loading="lazy"
                                 />
@@ -114,7 +114,7 @@ const AffiliatedLogos: React.FC = () => {
                                 <img
                                     key={`2-${logo.id}-${index}`}
                                     src={logo.logo_url}
-                                    alt={logo.name}
+                                    alt=""
                                     className="h-4 md:h-5 mx-8 object-contain flex-shrink-0"
                                     loading="lazy"
                                 />

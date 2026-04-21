@@ -13,7 +13,8 @@ const AIChatButton: React.FC = () => {
         '/admin',
         '/mentor',
         '/auth',
-        '/dashboard'
+        '/dashboard',
+        '/book-session'
     ];
 
     const shouldHide = !pathname || hideOnRoutes.some(route => pathname.startsWith(route));
@@ -22,6 +23,7 @@ const AIChatButton: React.FC = () => {
 
     return (
         <motion.div 
+            id="ai-chat-button"
             className="fixed bottom-6 left-6 z-[9999] flex flex-col items-start"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

@@ -49,6 +49,16 @@ const ClassPage: React.FC = () => {
     const [selectedUnits, setSelectedUnits] = useState<{ subject: Subject, topic: Topic }[]>([]);
     const [bookingType, setBookingType] = useState<'regular' | 'custom-combo' | 'all-in-one'>('regular');
 
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (isModalOpen) {
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = '';
+            };
+        }
+    }, [isModalOpen]);
+
     // Fetch subjects for this class filtered by curriculum
     useEffect(() => {
         const fetchSubjects = async () => {
@@ -211,14 +221,21 @@ const ClassPage: React.FC = () => {
         );
     };
 
-    // Pre-fetch all topics when modal opens to ensure smooth UX
+    // Pre-fetch all topics if modal is open to ensure instant combo selections
+    useEffect(() => {
+        if (isModalOpen) {
+            subjects.forEach(subject => {
+                if (!topics[subject.id]) {
+                    fetchTopics(subject.id);
+                }
+            });
+        }
+    }, [isModalOpen, subjects]);
+
+    // Open modal with all subjects collapsed by default
     const handleOpenModal = () => {
         setIsModalOpen(true);
-        subjects.forEach(subject => {
-            if (!topics[subject.id]) {
-                fetchTopics(subject.id);
-            }
-        });
+        setExpandedSubject(null);
     };
 
     const toggleUnitSelection = (subject: Subject, topic: Topic) => {
@@ -370,7 +387,9 @@ const ClassPage: React.FC = () => {
                                         {expandedBoard === board.id && (
                                             <div className="bg-gray-50/50 p-4 animate-in slide-in-from-top-2 duration-300 flex flex-col w-full py-8">
                                                 {loading ? (
-                                                    <BrandedLoading size="md" />
+                                                    <div className="flex justify-center w-full">
+                                                        <BrandedLoading size="md" />
+                                                    </div>
                                                 ) : subjects.length === 0 ? (
                                                     <p className="text-center py-4 text-xs font-bold text-gray-400">No subjects found for this board</p>
                                                 ) : (
@@ -448,8 +467,9 @@ const ClassPage: React.FC = () => {
 
             {/* Booking Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 font-sans">
-                    <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4 font-sans">
+                    <style>{`#ai-chat-button { display: none !important; }`}</style>
+                    <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] md:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
                         {/* Modal Header */}
                         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
                             <div>
@@ -466,6 +486,40 @@ const ClassPage: React.FC = () => {
 
                         {/* Modal Body - Scrollable */}
                         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                            {/* Curriculum Selector Component in Modal */}
+                            <div className="mb-6 md:hidden">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Select Curriculum</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { id: 'CBSE', label: 'CBSE' },
+                                        { id: 'ANDHRA', label: 'Andhra' },
+                                        { id: 'TELANGANA', label: 'Telangana' }
+                                    ].map(board => {
+                                        const isSelected = curriculum === 'CBSE' ? board.id === 'CBSE' : stateRegion === board.id;
+                                        return (
+                                            <button
+                                                key={board.id}
+                                                onClick={() => {
+                                                    if (board.id === 'CBSE') {
+                                                        setCurriculum('CBSE');
+                                                    } else {
+                                                        setCurriculum('STATE');
+                                                        setStateRegion(board.id as any);
+                                                    }
+                                                }}
+                                                className={`py-2 text-[10px] sm:text-xs font-black uppercase tracking-widest rounded-xl border-2 transition-all ${
+                                                    isSelected
+                                                        ? 'bg-[#1B2A5A] border-[#1B2A5A] text-white shadow-lg'
+                                                        : 'bg-white border-gray-100 text-gray-400 hover:border-[#1B2A5A]/30'
+                                                }`}
+                                            >
+                                                {board.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
                             <div className="mb-6 grid grid-cols-3 gap-2">
                                 {[
                                     { id: 'regular', label: 'Regular' },
@@ -561,9 +615,16 @@ const ClassPage: React.FC = () => {
                                     ) : (
                                         subjects.map(subject => (
                                             <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                                <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                                                    <h3 className="font-black text-gray-900 tracking-tight text-sm">{subject.name}</h3>
-                                                </div>
+                                                <button 
+                                                    onClick={() => toggleSubject(subject.id)}
+                                                    className="w-full px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                                                >
+                                                    <h3 className="font-black text-gray-900 tracking-tight text-sm text-left">{subject.name}</h3>
+                                                    <span className="text-gray-400 shrink-0 ml-4">
+                                                        {expandedSubject === subject.id ? <FaMinus size={12} /> : <FaPlus size={12} />}
+                                                    </span>
+                                                </button>
+                                                {expandedSubject === subject.id && (
                                                 <div className="divide-y divide-gray-100">
                                                     {!topics[subject.id] ? (
                                                         <div className="px-4 py-3 text-sm text-gray-500">Loading topics...</div>
@@ -624,6 +685,7 @@ const ClassPage: React.FC = () => {
                                                             </div>
                                                     )}
                                                 </div>
+                                                )}
                                             </div>
                                         ))
                                     )}
