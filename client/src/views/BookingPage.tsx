@@ -332,8 +332,13 @@ const BookingPage: React.FC = () => {
                     initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     onClick={() => {
-                        const lastId = classInfo?.id || (typeof window !== 'undefined' ? localStorage.getItem('last_visited_class_id') : null);
-                        router.push(lastId ? `/class/${lastId}` : '/');
+                        const savedId = typeof window !== 'undefined' ? localStorage.getItem('last_visited_class_id') : null;
+                        const finalId = classInfo?.id?.toString() || savedId;
+                        if (finalId) {
+                            router.push(`/class/${finalId}`);
+                        } else {
+                            router.push('/');
+                        }
                     }}
                     className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-all font-black text-[10px] uppercase tracking-widest mb-10 group"
                 >

@@ -147,24 +147,24 @@ const HeroSection: React.FC = () => {
                 <div className="flex flex-col lg:flex-row items-center justify-between gap-12 w-full">
 
                     {/* Left Content Column */}
-                    <div className={`w-full lg:w-[65%] flex flex-col items-start text-left mt-24 lg:mt-32 transition-opacity duration-700 ease-in-out ${loading ? 'opacity-0' : 'opacity-100'}`}>
-                            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[70px] font-extrabold text-white leading-[1.1] mb-6 animate-fade-in-up tracking-tight font-['Urbanist']" style={{ animationDelay: '0.1s' }}>
+                    <div className={`w-full lg:w-[65%] flex flex-col items-start text-left mt-36 lg:mt-32 transition-opacity duration-700 ease-in-out ${loading ? 'opacity-0' : 'opacity-100'}`}>
+                            <h1 className="text-5xl sm:text-5xl md:text-6xl lg:text-[70px] font-extrabold text-white leading-[1.1] mb-6 animate-fade-in-up tracking-tight font-['Urbanist']" style={{ animationDelay: '0.1s' }}>
                                 {renderTitle(title)}
                             </h1>
                             <p className="text-lg md:text-xl text-gray-200 mb-10 leading-relaxed animate-fade-in-up drop-shadow-sm max-w-2xl font-normal" style={{ animationDelay: '0.2s' }}>
                                 {renderSubtitle(subtitle)}
                             </p>
-
-                            <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto animate-fade-in-up mb-14" style={{ animationDelay: '0.3s' }}>
+ 
+                            <div className="flex flex-row gap-3 w-full sm:w-auto animate-fade-in-up mb-14" style={{ animationDelay: '0.3s' }}>
                                 <button
                                     onClick={() => router.push('/class/1')}
-                                    className="px-8 py-3.5 bg-[#b35a2e] hover:bg-[#c75e33] text-white font-bold rounded-xl outline-none transition-all shadow-lg w-full sm:w-auto text-center"
+                                    className="px-4 sm:px-8 py-3.5 bg-[#b35a2e] hover:bg-[#c75e33] text-white font-bold rounded-xl outline-none transition-all shadow-lg flex-1 sm:flex-none text-center text-sm sm:text-base whitespace-nowrap"
                                 >
                                     Explore Classes
                                 </button>
                                 <button
                                     onClick={() => document.getElementById('mentors')?.scrollIntoView({ behavior: 'smooth' })}
-                                    className="px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white backdrop-blur-md font-bold rounded-xl transition-all shadow-md border border-white/20 hover:border-white/30 w-full sm:w-auto text-center"
+                                    className="px-4 sm:px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white backdrop-blur-md font-bold rounded-xl transition-all shadow-md border border-white/20 hover:border-white/30 flex-1 sm:flex-none text-center text-sm sm:text-base whitespace-nowrap"
                                 >
                                     View Tutors
                                 </button>
