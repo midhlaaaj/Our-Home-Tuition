@@ -59,6 +59,13 @@ const ClassPage: React.FC = () => {
         }
     }, [isModalOpen]);
 
+    // Track last visited class for redirection fallback
+    useEffect(() => {
+        if (id) {
+            localStorage.setItem('last_visited_class_id', id.toString());
+        }
+    }, [id]);
+
     // Fetch subjects for this class filtered by curriculum
     useEffect(() => {
         const fetchSubjects = async () => {

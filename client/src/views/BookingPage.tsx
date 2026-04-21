@@ -277,7 +277,7 @@ const BookingPage: React.FC = () => {
                         <button
                             onClick={() => {
                                 const lastClassId = typeof window !== 'undefined' ? localStorage.getItem('last_visited_class_id') : null;
-                                router.push(lastClassId ? `/class/${lastClassId}` : '/');
+                                router.push(`/class/${lastClassId || 1}`);
                             }}
                             className="w-full bg-[#1B2A5A] hover:bg-[#142044] text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#1B2A5A]/20"
                         >
@@ -333,12 +333,8 @@ const BookingPage: React.FC = () => {
                     animate={{ x: 0, opacity: 1 }}
                     onClick={() => {
                         const savedId = typeof window !== 'undefined' ? localStorage.getItem('last_visited_class_id') : null;
-                        const finalId = classInfo?.id?.toString() || savedId;
-                        if (finalId) {
-                            router.push(`/class/${finalId}`);
-                        } else {
-                            router.push('/');
-                        }
+                        const finalId = classInfo?.id?.toString() || savedId || '1';
+                        router.push(`/class/${finalId}`);
                     }}
                     className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-all font-black text-[10px] uppercase tracking-widest mb-10 group"
                 >
