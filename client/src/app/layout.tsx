@@ -91,6 +91,10 @@ export default function RootLayout({
             } 
           })}
         </Script>
+        <Script 
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="afterInteractive"
+        />
       </head>
       <body className="min-h-full flex flex-col font-sans">
         <RoleBasedAuthProvider>

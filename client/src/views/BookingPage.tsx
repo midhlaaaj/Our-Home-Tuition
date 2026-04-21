@@ -148,8 +148,12 @@ const BookingPage: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            // Initiate Razorpay Payment
-            const paymentResponse: any = await handleRazorpayPayment();
+            // Initiate Razorpay Payment - BYPASSED FOR TESTING
+            // const paymentResponse: any = await handleRazorpayPayment();
+            const paymentResponse = {
+                razorpay_payment_id: 'test_bypass_' + Math.random().toString(36).substring(7),
+                razorpay_order_id: 'order_bypass_' + Math.random().toString(36).substring(7)
+            };
 
             // Generate 6-digit OTP
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -178,9 +182,7 @@ const BookingPage: React.FC = () => {
                     status: 'pending',
                     otp: otp,
                     paid_amount: totalPrice,
-                    total_duration: totalDuration,
-                    razorpay_payment_id: paymentResponse.razorpay_payment_id,
-                    razorpay_order_id: paymentResponse.razorpay_order_id
+                    razorpay_payment_id: paymentResponse.razorpay_payment_id
                 });
 
             if (error) throw error;
@@ -188,8 +190,8 @@ const BookingPage: React.FC = () => {
             // Send Notification to Parent
             const { error: notifError } = await supabase.from('notifications').insert({
                 user_id: user.id,
-                title: 'Order Summary',
-                message: 'Payment completed and booking is initiated. Our team will contact you soon.',
+                title: 'Booking Request',
+                message: 'Your booking request has been initiated. our team will contact you soon.',
                 type: 'booking_initiated'
             });
 

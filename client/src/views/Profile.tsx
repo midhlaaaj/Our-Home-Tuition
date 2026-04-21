@@ -18,6 +18,8 @@ interface Booking {
     selected_units: { subject_id: string, topic_id: string, subject_name?: string, topic_name?: string }[];
     status: string;
     class_type: string;
+    otp?: string;
+    mentor?: any; // Changed to any to handle nested join objects/arrays
 }
 
 const Profile: React.FC = () => {
@@ -54,7 +56,7 @@ const Profile: React.FC = () => {
                 try {
                     const { data, error } = await supabase
                         .from('bookings')
-                        .select('*')
+                        .select('*, mentor:mentors!assigned_mentor_id(name)')
                         .eq('user_id', user.id)
                         .order('created_at', { ascending: false });
 
@@ -319,7 +321,7 @@ const Profile: React.FC = () => {
                                                         <p className="text-gray-400 font-bold text-sm">
                                                             {booking.selected_units.length} Unit(s) • {booking.class_type === 'individual' ? '1-on-1 Session' : 'Group Session'}
                                                         </p>
-                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                        <div className="mt-3 flex items-center gap-3">
                                                             <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${booking.status === 'confirmed' ? 'bg-green-500/20 text-green-400' :
                                                                 booking.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
                                                                     'bg-white/10 text-white/40'
@@ -327,6 +329,25 @@ const Profile: React.FC = () => {
                                                                 {booking.status}
                                                             </span>
                                                         </div>
+
+                                                        {booking.status === 'confirmed' && (
+                                                            <div className="mt-4 p-4 bg-white/5 rounded-2xl border border-white/10 space-y-2">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-[#ffb76c] animate-pulse"></div>
+                                                                    <p className="text-[#ffb76c] text-[10px] font-black uppercase tracking-widest">
+                                                                        Mentor: <span className="text-white ml-1">
+                                                                            {(Array.isArray(booking.mentor) ? booking.mentor[0]?.name : booking.mentor?.name) || 'Assigning...'}
+                                                                        </span>
+                                                                    </p>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                                                                    <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">
+                                                                        Session OTP: <span className="text-white bg-white/20 px-2 py-0.5 rounded-md font-black tracking-[0.2em] ml-1">{booking.otp || '---'}</span>
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="text-right flex flex-col items-end gap-2">

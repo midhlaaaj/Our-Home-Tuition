@@ -57,7 +57,6 @@ interface Task {
     status?: string;
     preferred_date?: string | null;
     preferred_time?: string | null;
-    selected_time?: string | null;
     session_mode?: string;
 }
 
@@ -434,18 +433,27 @@ const MentorDashboard: React.FC = () => {
                 .eq('id', offer.id);
             if (offerErr) throw offerErr;
 
-            // 3. Update the booking
+            // 3. Update the booking directly to CONFIRMED
             const { error: bookingErr } = await supabase
                 .from('bookings')
                 .update({ 
-                    assigned_mentor_id: profile.id,
-                    status: 'awaiting_approval' // Or 'confirmed'? User said: "awaiting admin's acceptance" in existing logic, but for direct broadcast maybe confirmed?
-                    // Actually, let's stick to 'awaiting_approval' as per handleAcceptOffer logic at line 410.
+                    assigned_mentor_id: profile.id, // Use profile.id which is the mentor table ID
+                    status: 'confirmed'
                 })
                 .eq('id', offer.booking_id);
             if (bookingErr) throw bookingErr;
 
-            // 4. Expire all other offers for this booking
+            // 4. Notify Parent (User)
+            const { error: notifError } = await supabase.from('notifications').insert({
+                user_id: offer.booking?.user_id,
+                title: 'Mentor Assigned!',
+                message: `Great news! ${profile?.name} has accepted your booking request. Your session is confirmed. Session OTP: ${offer.booking?.otp || '---'}. instructions: Share the OTP with your mentor only during the session.`,
+                type: 'booking_confirmed'
+            });
+
+            if (notifError) console.error("Notification failed:", notifError);
+
+            // 5. Expire all other offers for this booking
             await supabase
                 .from('mentor_assignment_offers')
                 .update({ status: 'expired' })
@@ -453,7 +461,7 @@ const MentorDashboard: React.FC = () => {
                 .neq('id', offer.id)
                 .eq('status', 'pending');
 
-            showSuccess("Assignment accepted! Awaiting admin's final confirmation.");
+            showSuccess("Assignment confirmed! Parent has been notified with your details and the OTP.");
             setAssignmentOffers(assignmentOffers.filter(o => o.id !== offer.id));
             fetchMentorData();
         } catch (err: any) {
@@ -522,7 +530,7 @@ const MentorDashboard: React.FC = () => {
         // 3. Confirm Booking
         const { error } = await supabase
             .from('bookings')
-            .update({ status: 'confirmed', selected_time: singleTime })
+            .update({ status: 'confirmed', preferred_time: singleTime }) // Shift time to preferred_time if specifically selected
             .eq('id', taskId);
         
         if (error) throw error;
@@ -541,7 +549,7 @@ const MentorDashboard: React.FC = () => {
         } else {
             showSuccess("Task accepted and parent notified!");
         }
-        setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed', selected_time: singleTime } : t));
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'confirmed', preferred_time: singleTime } : t));
     };
 
     const handleAcceptTask = async (taskId: string, type: 'query' | 'booking') => {
@@ -1197,11 +1205,11 @@ const MentorDashboard: React.FC = () => {
                                                             <div className="flex flex-wrap gap-4">
                                                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl border border-gray-100">
                                                                     <FaCalendarAlt size={12} className="text-[#a0522d]" />
-                                                                    <span className="text-[11px] font-black text-gray-700">{offer.booking?.preferred_date}</span>
+                                                                    <span className="text-[11px] font-black text-gray-700">{offer.booking?.preferred_date || 'TBD'}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl border border-gray-100">
                                                                     <FaClock size={12} className="text-[#a0522d]" />
-                                                                    <span className="text-[11px] font-black text-gray-700">{offer.booking?.preferred_time}</span>
+                                                                    <span className="text-[11px] font-black text-gray-700">{offer.booking?.preferred_time || 'TBD'}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-xl border border-green-100">
                                                                     <span className="text-[11px] font-black text-green-600">Payout: ₹{offer.offered_payout}</span>
@@ -1458,7 +1466,7 @@ const MentorDashboard: React.FC = () => {
                                                             </div>
                                                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-lg border border-gray-100">
                                                                 <FaClock size={10} className="text-[#a0522d]" />
-                                                                <span className="text-[10px] font-bold text-gray-600">{task.selected_time || task.preferred_time}</span>
+                                                                <span className="text-[10px] font-bold text-gray-600">{task.preferred_time}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1580,7 +1588,7 @@ const MentorDashboard: React.FC = () => {
                                                         <div className="flex items-center gap-4">
                                                             <div className="flex items-center gap-1.5 text-[#a0522d] bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100/50">
                                                                 <FaClock size={12} />
-                                                                <span className="text-[11px] font-black uppercase tracking-widest">{session.selected_time || session.preferred_time}</span>
+                                                                <span className="text-[11px] font-black uppercase tracking-widest">{session.preferred_time}</span>
                                                             </div>
                                                             <div className="flex items-center gap-1.5 text-gray-600 bg-white border border-gray-200 px-3 py-1.5 rounded-xl">
                                                                 {session.session_mode === 'online' ? <FaWifi size={12} /> : <FaHome size={12} />}

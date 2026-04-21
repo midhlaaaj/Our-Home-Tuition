@@ -41,8 +41,27 @@ ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view their own bookings" ON public.bookings FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert their own bookings" ON public.bookings FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own bookings" ON public.bookings FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Mentors can view assigned bookings" ON public.bookings FOR SELECT USING (EXISTS (SELECT 1 FROM public.mentors WHERE id = assigned_mentor_id AND auth_user_id = auth.uid()));
-CREATE POLICY "Mentors can update assigned bookings" ON public.bookings FOR UPDATE USING (EXISTS (SELECT 1 FROM public.mentors WHERE id = assigned_mentor_id AND auth_user_id = auth.uid()));
+CREATE POLICY "Mentors can view assigned bookings" ON public.bookings FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.mentors WHERE id = assigned_mentor_id AND auth_user_id = auth.uid())
+    OR
+    EXISTS (
+        SELECT 1 FROM public.mentor_assignment_offers 
+        WHERE booking_id = public.bookings.id 
+        AND mentor_id = (SELECT id FROM public.mentors WHERE auth_user_id = auth.uid()) 
+        AND status = 'pending'
+    )
+);
+
+CREATE POLICY "Mentors can update assigned bookings" ON public.bookings FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM public.mentors WHERE id = assigned_mentor_id AND auth_user_id = auth.uid())
+    OR
+    EXISTS (
+        SELECT 1 FROM public.mentor_assignment_offers 
+        WHERE booking_id = public.bookings.id 
+        AND mentor_id = (SELECT id FROM public.mentors WHERE auth_user_id = auth.uid()) 
+        AND status = 'pending'
+    )
+);
 CREATE POLICY "Admins have full access to bookings" ON public.bookings FOR ALL USING (is_admin());
 
 --------------------------------------------------------------------------------

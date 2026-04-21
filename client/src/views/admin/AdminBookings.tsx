@@ -6,7 +6,8 @@ import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import {
     FaEnvelope, FaPhone,
-    FaCheckCircle, FaUndo, FaFileCsv, FaFileExcel, FaChevronDown
+    FaCheckCircle, FaUndo, FaFileCsv, FaFileExcel, FaChevronDown,
+    FaCalendarAlt, FaClock
 } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 
@@ -45,6 +46,7 @@ const AdminBookings: React.FC = () => {
     const { supabaseClient: supabase } = useAuth();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [mentors, setMentors] = useState<Mentor[]>([]);
+    const [assignmentOffers, setAssignmentOffers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
     const [selectedMentors, setSelectedMentors] = useState<Record<string, string>>({});
@@ -56,21 +58,41 @@ const AdminBookings: React.FC = () => {
 
     useEffect(() => {
         fetchData();
+
+        // Add Real-time sync for bookings
+        const channel = supabase
+            .channel('admin_booking_updates')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'bookings' },
+                () => {
+                    console.log('Real-time update: refreshing bookings...');
+                    fetchData();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [bookingsRes, mentorsRes] = await Promise.all([
+            const [bookingsRes, mentorsRes, offersRes] = await Promise.all([
                 supabase.from('bookings').select('*').order('created_at', { ascending: false }),
-                supabase.from('mentors').select('id, name, subject, latitude, longitude')
+                supabase.from('mentors').select('id, name, subject, latitude, longitude'),
+                supabase.from('mentor_assignment_offers').select('booking_id, status')
             ]);
 
             if (bookingsRes.error) throw bookingsRes.error;
             if (mentorsRes.error) throw mentorsRes.error;
+            if (offersRes.error) throw offersRes.error;
 
             setBookings(bookingsRes.data || []);
             setMentors(mentorsRes.data || []);
+            setAssignmentOffers(offersRes.data || []);
 
             // Initialize selected mentors
             const mentorsMap = (bookingsRes.data || []).reduce((acc: any, b: any) => ({
@@ -177,6 +199,8 @@ const AdminBookings: React.FC = () => {
             const { error } = await supabase.from('mentor_assignment_offers').insert(offers);
             if (error) throw error;
 
+            // Update local state
+            setAssignmentOffers(prev => [...prev, ...offers]);
             alert(`Broadcasted to ${availableMentors.length} mentors!`);
         } catch (err) {
             console.error("Broadcast error:", err);
@@ -191,7 +215,7 @@ const AdminBookings: React.FC = () => {
             'Student Name': b.primary_student?.name || 'N/A',
             'Class/Level': `Level ${b.class_id}`,
             'Curriculum': b.curriculum,
-            'Time': b.selected_time || b.preferred_time || 'TBD',
+            'Time': b.preferred_time || 'TBD',
             'OTP': b.otp || 'N/A',
             'Attendance': b.status === 'completed' ? 'Validated' : 'Pending',
             'Mentor': mentors.find(m => m.id === b.assigned_mentor_id)?.name || 'N/A',
@@ -395,9 +419,17 @@ const AdminBookings: React.FC = () => {
                                                     </span>
                                                     <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">ID: {booking.id.slice(0, 8)}</span>
                                                 </div>
-                                                <h3 className="text-xl font-black text-gray-900">{booking.primary_student?.name}</h3>
+                                                <div className="flex flex-col gap-1">
+                                                    <label className="text-[10px] font-black text-[#a0522d]/50 uppercase tracking-widest ml-1">Parent/Student</label>
+                                                    <h3 className="text-xl font-black text-gray-900 leading-none">{booking.primary_student?.name}</h3>
+                                                </div>
                                                 <div className="flex items-center gap-3">
                                                     <p className="text-xs font-black text-[#a0522d] uppercase tracking-widest mt-1">{booking.curriculum} • Level {booking.class_id}</p>
+                                                    {assignmentOffers.some(o => o.booking_id === booking.id) && (
+                                                        <span className="text-[10px] font-black bg-orange-100 text-[#a0522d] px-2 py-0.5 rounded-full uppercase tracking-tighter mt-1 animate-pulse">
+                                                            Broadcasted
+                                                         </span>
+                                                     )}
                                                     {booking.paid_amount > 0 && (
                                                         <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full uppercase tracking-tighter mt-1">
                                                             Paid: ₹{booking.paid_amount}
@@ -413,6 +445,14 @@ const AdminBookings: React.FC = () => {
                                                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100/50">
                                                     <FaPhone className="text-gray-400" size={12} />
                                                     <span className="text-xs font-bold text-gray-600">{booking.primary_student?.phone}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100/50">
+                                                    <FaCalendarAlt className="text-gray-400" size={12} />
+                                                    <span className="text-xs font-bold text-gray-600">{booking.preferred_date || 'TBD'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100/50">
+                                                    <FaClock className="text-gray-400" size={12} />
+                                                    <span className="text-xs font-bold text-gray-600">{booking.preferred_time || 'TBD'}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -441,9 +481,17 @@ const AdminBookings: React.FC = () => {
                                                         <>
                                                             <button 
                                                                 onClick={() => handleBroadcast(booking)} 
-                                                                className="w-full bg-[#1B2A5A] text-white border border-[#1B2A5A] rounded-xl py-3 text-[9px] font-black uppercase tracking-widest hover:bg-[#a0522d] hover:border-[#a0522d] transition-all flex items-center justify-center gap-2"
+                                                                className={`w-full border rounded-xl py-3 text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                                                                    assignmentOffers.some(o => o.booking_id === booking.id)
+                                                                    ? 'bg-green-500 border-green-500 text-white'
+                                                                    : 'bg-[#1B2A5A] border-[#1B2A5A] text-white hover:bg-[#a0522d] hover:border-[#a0522d]'
+                                                                }`}
                                                             >
-                                                                Broadcast to Nearby
+                                                                {assignmentOffers.some(o => o.booking_id === booking.id) ? (
+                                                                    <><FaCheckCircle size={10} /> Already Broadcasted</>
+                                                                ) : (
+                                                                    <>Broadcast to Nearby</>
+                                                                )}
                                                             </button>
                                                             <button 
                                                                 onClick={() => handleAssignMentor(booking.id, selectedMentors[booking.id])} 
@@ -572,7 +620,7 @@ const AdminBookings: React.FC = () => {
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <p className="font-bold text-gray-600">{b.curriculum}</p>
-                                                    <p className="text-[10px] text-[#a0522d] font-black uppercase tracking-widest">{b.selected_time || b.preferred_time || 'TBD'}</p>
+                                                    <p className="text-[10px] text-[#a0522d] font-black uppercase tracking-widest">{b.preferred_time || 'TBD'}</p>
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <p className="font-black text-gray-900">₹{b.paid_amount || 0}</p>
