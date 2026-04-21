@@ -1202,7 +1202,7 @@ const MentorDashboard: React.FC = () => {
                                                                     <div className="flex flex-wrap gap-1.5 mb-2 mt-2">
                                                                         {offer.booking.selected_units.map((unit: any, idx: number) => (
                                                                             <span key={idx} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-bold text-gray-500 uppercase tracking-tight">
-                                                                                {unit.topic_name}
+                                                                                {unit.unit_no ? `Unit ${unit.unit_no}: ` : ''}{unit.topic_name}
                                                                             </span>
                                                                         ))}
                                                                     </div>
@@ -1330,7 +1330,7 @@ const MentorDashboard: React.FC = () => {
                                                                     <div className="flex flex-wrap gap-1.5 pt-1 border-t border-gray-50">
                                                                         {task.selected_units.map((unit: any, idx: number) => (
                                                                             <span key={idx} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-bold text-gray-400 uppercase tracking-tight">
-                                                                                {unit.topic_name}
+                                                                                {unit.unit_no ? `Unit ${unit.unit_no}: ` : ''}{unit.topic_name}
                                                                             </span>
                                                                         ))}
                                                                     </div>
@@ -1485,7 +1485,7 @@ const MentorDashboard: React.FC = () => {
                                                                 <div className="flex flex-wrap gap-1.5 pt-1 border-t border-gray-50">
                                                                     {task.selected_units.map((unit: any, idx: number) => (
                                                                         <span key={idx} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-bold text-gray-400 uppercase tracking-tight">
-                                                                            {unit.topic_name}
+                                                                            {unit.unit_no ? `Unit ${unit.unit_no}: ` : ''}{unit.topic_name}
                                                                         </span>
                                                                     ))}
                                                                 </div>

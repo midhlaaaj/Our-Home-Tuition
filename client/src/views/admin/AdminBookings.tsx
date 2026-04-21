@@ -441,6 +441,15 @@ const AdminBookings: React.FC = () => {
                                                         </span>
                                                     )}
                                                 </div>
+                                                {booking.selected_units && (
+                                                    <div className="flex flex-wrap gap-1.5 mt-3">
+                                                        {booking.selected_units.map((unit: any, idx: number) => (
+                                                            <span key={idx} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-bold text-gray-400 uppercase tracking-tight">
+                                                                {unit.unit_no ? `Unit ${unit.unit_no}: ` : ''}{unit.topic_name}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100/50">
@@ -636,6 +645,15 @@ const AdminBookings: React.FC = () => {
                                                             </span>
                                                         )}
                                                     </div>
+                                                    {b.selected_units && (
+                                                        <div className="flex flex-wrap gap-1 mt-2">
+                                                            {b.selected_units.map((unit: any, idx: number) => (
+                                                                <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-400 rounded text-[8px] font-bold uppercase">
+                                                                    {unit.unit_no ? `U${unit.unit_no}: ` : ''}{unit.topic_name}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <p className="font-black text-gray-900">₹{b.paid_amount || 0}</p>

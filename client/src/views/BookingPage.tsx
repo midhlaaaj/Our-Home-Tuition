@@ -167,6 +167,7 @@ const BookingPage: React.FC = () => {
                     selected_units: state?.selectedUnits.map(su => ({
                         subject_id: su.subject.id,
                         topic_id: su.topic.id,
+                        unit_no: su.topic.unit_no,
                         subject_name: su.subject.name,
                         topic_name: su.topic.name,
                         price: su.topic.unit_price || 100
