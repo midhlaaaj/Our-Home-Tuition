@@ -22,6 +22,12 @@ interface LocationState {
     curriculum: string;
 }
 
+const ALL_TIME_SLOTS = [
+    '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM',
+    '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM'
+];
+
 declare global {
     interface Window {
         Razorpay: any;
@@ -48,6 +54,45 @@ const BookingPage: React.FC = () => {
     const [lat, setLat] = useState<number | null>(null);
     const [lng, setLng] = useState<number | null>(null);
     const { user } = useAuth();
+
+    // Calculate available time slots
+    const getAvailableSlots = () => {
+        if (!preferredDate) return ALL_TIME_SLOTS;
+
+        const today = new Date();
+        
+        // Compare dates without time using local date
+        const localDate = today.getFullYear() + '-' + 
+            String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(today.getDate()).padStart(2, '0');
+            
+        const isToday = localDate === preferredDate;
+        
+        if (!isToday) return ALL_TIME_SLOTS;
+
+        const currentHour = today.getHours();
+        
+        return ALL_TIME_SLOTS.filter(slot => {
+            const [time, period] = slot.split(' ');
+            let [slotHour] = time.split(':').map(Number);
+            
+            // Convert to 24-hour format for comparison
+            if (period === 'PM' && slotHour !== 12) slotHour += 12;
+            if (period === 'AM' && slotHour === 12) slotHour = 0;
+            
+            // Apply 2-hour buffer rule
+            return slotHour >= currentHour + 2;
+        });
+    };
+
+    const availableSlots = getAvailableSlots();
+
+    // Reset preferred time if it's no longer available
+    useEffect(() => {
+        if (preferredTime && !availableSlots.includes(preferredTime)) {
+            setPreferredTime('');
+        }
+    }, [preferredDate, availableSlots, preferredTime]);
 
     // Pre-fill user data
     useEffect(() => {
@@ -572,29 +617,32 @@ const BookingPage: React.FC = () => {
                                                 </h3>
                                             </div>
                                             <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                                                {[
-                                                    '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-                                                    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM',
-                                                    '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM'
-                                                ].map((time) => {
-                                                    const isSelected = preferredTime === time;
-                                                    return (
-                                                        <button
-                                                            key={time}
-                                                            type="button"
-                                                            onClick={() => setPreferredTime(isSelected ? '' : time)}
-                                                            className={`py-3 px-1 rounded-xl text-[9px] font-black transition-all border-2 flex flex-col items-center justify-center gap-0 ${isSelected
-                                                                ? 'bg-[#a0522d] border-[#a0522d] text-white shadow-lg shadow-[#a0522d]/20 scale-[1.02]'
-                                                                : 'bg-white border-gray-50 text-gray-400 hover:border-orange-100 hover:text-[#a0522d]'
-                                                                }`}
-                                                        >
-                                                            <span className="text-[10px] tracking-tight">{time.split(' ')[0]}</span>
-                                                            <span className={`text-[7.5px] font-bold uppercase tracking-tighter ${isSelected ? 'text-white/70' : 'text-gray-300'}`}>
-                                                                {time.split(' ')[1]}
-                                                            </span>
-                                                        </button>
-                                                    );
-                                                })}
+                                                {availableSlots.length > 0 ? (
+                                                    availableSlots.map((time) => {
+                                                        const isSelected = preferredTime === time;
+                                                        return (
+                                                            <button
+                                                                key={time}
+                                                                type="button"
+                                                                onClick={() => setPreferredTime(isSelected ? '' : time)}
+                                                                className={`py-3 px-1 rounded-xl text-[9px] font-black transition-all border-2 flex flex-col items-center justify-center gap-0 ${isSelected
+                                                                    ? 'bg-[#a0522d] border-[#a0522d] text-white shadow-lg shadow-[#a0522d]/20 scale-[1.02]'
+                                                                    : 'bg-white border-gray-50 text-gray-400 hover:border-orange-100 hover:text-[#a0522d]'
+                                                                    }`}
+                                                            >
+                                                                <span className="text-[10px] tracking-tight">{time.split(' ')[0]}</span>
+                                                                <span className={`text-[7.5px] font-bold uppercase tracking-tighter ${isSelected ? 'text-white/70' : 'text-gray-300'}`}>
+                                                                    {time.split(' ')[1]}
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <div className="col-span-full py-4 bg-orange-50/50 rounded-xl border border-dashed border-orange-200 text-center">
+                                                        <p className="text-[9px] font-black uppercase tracking-widest text-[#a0522d]">No remaining slots for today</p>
+                                                        <p className="text-[8px] text-gray-400 font-bold mt-0.5">Please select another date</p>
+                                                    </div>
+                                                )}
                                             </div>
                                             <input type="hidden" required value={preferredTime} />
                                         </div>

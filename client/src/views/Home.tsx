@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -12,13 +14,17 @@ import BrowseClasses from '../components/BrowseClasses';
 import ContactForm from '../components/ContactForm';
 import Reveal from '../components/Reveal';
 
-const Home: React.FC = () => {
+interface HomeProps {
+    initialHeroData?: any;
+}
+
+const Home: React.FC<HomeProps> = ({ initialHeroData }) => {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
             <Header showToggle={false} />
 
             <main className="flex-grow">
-                <HeroSection />
+                <HeroSection initialHeroData={initialHeroData} />
                 <section aria-label="Tutoring Statistics">
                     <Reveal delay={0.3}>
                         <CounterSection />

@@ -11,6 +11,7 @@ import { supabase } from '../supabaseClient';
 import BrandedLoading from '../components/BrandedLoading';
 import { FaPlus, FaMinus, FaTimes, FaCheckCircle } from 'react-icons/fa';
 import { useModal } from '../context/ModalContext';
+import { useAuth } from '../context/AuthContext';
 
 
 
@@ -38,6 +39,7 @@ const ClassPage: React.FC = () => {
     const classInfo = classesData.find(c => c.id.toString() === id);
     const { curriculum, stateRegion, toggleStateRegion, setBookingData } = useCurriculum();
     const { showAlert } = useModal();
+    const { user } = useAuth();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [topics, setTopics] = useState<Record<string, Topic[]>>({});
     const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
@@ -46,8 +48,12 @@ const ClassPage: React.FC = () => {
 
     // Booking Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalExpandedSubject, setModalExpandedSubject] = useState<string | null>(null);
     const [selectedUnits, setSelectedUnits] = useState<{ subject: Subject, topic: Topic }[]>([]);
-    const [bookingType, setBookingType] = useState<'regular' | 'custom-combo' | 'all-in-one'>('regular');
+    const [bookingType, setBookingType] = useState<'regular' | 'custom-units' | 'all-in-one'>('regular');
+    const [isAddingSubject, setIsAddingSubject] = useState(false);
+    const [newSubjectName, setNewSubjectName] = useState('');
+    const [customInputs, setCustomInputs] = useState<Record<string, { unitNo: string, topicName: string }>>({});
 
     // Lock body scroll when modal is open
     useEffect(() => {
@@ -58,6 +64,16 @@ const ClassPage: React.FC = () => {
             };
         }
     }, [isModalOpen]);
+
+    const allowedBookingTypes = React.useMemo(() => {
+        const types = [
+            { id: 'regular', label: 'Regular' },
+            { id: 'custom-units', label: 'Custom Units' },
+            { id: 'all-in-one', label: 'All In One' }
+        ];
+        const currentClassId = classInfo?.id || (id ? parseInt(id as string) : 0);
+        return types.filter(type => type.id !== 'all-in-one' || (currentClassId > 0 && currentClassId <= 4));
+    }, [classInfo, id]);
 
     // Track last visited class for redirection fallback
     useEffect(() => {
@@ -239,20 +255,30 @@ const ClassPage: React.FC = () => {
         }
     }, [isModalOpen, subjects]);
 
+    const toggleModalSubject = (subjectId: string) => {
+        if (modalExpandedSubject === subjectId) {
+            setModalExpandedSubject(null);
+        } else {
+            setModalExpandedSubject(subjectId);
+            if (!topics[subjectId]) {
+                fetchTopics(subjectId);
+            }
+        }
+    };
+
     // Open modal with all subjects collapsed by default
     const handleOpenModal = () => {
         setIsModalOpen(true);
-        setExpandedSubject(null);
+        setModalExpandedSubject(null);
     };
 
     const toggleUnitSelection = (subject: Subject, topic: Topic) => {
         const isSelected = selectedUnits.some(u => u.topic.id === topic.id);
         
-        if (bookingType === 'custom-combo') {
-            if (!isSelected && selectedUnits.length >= 2) {
-                // Already have 2, can't add more
-                return;
-            }
+        const limit = bookingType === 'custom-units' ? 4 : 2;
+        if (!isSelected && selectedUnits.length >= limit) {
+            showAlert(`Maximum ${limit} units can be selected for this mode.`);
+            return;
         }
 
         setSelectedUnits(prev => {
@@ -264,10 +290,10 @@ const ClassPage: React.FC = () => {
         });
     };
 
-    const handleBookingTypeChange = (type: 'regular' | 'custom-combo' | 'all-in-one') => {
+    const handleBookingTypeChange = (type: 'regular' | 'custom-units' | 'all-in-one') => {
         setBookingType(type);
         if (type === 'all-in-one') {
-            // Select exactly two topics (from any core subjects) to match 2 hours
+            setSelectedUnits([]); // Clear all before combo logic
             const allSelected: { subject: Subject, topic: Topic }[] = [];
             let count = 0;
             for (const subject of subjects) {
@@ -280,9 +306,116 @@ const ClassPage: React.FC = () => {
             }
             setSelectedUnits(allSelected);
         } else {
-            setSelectedUnits([]);
+            const limit = type === 'custom-units' ? 4 : 2;
+            if (selectedUnits.length > limit) {
+                setSelectedUnits([]);
+                showAlert(`Selections cleared: ${type} mode allows maximum ${limit} units.`);
+            }
         }
     };
+    const handleAddCustomSubject = async () => {
+        console.log("handleAddCustomSubject called, user:", user?.id, "name:", newSubjectName);
+        if (!newSubjectName.trim()) return;
+        if (!user) {
+            console.warn("Add Subject failed: User not logged in");
+            showAlert("You must be signed in to add custom subjects. Please sign in or create an account.");
+            return;
+        }
+
+        try {
+            const newSubject = {
+                class_id: parseInt(id),
+                name: newSubjectName.trim(),
+                curriculum: curriculum,
+                user_id: user.id
+            };
+
+            console.log("Inserting subject into Supabase:", newSubject);
+            const { data, error } = await supabase
+                .from('class_subjects')
+                .insert(newSubject)
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Supabase Subject Insert Error:", error);
+                throw new Error(error.message);
+            }
+
+            console.log("Subject inserted successfully:", data);
+            setSubjects(prev => [...prev, data as Subject]);
+            setNewSubjectName('');
+            setIsAddingSubject(false);
+            setModalExpandedSubject(data.id);
+        } catch (error: any) {
+            console.error("Add Subject Exception:", error);
+            showAlert("Failed to save subject. Have you run the SQL migration script yet? Error: " + error.message);
+        }
+    };
+
+    const handleAddCustomUnit = async (subject: Subject) => {
+        const inputs = customInputs[subject.id];
+        console.log("handleAddCustomUnit called for subject:", subject.name, "inputs:", inputs);
+        
+        if (!inputs?.unitNo || !inputs?.topicName) {
+            showAlert("Please enter both Unit and Topic name.");
+            return;
+        }
+        
+        if (!user) {
+            console.warn("Add Unit failed: User not logged in");
+            showAlert("You must be signed in to add custom units.");
+            return;
+        }
+
+        try {
+            const newTopic = {
+                subject_id: subject.id,
+                unit_no: parseInt(inputs.unitNo) || 1,
+                unit_title: inputs.unitNo,
+                name: inputs.topicName,
+                estimated_duration: 30, // 30m each allows 4 units in 2 hours
+                unit_price: 100,
+                user_id: user.id
+            };
+
+            console.log("Inserting topic into Supabase:", newTopic);
+            const { data, error } = await supabase
+                .from('class_topics')
+                .insert(newTopic)
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Supabase Topic Insert Error:", error);
+                throw new Error(error.message);
+            }
+
+            console.log("Topic inserted successfully:", data);
+            // Add to topics state
+            setTopics(prev => ({
+                ...prev,
+                [subject.id]: [...(prev[subject.id] || []), data as Topic]
+            }));
+
+            // Only add to selected if under limit
+            if (selectedUnits.length < 4) {
+                setSelectedUnits(prev => [...prev, { subject, topic: data as Topic }]);
+            } else {
+                showAlert("Subject added to your list, but you can only select 4 for this booking.");
+            }
+
+            // Clear inputs
+            setCustomInputs(prev => ({
+                ...prev,
+                [subject.id]: { unitNo: '', topicName: '' }
+            }));
+        } catch (error: any) {
+            console.error("Add Unit Exception:", error);
+            showAlert("Failed to save unit. Have you run the SQL migration script? Error: " + error.message);
+        }
+    };
+
 
     const toggleSubjectSelection = (subject: Subject) => {
         const subjectTopics = topics[subject.id] || [];
@@ -302,13 +435,24 @@ const ClassPage: React.FC = () => {
     const handleProceedToBooking = () => {
         const totalDuration = selectedUnits.reduce((acc, curr) => acc + (curr.topic.estimated_duration || 60), 0);
         
-        if (totalDuration !== 120) {
-            showAlert("Exactly 2 hour booking is required.");
+        // For custom units, we allow 1-4 units and treat it as a 2-hour session
+        const isCustomValid = bookingType === 'custom-units' && selectedUnits.length >= 1 && selectedUnits.length <= 4;
+        const isRegularValid = bookingType !== 'custom-units' && totalDuration === 120;
+
+        if (!isCustomValid && !isRegularValid) {
+            showAlert(bookingType === 'custom-units' 
+                ? "Please select at least 1 unit (up to 4)." 
+                : "Exactly 2 hour booking is required. (Currently: " + totalDuration/60 + " hours)");
             return;
         }
 
         setIsModalOpen(false);
-        setBookingData({ selectedUnits, classInfo, curriculum, bookingType });
+        // Ensure bookingData contains the forced 2-hour duration if custom
+        const finalUnits = bookingType === 'custom-units' 
+            ? selectedUnits.map(u => ({ ...u, topic: { ...u.topic, estimated_duration: 120 / selectedUnits.length } }))
+            : selectedUnits;
+
+        setBookingData({ selectedUnits: finalUnits, classInfo, curriculum, bookingType });
         if (classInfo?.id) {
             localStorage.setItem('last_visited_class_id', classInfo.id.toString());
         }
@@ -530,12 +674,8 @@ const ClassPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="mb-6 grid grid-cols-3 gap-2">
-                                {[
-                                    { id: 'regular', label: 'Regular' },
-                                    { id: 'custom-combo', label: 'Custom Combo' },
-                                    { id: 'all-in-one', label: 'All In One' }
-                                ].map(type => (
+                            <div className={`mb-6 grid ${allowedBookingTypes.length === 3 ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
+                                {allowedBookingTypes.map(type => (
                                     <button
                                         key={type.id}
                                         onClick={() => handleBookingTypeChange(type.id as any)}
@@ -623,81 +763,183 @@ const ClassPage: React.FC = () => {
                                             })()}
                                         </div>
                                     ) : (
-                                        subjects.map(subject => (
-                                            <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                                <button 
-                                                    onClick={() => toggleSubject(subject.id)}
-                                                    className="w-full px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between hover:bg-gray-100 transition-colors"
-                                                >
-                                                    <h3 className="font-black text-gray-900 tracking-tight text-sm text-left">{subject.name}</h3>
-                                                    <span className="text-gray-400 shrink-0 ml-4">
-                                                        {expandedSubject === subject.id ? <FaMinus size={12} /> : <FaPlus size={12} />}
-                                                    </span>
-                                                </button>
-                                                {expandedSubject === subject.id && (
-                                                <div className="divide-y divide-gray-100">
-                                                    {!topics[subject.id] ? (
-                                                        <div className="px-4 py-3 text-sm text-gray-500">Loading topics...</div>
-                                                    ) : topics[subject.id].length === 0 ? (
-                                                        <div className="px-4 py-3 text-sm text-gray-500">No units available.</div>
-                                                    ) : (
-                                                            <div className="divide-y divide-gray-100">
-                                                                {groupTopicsByUnit(topics[subject.id]).map((group) => (
-                                                                    <div key={group.unit_no} className="bg-white">
-                                                                        <div className="px-4 py-2 bg-gray-50/50">
-                                                                            <p className="text-sm font-bold text-[#a0522d] tracking-wide">
-                                                                                Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
-                                                                            </p>
+                                        <div className="space-y-4">
+                                            {subjects.map(subject => (
+                                                <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                                    <button 
+                                                        onClick={() => toggleModalSubject(subject.id)}
+                                                        className="w-full px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                                                    >
+                                                        <h3 className="font-black text-gray-900 tracking-tight text-sm text-left">{subject.name}</h3>
+                                                        <span className="text-gray-400 shrink-0 ml-4">
+                                                            {modalExpandedSubject === subject.id ? <FaMinus size={12} /> : <FaPlus size={12} />}
+                                                        </span>
+                                                    </button>
+                                                    {modalExpandedSubject === subject.id && (
+                                                        <div className="p-4 bg-white border-t border-gray-50">
+                                                            {bookingType === 'custom-units' ? (
+                                                                <div className="space-y-4">
+                                                                    <div className="grid grid-cols-2 gap-3">
+                                                                        <div className="space-y-1">
+                                                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Unit Name/No</label>
+                                                                            <input 
+                                                                                type="text" 
+                                                                                placeholder="e.g. Unit 1"
+                                                                                value={customInputs[subject.id]?.unitNo || ''}
+                                                                                onChange={(e) => setCustomInputs(prev => ({ ...prev, [subject.id]: { ...prev[subject.id], unitNo: e.target.value } }))}
+                                                                                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a0522d]/20"
+                                                                            />
                                                                         </div>
-                                                                        {group.topics.map(topic => {
-                                                                            const isSelected = selectedUnits.some(u => u.topic.id === topic.id);
-                                                                            return (
-                                                                                <label
-                                                                                    key={topic.id}
-                                                                                className={`flex items-start gap-4 px-6 py-3 cursor-pointer transition-all ${
-                                                                                    isSelected 
-                                                                                        ? 'bg-orange-50/30' 
-                                                                                        : (selectedUnits.length >= 2)
-                                                                                            ? 'opacity-40 grayscale pointer-events-none bg-gray-50/50'
-                                                                                            : 'hover:bg-orange-50/50'
-                                                                                }`}
-                                                                                >
-                                                                                    <div className="mt-0.5">
-                                                                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-[#a0522d] border-[#a0522d]' : 'border-gray-200 bg-white'}`}>
-                                                                                            {isSelected && <svg className="w-3.5 h-3.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                                                                                        </div>
-                                                                                        <input
-                                                                                            type="checkbox"
-                                                                                            className="sr-only"
-                                                                                            checked={isSelected}
-                                                                                            onChange={() => toggleUnitSelection(subject, topic)}
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="flex-1">
-                                                                                        <div className="flex items-center justify-between gap-4">
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <span className="text-[#e69b48]">•</span>
-                                                                                                <p className={`text-base font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
-                                                                                            </div>
-                                                                                            <div className="text-right shrink-0">
-                                                                                                <p className="text-[10px] font-bold text-green-500 leading-none mt-1">({(topic.estimated_duration || 60) / 60} Hour)</p>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                        {topic.description && (
-                                                                                            <p className="text-sm text-gray-500 mt-1 ml-4 line-clamp-2">{topic.description}</p>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </label>
-                                                                            );
-                                                                        })}
+                                                                        <div className="space-y-1">
+                                                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Topic Name</label>
+                                                                            <input 
+                                                                                type="text" 
+                                                                                placeholder="e.g. Algebra Basics"
+                                                                                value={customInputs[subject.id]?.topicName || ''}
+                                                                                onChange={(e) => setCustomInputs(prev => ({ ...prev, [subject.id]: { ...prev[subject.id], topicName: e.target.value } }))}
+                                                                                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a0522d]/20"
+                                                                            />
+                                                                        </div>
                                                                     </div>
-                                                                ))}
-                                                            </div>
+                                                                    <button 
+                                                                        onClick={() => handleAddCustomUnit(subject)}
+                                                                        className="w-full py-2 bg-[#a0522d] text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm hover:bg-[#804224] transition-all"
+                                                                    >
+                                                                        Add Custom Unit
+                                                                    </button>
+                                                                    
+                                                                    {/* Show already added custom units for this subject */}
+                                                                    {selectedUnits.filter(u => u.subject.id === subject.id).length > 0 && (
+                                                                        <div className="pt-2 border-t border-gray-100">
+                                                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Added Units:</p>
+                                                                            <div className="space-y-2">
+                                                                                {selectedUnits.filter(u => u.subject.id === subject.id).map((u, idx) => (
+                                                                                    <div key={idx} className="flex items-center justify-between bg-orange-50/50 px-3 py-2 rounded-lg">
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <FaCheckCircle className="text-green-500" size={12} />
+                                                                                            <span className="text-xs font-bold text-gray-700">{u.topic.unit_title}: {u.topic.name}</span>
+                                                                                        </div>
+                                                                                        <button 
+                                                                                            onClick={() => setSelectedUnits(prev => prev.filter(item => item.topic.id !== u.topic.id))}
+                                                                                            className="text-gray-400 hover:text-red-500 transition-colors"
+                                                                                        >
+                                                                                            <FaTimes size={10} />
+                                                                                        </button>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="divide-y divide-gray-100">
+                                                                    {!topics[subject.id] ? (
+                                                                        <div className="px-4 py-3 text-sm text-gray-500">Loading topics...</div>
+                                                                    ) : topics[subject.id].length === 0 ? (
+                                                                        <div className="px-4 py-3 text-sm text-gray-500">No units available.</div>
+                                                                    ) : (
+                                                                        <div className="divide-y divide-gray-100">
+                                                                            {groupTopicsByUnit(topics[subject.id]).map((group) => (
+                                                                                <div key={group.unit_no} className="bg-white">
+                                                                                    <div className="px-4 py-2 bg-gray-50/50">
+                                                                                        <p className="text-sm font-bold text-[#a0522d] tracking-wide">
+                                                                                            Unit {group.unit_no}{group.unit_title ? `: ${group.unit_title}` : ''}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    {group.topics.map(topic => {
+                                                                                        const isSelected = selectedUnits.some(u => u.topic.id === topic.id);
+                                                                                        return (
+                                                                                            <label
+                                                                                                key={topic.id}
+                                                                                                className={`flex items-start gap-4 px-6 py-3 cursor-pointer transition-all ${
+                                                                                                    isSelected 
+                                                                                                        ? 'bg-orange-50/30' 
+                                                                                                        : (selectedUnits.length >= (bookingType === ('custom-units' as string) ? 4 : 2))
+                                                                                                            ? 'opacity-40 grayscale pointer-events-none bg-gray-50/50'
+                                                                                                            : 'hover:bg-orange-50/50'
+                                                                                                }`}
+                                                                                            >
+                                                                                                <div className="mt-0.5">
+                                                                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-[#a0522d] border-[#a0522d]' : 'border-gray-200 bg-white'}`}>
+                                                                                                        {isSelected && <svg className="w-3.5 h-3.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                                                                                    </div>
+                                                                                                    <input
+                                                                                                        type="checkbox"
+                                                                                                        className="sr-only"
+                                                                                                        checked={isSelected}
+                                                                                                        onChange={() => toggleUnitSelection(subject, topic)}
+                                                                                                    />
+                                                                                                </div>
+                                                                                                <div className="flex-1">
+                                                                                                    <div className="flex items-center justify-between gap-4">
+                                                                                                        <div className="flex items-center gap-2">
+                                                                                                            <span className="text-[#e69b48]">•</span>
+                                                                                                            <p className={`text-base font-semibold ${isSelected ? 'text-[#a0522d]' : 'text-gray-800'}`}>{topic.name}</p>
+                                                                                                        </div>
+                                                                                                        <div className="text-right shrink-0">
+                                                                                                            <p className="text-[10px] font-bold text-green-500 leading-none mt-1">({(topic.estimated_duration || 60) / 60} Hour)</p>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                    {topic.description && (
+                                                                                                        <p className="text-sm text-gray-500 mt-1 ml-4 line-clamp-2">{topic.description}</p>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            </label>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </div>
-                                                )}
-                                            </div>
-                                        ))
+                                            ))}
+
+                                            {bookingType === 'custom-units' && (
+                                                <div className="mt-6">
+                                                    {!isAddingSubject ? (
+                                                        <button 
+                                                            onClick={() => setIsAddingSubject(true)}
+                                                            className="w-full py-4 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 hover:border-[#a0522d]/30 hover:text-[#a0522d] transition-all flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-widest"
+                                                        >
+                                                            <FaPlus size={12} /> Add Other Subject
+                                                        </button>
+                                                    ) : (
+                                                        <div className="bg-white p-4 rounded-xl border border-[#a0522d]/30 shadow-sm space-y-4">
+                                                            <div className="space-y-1">
+                                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">New Subject Name</label>
+                                                                <input 
+                                                                    autoFocus
+                                                                    type="text" 
+                                                                    placeholder="e.g. French, Programming, etc."
+                                                                    value={newSubjectName}
+                                                                    onChange={(e) => setNewSubjectName(e.target.value)}
+                                                                    onKeyDown={(e) => e.key === 'Enter' && handleAddCustomSubject()}
+                                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a0522d]/20"
+                                                                />
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <button 
+                                                                    onClick={handleAddCustomSubject}
+                                                                    className="flex-1 py-2.5 bg-[#1B2A5A] text-white text-[10px] font-black uppercase tracking-widest rounded-lg"
+                                                                >
+                                                                    Add Subject
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => setIsAddingSubject(false)}
+                                                                    className="px-4 py-2.5 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-lg"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -716,7 +958,7 @@ const ClassPage: React.FC = () => {
                                             ({selectedUnits.length} Units)
                                         </span>
                                         <span className="text-[9px] font-bold text-green-600 mt-0.5 leading-none">
-                                            {selectedUnits.reduce((acc, curr) => acc + (curr.topic.estimated_duration || 60), 0) / 60} Hours Est.
+                                            {bookingType === 'custom-units' ? '2' : (selectedUnits.reduce((acc, curr) => acc + (curr.topic.estimated_duration || 60), 0) / 60)} Hours Est.
                                         </span>
                                     </div>
                                 </div>
@@ -731,7 +973,7 @@ const ClassPage: React.FC = () => {
                                     <button
                                         onClick={handleProceedToBooking}
                                         disabled={selectedUnits.length === 0}
-                                        className="flex-1 md:flex-none bg-[#a0522d] hover:bg-[#804224] disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 md:py-3.5 rounded-[14px] font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-lg shadow-[#a0522d]/20 active:scale-95"
+                                        className="flex-1 md:flex-none bg-[#a0522d] hover:bg-[#804224] disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 md:py-3.5 rounded-[14px] font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-md active:scale-95"
                                     >
                                         Proceed to Booking
                                     </button>

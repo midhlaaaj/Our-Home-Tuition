@@ -94,8 +94,8 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                 .limit(10);
 
             if (!error && data) {
-                setNotifications(data);
-                setUnreadCount(data.filter(n => !n.is_read).length);
+                setNotifications(data as Notification[]);
+                setUnreadCount((data as Notification[]).filter((n: Notification) => !n.is_read).length);
             }
         };
 
@@ -112,7 +112,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
                     table: 'notifications',
                     filter: `user_id=eq.${user.id}`
                 },
-                (payload) => {
+                (payload: any) => {
                     const newNotification = payload.new as Notification;
                     setNotifications(prev => [newNotification, ...prev].slice(0, 10));
                     setUnreadCount(prev => prev + 1);
@@ -134,7 +134,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass, showToggle = true }) => {
             .eq('is_read', false);
 
         if (!error) {
-            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            setNotifications((prev: Notification[]) => prev.map((n: Notification) => ({ ...n, is_read: true })));
             setUnreadCount(0);
         }
     };

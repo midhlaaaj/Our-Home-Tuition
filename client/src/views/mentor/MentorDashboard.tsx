@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-    FaUser, FaCheckCircle, FaTrash, FaClock, FaHistory, FaPlus,
+    FaUser, FaCheckCircle, FaTrash, FaClock, FaHistory, FaPlus, FaBell,
     FaTimes, FaCalendarAlt, FaWifi, FaHome, FaLinkedin, FaGraduationCap, 
     FaBriefcase, FaStar, FaPen, FaSave, FaChevronDown, FaSignOutAlt, FaCalendarCheck, FaMapMarkerAlt, FaBars, FaInfoCircle, FaEye, FaEyeSlash,
     FaChevronLeft, FaChevronRight, FaLock
@@ -59,6 +59,16 @@ interface Task {
     preferred_time?: string | null;
     session_mode?: string;
     selected_units?: any[];
+    is_rescheduled?: boolean;
+}
+
+interface Notification {
+    id: string;
+    title: string;
+    message: string;
+    is_read: boolean;
+    created_at: string;
+    mentor_id: string;
 }
 
 const MentorDashboard: React.FC = () => {
@@ -70,13 +80,18 @@ const MentorDashboard: React.FC = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history' | 'security' | 'calendar' | 'incentives' | 'assignments'>(() => {
+    const [activeTab, setActiveTab] = useState<'profile' | 'availability' | 'tasks' | 'offers' | 'history' | 'security' | 'calendar' | 'incentives' | 'assignments' | 'notifications'>(() => {
         if (typeof window !== 'undefined') {
             const saved = window.localStorage.getItem('mentor_dashboard_tab');
             return (saved as any) || 'profile';
         }
         return 'profile';
     });
+
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const notificationRef = useRef<HTMLDivElement>(null);
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -154,10 +169,56 @@ const MentorDashboard: React.FC = () => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
             }
+            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+                setIsNotificationOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Real-time notifications for Mentor
+    useEffect(() => {
+        if (!profile?.id) return;
+
+        const fetchNotifications = async () => {
+            const { data, error } = await supabase
+                .from('mentor_notifications')
+                .select('*')
+                .eq('mentor_id', profile.id)
+                .order('created_at', { ascending: false })
+                .limit(20);
+
+            if (!error && data) {
+                setNotifications(data as Notification[]);
+                setUnreadCount((data as Notification[]).filter((n: Notification) => !n.is_read).length);
+            }
+        };
+
+        fetchNotifications();
+
+        const channel = supabase
+            .channel(`mentor-notifs-${profile.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'mentor_notifications',
+                    filter: `mentor_id=eq.${profile.id}`
+                },
+                (payload: any) => {
+                    const newNotif = payload.new as Notification;
+                    setNotifications(prev => [newNotif, ...prev].slice(0, 20));
+                    setUnreadCount(prev => prev + 1);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [profile?.id]);
 
     // Real-time subscription for Incentives
     useEffect(() => {
@@ -366,7 +427,8 @@ const MentorDashboard: React.FC = () => {
                     status: b.status,
                     preferred_date: b.preferred_date,
                     preferred_time: b.preferred_time,
-                    session_mode: b.session_mode
+                    session_mode: b.session_mode,
+                    is_rescheduled: b.is_rescheduled
                 }));
 
                 const combinedTasks = [...formattedQueries, ...formattedBookings];
@@ -708,6 +770,46 @@ const MentorDashboard: React.FC = () => {
         }
     };
 
+    const markNotificationAsRead = async (id: string) => {
+        const { error } = await supabase
+            .from('mentor_notifications')
+            .update({ is_read: true })
+            .eq('id', id);
+
+        if (!error) {
+            setNotifications(prev => prev.map((n: Notification) => n.id === id ? { ...n, is_read: true } : n));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        }
+    };
+
+    const markAllNotificationsAsRead = async () => {
+        if (!profile?.id) return;
+        const { error } = await supabase
+            .from('mentor_notifications')
+            .update({ is_read: true })
+            .eq('mentor_id', profile.id);
+
+        if (!error) {
+            setNotifications(prev => prev.map((n: Notification) => ({ ...n, is_read: true })));
+            setUnreadCount(0);
+        }
+    };
+
+    const deleteNotification = async (id: string) => {
+        const { error } = await supabase
+            .from('mentor_notifications')
+            .delete()
+            .eq('id', id);
+
+        if (!error) {
+            const deletedNotif = notifications.find(n => n.id === id);
+            setNotifications(prev => prev.filter((n: Notification) => n.id !== id));
+            if (deletedNotif && !deletedNotif.is_read) {
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            }
+        }
+    };
+
     const handleSignOut = async () => {
         await signOut();
         router.push('/');
@@ -830,6 +932,69 @@ const MentorDashboard: React.FC = () => {
                     </Link>
 
                     <div className="flex items-center gap-4">
+                        {/* Notification Bell */}
+                        <div className="relative" ref={notificationRef}>
+                            <button
+                                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                                className={`w-10 h-10 rounded-full bg-[#1B2A5A] flex items-center justify-center text-white transition-all shadow-sm ${isNotificationOpen ? 'ring-2 ring-[#a0522d]/50' : ''}`}
+                                aria-label="Notifications"
+                            >
+                                <FaBell size={18} />
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white animate-pulse">
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Notification Dropdown */}
+                            <AnimatePresence>
+                                {isNotificationOpen && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className="absolute right-0 mt-3 w-80 bg-white rounded-[24px] shadow-2xl border border-gray-100 p-0 z-[110] origin-top-right overflow-hidden"
+                                    >
+                                        <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-[#1B2A5A]/5">
+                                            <h3 className="text-sm font-black text-[#1B2A5A]">RECENT ALERTS</h3>
+                                            <span className="text-[9px] font-black bg-[#1B2A5A] text-white px-2 py-0.5 rounded-full">
+                                                {unreadCount} NEW
+                                            </span>
+                                        </div>
+                                        <div className="max-h-[300px] overflow-y-auto px-1 py-1 custom-scrollbar">
+                                            {notifications.length > 0 ? (
+                                                notifications.map((n) => (
+                                                    <div 
+                                                        key={n.id} 
+                                                        onClick={() => markNotificationAsRead(n.id)}
+                                                        className={`p-3 rounded-xl mb-1 cursor-pointer transition-all ${n.is_read ? 'bg-white hover:bg-gray-50' : 'bg-blue-50/30 border-l-2 border-blue-500 hover:bg-blue-50/50'}`}
+                                                    >
+                                                        <div className="flex justify-between items-start">
+                                                            <p className="text-[11px] font-black text-gray-900 leading-tight">{n.title}</p>
+                                                            <span className="text-[8px] text-gray-400 font-bold uppercase">{new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                                                        </div>
+                                                        <p className="text-[10px] text-gray-500 line-clamp-2 mt-0.5">{n.message}</p>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="py-8 flex flex-col items-center">
+                                                    <FaBell className="text-gray-200 mb-2" size={20} />
+                                                    <p className="text-[11px] font-bold text-gray-400">No new alerts</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button 
+                                            onClick={() => { setActiveTab('notifications'); setIsNotificationOpen(false); }}
+                                            className="w-full py-3 text-center text-[10px] font-black text-[#1B2A5A] bg-gray-50 hover:bg-gray-100 transition-colors uppercase tracking-widest border-t border-gray-100"
+                                        >
+                                            View All Alerts
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
                         {/* Mobile Menu Button */}
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
@@ -838,6 +1003,7 @@ const MentorDashboard: React.FC = () => {
                             <FaBars size={24} />
                         </button>
 
+                        {/* Profile Dropdown */}
                         <div className="relative hidden lg:block" ref={dropdownRef}>
                             <button
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -932,6 +1098,7 @@ const MentorDashboard: React.FC = () => {
                                             { id: 'assignments', icon: <FaCalendarAlt />, label: 'Assignments' },
                                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
+                                            { id: 'notifications', icon: <FaBell />, label: 'Notifications' },
                                             { id: 'history', icon: <FaHistory />, label: 'Booking History' },
                                             { id: 'incentives', icon: <FaStar />, label: 'Incentives' },
                                             { id: 'security', icon: <FaSignOutAlt />, label: 'Password' }
@@ -976,6 +1143,7 @@ const MentorDashboard: React.FC = () => {
                             { id: 'assignments', icon: <FaCalendarAlt />, label: 'Assignments' },
                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
+                            { id: 'notifications', icon: <FaBell />, label: 'Notifications' },
                             { id: 'history', icon: <FaHistory />, label: 'Booking History' },
                             { id: 'incentives', icon: <FaStar />, label: 'Incentives' },
                             { id: 'calendar', icon: <FaCalendarAlt />, label: 'Calendar' },
@@ -1345,9 +1513,14 @@ const MentorDashboard: React.FC = () => {
                                                             <h3 className="font-black text-gray-900">{task.name}</h3>
                                                             <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded ${task.type === 'booking' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
                                                                 }`}>
-                                                                {task.type === 'booking' ? 'Session Booking' : 'General Query'}
-                                                            </span>
-                                                        </div>
+                                                                    {task.type === 'booking' ? 'Session Booking' : 'General Query'}
+                                                                </span>
+                                                                {task.is_rescheduled && (
+                                                                    <span className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded bg-blue-50 text-blue-600 border border-blue-100 italic">
+                                                                        Rescheduled
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         {task.query ? (
                                                             <p className="text-xs text-gray-500 font-medium italic mb-4">"{task.query}"</p>
                                                         ) : (
@@ -1465,6 +1638,95 @@ const MentorDashboard: React.FC = () => {
                                                     </button>
                                                 </div>
                                             )}
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )}
+
+                            {activeTab === 'notifications' && (
+                                <motion.div
+                                    key="notifications"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-8"
+                                >
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                        <div>
+                                            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Notification Center</h2>
+                                            <p className="text-gray-400 font-bold text-sm mt-1 border-l-4 border-[#a0522d] pl-4">Stay updated with class schedules and system alerts.</p>
+                                        </div>
+                                        
+                                        {notifications.some(n => !n.is_read) && (
+                                            <button 
+                                                onClick={markAllNotificationsAsRead}
+                                                className="flex items-center gap-3 px-8 py-4 bg-white text-[#1B2A5A] rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-gray-200/50 border border-gray-100 hover:bg-gray-50 transition-all"
+                                            >
+                                                <FaCheckCircle className="text-green-500" />
+                                                Mark All As Read
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {notifications.length > 0 ? (
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {notifications.map((n) => (
+                                                <div 
+                                                    key={n.id}
+                                                    className={`group relative p-6 md:p-8 rounded-[40px] transition-all bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/40 ${!n.is_read ? 'border-l-[6px] border-l-blue-500' : ''}`}
+                                                >
+                                                    <div className="flex justify-between items-start gap-6">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-4 mb-2">
+                                                                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${!n.is_read ? 'bg-blue-50 text-blue-500' : 'bg-gray-50 text-gray-400'}`}>
+                                                                    <FaBell size={16} />
+                                                                </div>
+                                                                <h3 className="text-lg font-black text-[#1B2A5A] tracking-tight">{n.title}</h3>
+                                                            </div>
+                                                            <p className="text-sm text-gray-600 font-medium leading-relaxed max-w-3xl ml-14">
+                                                                {n.message}
+                                                            </p>
+                                                            <div className="mt-4 flex items-center gap-6 ml-14">
+                                                                <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                                    <FaClock size={12} />
+                                                                    {new Date(n.created_at).toLocaleDateString(undefined, { 
+                                                                        month: 'long', 
+                                                                        day: 'numeric',
+                                                                        hour: '2-digit',
+                                                                        minute: '2-digit'
+                                                                    })}
+                                                                </div>
+                                                                {!n.is_read && (
+                                                                    <button 
+                                                                        onClick={() => markNotificationAsRead(n.id)}
+                                                                        className="text-[10px] font-black text-blue-500 hover:text-blue-700 uppercase tracking-[0.2em] transition-colors"
+                                                                    >
+                                                                        Mark read
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <button 
+                                                            onClick={() => deleteNotification(n.id)}
+                                                            className="w-12 h-12 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
+                                                            title="Delete notification"
+                                                        >
+                                                            <FaTrash size={18} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[60px] border border-dashed border-gray-200">
+                                            <div className="w-24 h-24 bg-gray-50 rounded-[32px] flex items-center justify-center text-gray-200 mb-8 border border-gray-100">
+                                                <FaBell size={40} />
+                                            </div>
+                                            <h2 className="text-2xl font-black text-[#1B2A5A] mb-2 tracking-tight">Zero Notifications</h2>
+                                            <p className="text-gray-400 font-bold max-w-xs text-center leading-relaxed text-sm">
+                                                We'll notify you here when sessions are rescheduled or assignments are updated.
+                                            </p>
                                         </div>
                                     )}
                                 </motion.div>

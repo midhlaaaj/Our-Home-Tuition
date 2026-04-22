@@ -6,24 +6,42 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../supabaseClient';
 import { safeFetch } from '../utils/supabaseUtils';
 
-const HeroSection: React.FC = () => {
-    const [mediaUrl, setMediaUrl] = useState<string | null>(null);
-    const [mediaType, setMediaType] = useState<'image' | 'video' | null>('image');
-    const [title, setTitle] = useState<string>('');
-    const [titleColor, setTitleColor] = useState<string>('#c75e33');
-    const [subtitle, setSubtitle] = useState<string>('');
-    const [loading, setLoading] = useState(true);
+interface HeroSectionProps {
+    initialHeroData?: any;
+}
+
+const HeroSection: React.FC<HeroSectionProps> = ({ initialHeroData }) => {
+    // Parse initial data helper
+    const parseTitle = (rawTitle: string | null) => {
+        let parsedTitle = rawTitle || 'Helping Young\nMinds Grow\nwith *Confidence*';
+        let parsedColor = '#c75e33';
+        if (parsedTitle.includes('|||')) {
+            const parts = parsedTitle.split('|||');
+            parsedTitle = parts[0];
+            parsedColor = parts[1];
+        }
+        return { text: parsedTitle, color: parsedColor };
+    };
+
+    const initialParsed = parseTitle(initialHeroData?.title);
+
+    const [mediaUrl, setMediaUrl] = useState<string | null>(initialHeroData?.media_url || null);
+    const [mediaType, setMediaType] = useState<'image' | 'video' | null>(initialHeroData?.type as 'image' | 'video' || 'image');
+    const [title, setTitle] = useState<string>(initialParsed.text);
+    const [titleColor, setTitleColor] = useState<string>(initialParsed.color);
+    const [subtitle, setSubtitle] = useState<string>(initialHeroData?.subtitle || 'Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.');
+    const [loading, setLoading] = useState(!initialHeroData);
     const router = useRouter();
 
     const initialized = React.useRef(false);
 
     useEffect(() => {
+        // If we already have initial data, we've already rendered it. 
+        // We can still fetch in the background to ensure consistency, but we don't need to block 'loading' state.
         if (initialized.current) return;
         initialized.current = true;
         
         const fetchHeroMedia = async () => {
-            // We removed the aggressive 10s timeout to allow Supabase more time to respond, especially on first load or wake-up.
-
             try {
                 const result = await safeFetch(async () => {
                     return await supabase
@@ -44,26 +62,14 @@ const HeroSection: React.FC = () => {
                 if (data) {
                     if (data.media_url) setMediaUrl(data.media_url);
                     if (data.type) setMediaType(data.type as 'image' | 'video');
-                    if (data.title) {
-                        let parsedTitle = data.title;
-                        let parsedColor = '#c75e33';
-                        if (parsedTitle.includes('|||')) {
-                            const parts = parsedTitle.split('|||');
-                            parsedTitle = parts[0];
-                            parsedColor = parts[1];
-                        }
-                        setTitle(parsedTitle);
-                        setTitleColor(parsedColor);
-                    } else {
-                        setTitle('Helping Young\nMinds Grow\nwith *Confidence*');
-                    }
+                    const { text, color } = parseTitle(data.title);
+                    setTitle(text);
+                    setTitleColor(color);
                     if (data.subtitle) setSubtitle(data.subtitle);
-                    else setSubtitle('Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.');
-                } else {
-                    // Fallback if no data at all
+                } else if (!initialHeroData) {
+                    // Fallback only if we don't have initial data
                     setTitle('Helping Young\nMinds Grow\nwith *Confidence*');
                     setSubtitle('Structured subject roadmaps, qualified home tutors, and\npersonalized learning for students from Class 1 to 10 —\nall at the comfort of your home.');
-                    setMediaType('image'); // default
                 }
             } catch (err) {
                 console.error("Unexpected error fetching hero media:", err);
@@ -72,8 +78,12 @@ const HeroSection: React.FC = () => {
             }
         };
 
+        // If we don't have initial data, we must fetch.
+        // If we HAVE initial data, we could skip the fetch to save resources, 
+        // or still fetch to ensure the most recent data (SWR pattern).
+        // For now, let's fetch to be safe, but since loading is already false, it won't flicker.
         fetchHeroMedia();
-    }, []);
+    }, [initialHeroData]);
 
     const renderTitle = (text: string) => {
         const lines = text.split('\n');

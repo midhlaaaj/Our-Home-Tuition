@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '../supabaseClient';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/supabaseClient';
 import { FaUser, FaHistory, FaSignOutAlt, FaPen, FaSave, FaCamera, FaCalendarAlt, FaChevronRight, FaGraduationCap, FaHome } from 'react-icons/fa';
-import AvatarSelectionModal from '../components/AvatarSelectionModal';
-import { useModal } from '../context/ModalContext';
+import AvatarSelectionModal from '@/components/AvatarSelectionModal';
+import { useModal } from '@/context/ModalContext';
 
 interface Booking {
     id: string;
@@ -19,7 +20,8 @@ interface Booking {
     status: string;
     class_type: string;
     otp?: string;
-    mentor?: any; // Changed to any to handle nested join objects/arrays
+    mentor?: any;
+    is_rescheduled?: boolean;
 }
 
 const Profile: React.FC = () => {
@@ -330,31 +332,16 @@ const Profile: React.FC = () => {
                                                             </span>
                                                         </div>
 
-                                                        {booking.status === 'confirmed' && (
-                                                            <div className="mt-4 p-4 bg-white/5 rounded-2xl border border-white/10 space-y-2">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-[#ffb76c] animate-pulse"></div>
-                                                                    <p className="text-[#ffb76c] text-[10px] font-black uppercase tracking-widest">
-                                                                        Mentor: <span className="text-white ml-1">
-                                                                            {(Array.isArray(booking.mentor) ? booking.mentor[0]?.name : booking.mentor?.name) || 'Assigning...'}
-                                                                        </span>
-                                                                    </p>
-                                                                </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                                                                    <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">
-                                                                        Session OTP: <span className="text-white bg-white/20 px-2 py-0.5 rounded-md font-black tracking-[0.2em] ml-1">{booking.otp || '---'}</span>
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="text-right flex flex-col items-end gap-2">
                                                     <p className="text-xs font-black text-white/30 uppercase tracking-widest">{new Date(booking.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                                                    <button className="flex items-center gap-2 text-[#ffb76c] font-black text-sm group/btn hover:text-white transition-colors">
+                                                    <Link 
+                                                        href={`/booking/${booking.id}`}
+                                                        className="flex items-center gap-2 text-[#ffb76c] font-black text-sm group/btn hover:text-white transition-colors"
+                                                    >
                                                         View Details <FaChevronRight size={10} className="transition-transform group-hover/btn:translate-x-1" />
-                                                    </button>
+                                                    </Link>
                                                 </div>
                                             </div>
                                         ))
