@@ -954,42 +954,55 @@ const MentorDashboard: React.FC = () => {
                                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className="absolute right-0 mt-3 w-80 bg-white rounded-[24px] shadow-2xl border border-gray-100 p-0 z-[110] origin-top-right overflow-hidden"
+                                        className="absolute right-0 mt-3 w-80 bg-white rounded-[32px] shadow-2xl border border-gray-100 pt-6 pb-0 px-0 z-[110] origin-top-right overflow-hidden"
                                     >
-                                        <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-[#1B2A5A]/5">
-                                            <h3 className="text-sm font-black text-[#1B2A5A]">RECENT ALERTS</h3>
-                                            <span className="text-[9px] font-black bg-[#1B2A5A] text-white px-2 py-0.5 rounded-full">
-                                                {unreadCount} NEW
-                                            </span>
+                                        <div className="flex justify-between items-center mb-6 px-6">
+                                            <h3 className="text-xl font-black text-[#1B2A5A]">Notifications</h3>
+                                            <div className="flex items-center gap-3">
+                                                {unreadCount > 0 && (
+                                                    <button onClick={markAllNotificationsAsRead} className="text-[9px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-700">
+                                                        Mark All Read
+                                                    </button>
+                                                )}
+                                                <span className="text-[10px] font-black bg-[#F3F0FF] text-[#1B2A5A] px-3 py-1 rounded-full uppercase tracking-wider">
+                                                    {unreadCount} NEW
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="max-h-[300px] overflow-y-auto px-1 py-1 custom-scrollbar">
+
+                                        <div className="max-h-[350px] overflow-y-auto px-2 custom-scrollbar">
                                             {notifications.length > 0 ? (
-                                                notifications.map((n) => (
-                                                    <div 
-                                                        key={n.id} 
-                                                        onClick={() => markNotificationAsRead(n.id)}
-                                                        className={`p-3 rounded-xl mb-1 cursor-pointer transition-all ${n.is_read ? 'bg-white hover:bg-gray-50' : 'bg-blue-50/30 border-l-2 border-blue-500 hover:bg-blue-50/50'}`}
-                                                    >
-                                                        <div className="flex justify-between items-start">
-                                                            <p className="text-[11px] font-black text-gray-900 leading-tight">{n.title}</p>
-                                                            <span className="text-[8px] text-gray-400 font-bold uppercase">{new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                                                <div className="space-y-1 pb-4">
+                                                    {notifications.map((n) => (
+                                                        <div 
+                                                            key={n.id} 
+                                                            onClick={() => markNotificationAsRead(n.id)}
+                                                            className={`p-4 rounded-2xl transition-all border-l-4 cursor-pointer ${n.is_read ? 'bg-white border-transparent hover:bg-gray-50' : 'bg-blue-50/50 border-blue-500 hover:bg-blue-50'}`}
+                                                        >
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <p className="text-xs font-black text-gray-900 leading-tight">{n.title}</p>
+                                                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">
+                                                                    {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[11px] text-gray-500 font-medium leading-relaxed line-clamp-2">
+                                                                {n.message}
+                                                            </p>
                                                         </div>
-                                                        <p className="text-[10px] text-gray-500 line-clamp-2 mt-0.5">{n.message}</p>
-                                                    </div>
-                                                ))
+                                                    ))}
+                                                </div>
                                             ) : (
-                                                <div className="py-8 flex flex-col items-center">
-                                                    <FaBell className="text-gray-200 mb-2" size={20} />
-                                                    <p className="text-[11px] font-bold text-gray-400">No new alerts</p>
+                                                <div className="flex flex-col items-center py-10 px-6">
+                                                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300 mb-6">
+                                                        <FaBell size={28} />
+                                                    </div>
+                                                    <h4 className="text-lg font-black text-[#1B2A5A] mb-2">No notifications</h4>
+                                                    <p className="text-sm text-gray-400 text-center leading-relaxed font-bold">
+                                                        We'll let you know when something important happens.
+                                                    </p>
                                                 </div>
                                             )}
                                         </div>
-                                        <button 
-                                            onClick={() => { setActiveTab('notifications'); setIsNotificationOpen(false); }}
-                                            className="w-full py-3 text-center text-[10px] font-black text-[#1B2A5A] bg-gray-50 hover:bg-gray-100 transition-colors uppercase tracking-widest border-t border-gray-100"
-                                        >
-                                            View All Alerts
-                                        </button>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -1098,7 +1111,6 @@ const MentorDashboard: React.FC = () => {
                                             { id: 'assignments', icon: <FaCalendarAlt />, label: 'Assignments' },
                                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
-                                            { id: 'notifications', icon: <FaBell />, label: 'Notifications' },
                                             { id: 'history', icon: <FaHistory />, label: 'Booking History' },
                                             { id: 'incentives', icon: <FaStar />, label: 'Incentives' },
                                             { id: 'security', icon: <FaSignOutAlt />, label: 'Password' }
@@ -1143,7 +1155,6 @@ const MentorDashboard: React.FC = () => {
                             { id: 'assignments', icon: <FaCalendarAlt />, label: 'Assignments' },
                             { id: 'offers', icon: <FaMapMarkerAlt />, label: 'Nearby Offers' },
                             { id: 'tasks', icon: <FaClock />, label: 'Current Tasks' },
-                            { id: 'notifications', icon: <FaBell />, label: 'Notifications' },
                             { id: 'history', icon: <FaHistory />, label: 'Booking History' },
                             { id: 'incentives', icon: <FaStar />, label: 'Incentives' },
                             { id: 'calendar', icon: <FaCalendarAlt />, label: 'Calendar' },
@@ -1643,95 +1654,6 @@ const MentorDashboard: React.FC = () => {
                                 </motion.div>
                             )}
 
-                            {activeTab === 'notifications' && (
-                                <motion.div
-                                    key="notifications"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-8"
-                                >
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                        <div>
-                                            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Notification Center</h2>
-                                            <p className="text-gray-400 font-bold text-sm mt-1 border-l-4 border-[#a0522d] pl-4">Stay updated with class schedules and system alerts.</p>
-                                        </div>
-                                        
-                                        {notifications.some(n => !n.is_read) && (
-                                            <button 
-                                                onClick={markAllNotificationsAsRead}
-                                                className="flex items-center gap-3 px-8 py-4 bg-white text-[#1B2A5A] rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-gray-200/50 border border-gray-100 hover:bg-gray-50 transition-all"
-                                            >
-                                                <FaCheckCircle className="text-green-500" />
-                                                Mark All As Read
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {notifications.length > 0 ? (
-                                        <div className="grid grid-cols-1 gap-4">
-                                            {notifications.map((n) => (
-                                                <div 
-                                                    key={n.id}
-                                                    className={`group relative p-6 md:p-8 rounded-[40px] transition-all bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/40 ${!n.is_read ? 'border-l-[6px] border-l-blue-500' : ''}`}
-                                                >
-                                                    <div className="flex justify-between items-start gap-6">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-4 mb-2">
-                                                                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${!n.is_read ? 'bg-blue-50 text-blue-500' : 'bg-gray-50 text-gray-400'}`}>
-                                                                    <FaBell size={16} />
-                                                                </div>
-                                                                <h3 className="text-lg font-black text-[#1B2A5A] tracking-tight">{n.title}</h3>
-                                                            </div>
-                                                            <p className="text-sm text-gray-600 font-medium leading-relaxed max-w-3xl ml-14">
-                                                                {n.message}
-                                                            </p>
-                                                            <div className="mt-4 flex items-center gap-6 ml-14">
-                                                                <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                                                    <FaClock size={12} />
-                                                                    {new Date(n.created_at).toLocaleDateString(undefined, { 
-                                                                        month: 'long', 
-                                                                        day: 'numeric',
-                                                                        hour: '2-digit',
-                                                                        minute: '2-digit'
-                                                                    })}
-                                                                </div>
-                                                                {!n.is_read && (
-                                                                    <button 
-                                                                        onClick={() => markNotificationAsRead(n.id)}
-                                                                        className="text-[10px] font-black text-blue-500 hover:text-blue-700 uppercase tracking-[0.2em] transition-colors"
-                                                                    >
-                                                                        Mark read
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </div>
-
-                                                        <button 
-                                                            onClick={() => deleteNotification(n.id)}
-                                                            className="w-12 h-12 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
-                                                            title="Delete notification"
-                                                        >
-                                                            <FaTrash size={18} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[60px] border border-dashed border-gray-200">
-                                            <div className="w-24 h-24 bg-gray-50 rounded-[32px] flex items-center justify-center text-gray-200 mb-8 border border-gray-100">
-                                                <FaBell size={40} />
-                                            </div>
-                                            <h2 className="text-2xl font-black text-[#1B2A5A] mb-2 tracking-tight">Zero Notifications</h2>
-                                            <p className="text-gray-400 font-bold max-w-xs text-center leading-relaxed text-sm">
-                                                We'll notify you here when sessions are rescheduled or assignments are updated.
-                                            </p>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            )}
-
                             {activeTab === 'history' && (
                                 <motion.div
                                     key="history"
@@ -1948,10 +1870,10 @@ const MentorDashboard: React.FC = () => {
                                             {/* Tiered Progress Path */}
                                             <div className="relative px-4 pb-12 pt-12">
                                                 {/* Connecting Line (Background) */}
-                                                <div className="absolute top-[108px] left-12 right-12 h-1 bg-gray-100 rounded-full" />
+                                                <div className="absolute top-[108px] left-8 right-8 md:left-12 md:right-12 h-1 bg-gray-100 rounded-full" />
                                                 
                                                 {/* Progress Line (Active) */}
-                                                <div className="absolute top-[108px] left-12 right-12 h-1 overflow-hidden pointer-events-none">
+                                                <div className="absolute top-[108px] left-8 right-8 md:left-12 md:right-12 h-1 overflow-hidden pointer-events-none">
                                                     <motion.div 
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${Math.min((offlineSessionCount / 10) * 100, 100)}%` }}
@@ -1961,10 +1883,10 @@ const MentorDashboard: React.FC = () => {
 
                                                 <div className="flex justify-between items-center relative z-20">
                                                     {[
-                                                        { count: 3, label: '3 Gigs' },
+                                                        { count: 0, label: 'Start' },
+                                                        { count: 2, label: '2 Gigs' },
                                                         { count: 4, label: '4 Gigs' },
-                                                        { count: 5, label: '5 Gigs' },
-                                                        { count: 7, label: '7 Gigs' },
+                                                        { count: 6, label: '6 Gigs' },
                                                         { count: 8, label: '8 Gigs' },
                                                         { count: 10, reward: '₹1000', label: '10 Gigs', locked: true }
                                                     ].map((m, idx) => {
@@ -1988,7 +1910,7 @@ const MentorDashboard: React.FC = () => {
                                                                         {m.count}
                                                                     </div>
                                                                     <div className="text-[8px] font-black uppercase text-gray-300 tracking-widest">
-                                                                        Gigs
+                                                                        {m.label}
                                                                     </div>
                                                                 </div>
                                                             </div>

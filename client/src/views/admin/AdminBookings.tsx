@@ -32,6 +32,7 @@ interface Booking {
     razorpay_payment_id: string | null;
     latitude?: number;
     longitude?: number;
+    user_id: string;
 }
 
 interface Mentor {
@@ -235,6 +236,19 @@ const AdminBookings: React.FC = () => {
             const { error } = await supabase.from('mentor_assignment_offers').insert(offers);
             if (error) throw error;
 
+            // 2. Insert notifications for each mentor
+            const notifications = availableMentors.map(m => ({
+                mentor_id: m.id,
+                booking_id: booking.id,
+                title: 'New Session Available',
+                message: 'new session available check assignments to accept the session.',
+                mentor_fare: payout,
+                is_read: false
+            }));
+
+            const { error: notifError } = await supabase.from('mentor_notifications').insert(notifications);
+            if (notifError) console.error("Notification broadcast error:", notifError);
+
             // Update local state
             setAssignmentOffers(prev => [...prev, ...offers]);
             alert(`Broadcasted to ${availableMentors.length} mentors!`);
@@ -302,6 +316,19 @@ const AdminBookings: React.FC = () => {
                 .eq('id', bookingId);
 
             if (error) throw error;
+
+            // Notify mentor if assigned
+            if (mentorId !== 'unassigned') {
+                const booking = bookings.find(b => b.id === bookingId);
+                await supabase.from('mentor_notifications').insert({
+                    mentor_id: mentorId,
+                    booking_id: bookingId,
+                    title: 'New Direct Assignment',
+                    message: `You have been specifically assigned to a new booking for Class ${booking?.class_id}. Please review and accept/decline in your dashboard.`,
+                    is_read: false
+                });
+            }
+
             setBookings(bookings.map(b => b.id === bookingId ? { ...b, assigned_mentor_id: mentorId === 'unassigned' ? null : mentorId, status } : b));
             alert(mentorId === 'unassigned' ? "Mentor unassigned." : "Mentor assigned! Awaiting mentor's acceptance.");
         } catch (err) {
@@ -313,6 +340,20 @@ const AdminBookings: React.FC = () => {
         try {
             const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', id);
             if (error) throw error;
+
+            // Notify parent if confirmed
+            if (newStatus === 'confirmed') {
+                const booking = bookings.find(b => b.id === id);
+                if (booking) {
+                    await supabase.from('notifications').insert({
+                        user_id: booking.user_id,
+                        title: 'Booking Confirmed!',
+                        message: `Your booking for Class ${booking.class_id} has been confirmed. A mentor has been assigned.`,
+                        type: 'booking_confirmed'
+                    });
+                }
+            }
+
             setBookings(bookings.map(b => b.id === id ? { ...b, status: newStatus } : b));
         } catch (err) {
             console.error('Error updating status:', err);

@@ -42,7 +42,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             icon: <FaHome />, 
             label: 'Homepage',
             children: [
-                { path: '/admin/homepage/sliders', label: 'Sliders', icon: <FaThLarge /> },
+                { path: '/admin/homepage/sliders', label: 'Hero Section', icon: <FaThLarge /> },
                 { path: '/admin/homepage/counters', label: 'Counters', icon: <FaListOl /> },
                 { path: '/admin/homepage/reviews', label: 'Reviews', icon: <FaStar /> },
                 { path: '/admin/homepage/brands', label: 'Brands', icon: <FaHandshake /> },

@@ -139,6 +139,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ initialHeroData }) => {
                                 fill
                                 className="object-cover"
                                 priority
+                                unoptimized
                                 sizes="100vw"
                             />
                         )}

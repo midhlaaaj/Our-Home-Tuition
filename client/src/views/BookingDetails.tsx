@@ -109,6 +109,16 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ id }) => {
 
             if (error) throw error;
 
+            // Notify Parent (Self-notification for record)
+            if (user?.id) {
+                await supabase.from('notifications').insert({
+                    user_id: user.id,
+                    title: 'Session Rescheduled',
+                    message: `You have rescheduled the session from ${booking.preferred_date} ${booking.preferred_time} to ${newDate} ${newTime}`,
+                    type: 'rescheduled'
+                });
+            }
+
             // Notify Mentor if assigned
             if (booking.assigned_mentor_id) {
                 await supabase.from('mentor_notifications').insert({
@@ -245,6 +255,17 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ id }) => {
                                                 <p className="text-sm font-black text-gray-900">{booking.preferred_time}</p>
                                             </div>
                                         </div>
+                                        {booking.otp && (
+                                            <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
+                                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#a0522d]">
+                                                    <FaInfoCircle size={16} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Session OTP</p>
+                                                    <p className="text-sm font-black text-gray-900 tracking-[0.2em]">{booking.otp}</p>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
