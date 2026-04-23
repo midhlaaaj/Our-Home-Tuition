@@ -7,6 +7,7 @@ import { ModalProvider } from "../context/ModalContext";
 import { CurriculumProvider } from "../context/CurriculumContext";
 import AIChatButton from "../components/AIChatButton";
 import ScrollToTop from "../components/ScrollToTop";
+import LeadTracker from "../components/LeadTracker";
 
 const urbanist = Urbanist({
   subsets: ["latin"],
@@ -101,6 +102,7 @@ export default function RootLayout({
           <CurriculumProvider>
             <ModalProvider>
               <ScrollToTop />
+              <LeadTracker />
               {children}
               <AIChatButton />
             </ModalProvider>

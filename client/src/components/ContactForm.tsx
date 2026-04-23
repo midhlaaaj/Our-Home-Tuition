@@ -37,6 +37,19 @@ const ContactForm: React.FC = () => {
 
             if (error) throw error;
 
+            // Update lead record
+            const fingerprint = typeof window !== 'undefined' ? localStorage.getItem('site_lead_fingerprint') : null;
+            if (fingerprint) {
+                await supabase
+                    .from('site_leads')
+                    .update({ 
+                        has_queried: true,
+                        name: formData.name,
+                        email: formData.email,
+                        phone: `+91 ${formData.phone}`
+                    })
+                    .eq('fingerprint', fingerprint);
+            }
             setSubmitted(true);
             clearPersistence(); // Clear persistence after successful submission
             // We don't manually clear formData here because persistence hook handles state, 

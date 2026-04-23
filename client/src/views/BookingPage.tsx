@@ -233,6 +233,21 @@ const BookingPage: React.FC = () => {
 
             if (error) throw error;
 
+            // Update lead record
+            const fingerprint = typeof window !== 'undefined' ? localStorage.getItem('site_lead_fingerprint') : null;
+            if (fingerprint) {
+                await supabase
+                    .from('site_leads')
+                    .update({ 
+                        has_booked: true,
+                        name,
+                        email,
+                        phone: `+91 ${phone}`,
+                        address
+                    })
+                    .eq('fingerprint', fingerprint);
+            }
+
             // Send Notification to Parent
             const { error: notifError } = await supabase.from('notifications').insert({
                 user_id: user.id,

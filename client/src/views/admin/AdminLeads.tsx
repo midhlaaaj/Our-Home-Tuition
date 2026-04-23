@@ -8,10 +8,12 @@ import * as XLSX from 'xlsx';
 
 interface Lead {
     id: string;
-    name: string;
-    email: string;
-    phone: string;
-    address?: string;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    address?: string | null;
+    has_booked: boolean;
+    has_queried: boolean;
     created_at: string;
 }
 
@@ -30,10 +32,11 @@ const AdminLeads: React.FC = () => {
 
     const fetchLeads = async () => {
         setLoading(true);
+        // Only fetch leads that have contact info (email or phone)
         const { data, error } = await supabase
-            .from('profiles')
-            .select('id, name, email, phone, address, created_at')
-            .eq('role', 'parent_student')
+            .from('site_leads')
+            .select('*')
+            .or('email.neq.null,phone.neq.null')
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -66,9 +69,9 @@ const AdminLeads: React.FC = () => {
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
             filtered = filtered.filter(l => 
-                l.name.toLowerCase().includes(term) || 
-                l.email.toLowerCase().includes(term) || 
-                l.phone.includes(term) ||
+                (l.name?.toLowerCase().includes(term)) || 
+                (l.email?.toLowerCase().includes(term)) || 
+                (l.phone?.includes(term)) ||
                 (l.address && l.address.toLowerCase().includes(term))
             );
         }
@@ -83,7 +86,9 @@ const AdminLeads: React.FC = () => {
             'Name': l.name,
             'Email': l.email,
             'Contact Number': l.phone,
-            'Address': l.address || 'N/A'
+            'Address': l.address || 'N/A',
+            'Booked Session': l.has_booked ? 'Yes' : 'No',
+            'Raised Query': l.has_queried ? 'Yes' : 'No'
         }));
 
         const ws = XLSX.utils.json_to_sheet(worksheetData);
@@ -184,6 +189,7 @@ const AdminLeads: React.FC = () => {
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">User Details</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Contact Info</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Location / Address</th>
                             </tr>
                         </thead>
@@ -218,11 +224,11 @@ const AdminLeads: React.FC = () => {
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-[#a0522d]/10 flex items-center justify-center text-[#a0522d] font-black text-xs">
-                                                    {lead.name.charAt(0)}
+                                                    {lead.name?.charAt(0) || '?'}
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-gray-900 leading-none mb-1">{lead.name}</p>
-                                                    <p className="text-[10px] font-bold text-gray-400">{lead.email}</p>
+                                                    <p className="text-sm font-black text-gray-900 leading-none mb-1">{lead.name || 'Anonymous User'}</p>
+                                                    <p className="text-[10px] font-bold text-gray-400">{lead.email || 'No email'}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -230,6 +236,16 @@ const AdminLeads: React.FC = () => {
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black bg-[#1B2A5A]/5 text-[#1B2A5A] uppercase tracking-widest border border-[#1B2A5A]/10">
                                                 {lead.phone}
                                             </span>
+                                        </td>
+                                        <td className="px-6 py-5 whitespace-nowrap">
+                                            <div className="flex flex-col gap-1.5">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${lead.has_booked ? 'bg-green-50 text-green-600 border-green-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+                                                    {lead.has_booked ? '✓ Booked' : 'No Booking'}
+                                                </span>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${lead.has_queried ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+                                                    {lead.has_queried ? '✓ Queried' : 'No Query'}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-5">
                                             <p className="text-xs font-medium text-gray-500 max-w-xs line-clamp-2 leading-relaxed">
