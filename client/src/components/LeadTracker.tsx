@@ -26,10 +26,15 @@ export default function LeadTracker() {
             if (user) {
                 leadData.user_id = user.id;
                 leadData.email = user.email;
+                // Use metadata as initial source
+                leadData.name = user.user_metadata?.full_name;
+                leadData.phone = user.user_metadata?.phone;
+                leadData.address = user.user_metadata?.address;
             }
 
             if (profile) {
-                leadData.name = profile.name || leadData.name;
+                // Profile table data takes precedence
+                leadData.name = profile.full_name || leadData.name;
                 leadData.phone = profile.phone || leadData.phone;
                 leadData.address = profile.address || leadData.address;
             }

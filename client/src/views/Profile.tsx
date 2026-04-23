@@ -96,6 +96,23 @@ const Profile: React.FC = () => {
             const { error } = await supabase.auth.updateUser(updateParams);
             
             if (error) throw error;
+
+            // Also update the public profiles table for consistency
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .update({
+                    full_name: editForm.displayName,
+                    phone: editForm.phone,
+                    address: editForm.address,
+                    email: editForm.email
+                })
+                .eq('id', user.id);
+
+            if (profileError) {
+                console.error("Error updating public profile:", profileError);
+                // We don't necessarily throw here if auth update succeeded, 
+                // but it's good to log.
+            }
             
             if (updateParams.email) {
                 showSuccess("Confirmation email sent to " + editForm.email + ". Please verify to complete the change.");
